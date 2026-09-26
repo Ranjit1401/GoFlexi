@@ -1,103 +1,257 @@
+import re
 from typing import Any, Dict, List, Optional
 import httpx
 from app.core.config import settings
 
-# Note: exact Sky Scrapper endpoint paths/params can shift — verify against
-# the live RapidAPI "Endpoints" tab for the subscribed listing before final wiring,
-# and adjust the path constants below if they differ.
-SEARCH_AIRPORT_PATH = "/api/v1/flights/searchAirport"
-SEARCH_FLIGHTS_PATH = "/api/v1/flights/searchFlights"
-SEARCH_HOTEL_DESTINATION_PATH = "/api/v1/hotels/searchDestinationOrHotel"
-SEARCH_HOTELS_PATH = "/api/v1/hotels/searchHotels"
+SERPAPI_SEARCH_URL = "https://serpapi.com/search.json"
+
+# Extensive IATA dictionary mapping city and airport search terms to 3-letter IATA codes
+IATA_LOOKUP: Dict[str, str] = {
+    "goa": "GOI",
+    "north goa": "GOX",
+    "south goa": "GOI",
+    "dabolim": "GOI",
+    "mopa": "GOX",
+    "mumbai": "BOM",
+    "bombay": "BOM",
+    "delhi": "DEL",
+    "new delhi": "DEL",
+    "indira gandhi": "DEL",
+    "bangalore": "BLR",
+    "bengaluru": "BLR",
+    "kempegowda": "BLR",
+    "chennai": "MAA",
+    "madras": "MAA",
+    "kolkata": "CCU",
+    "calcutta": "CCU",
+    "hyderabad": "HYD",
+    "jaipur": "JAI",
+    "pink city": "JAI",
+    "ahmedabad": "AMD",
+    "pune": "PNQ",
+    "kochi": "COK",
+    "cochin": "COK",
+    "kerala": "COK",
+    "manali": "KUU",
+    "kullu": "KUU",
+    "bhuntar": "KUU",
+    "shimla": "SLV",
+    "srinagar": "SXR",
+    "kashmir": "SXR",
+    "leh": "IXL",
+    "ladakh": "IXL",
+    "dehradun": "DED",
+    "rishikesh": "DED",
+    "mussoorie": "DED",
+    "udaipur": "UDR",
+    "jodhpur": "JDH",
+    "lucknow": "LKO",
+    "kanpur": "KNU",
+    "varanasi": "VNS",
+    "banaras": "VNS",
+    "kashi": "VNS",
+    "agra": "AGR",
+    "amritsar": "ATQ",
+    "chandigarh": "IXC",
+    "guwahati": "GAU",
+    "patna": "PAT",
+    "bhubaneswar": "BBI",
+    "port blair": "IXZ",
+    "andaman": "IXZ",
+    "indore": "IDR",
+    "bhopal": "BHO",
+    "raipur": "RPR",
+    "ranchi": "IXR",
+    "nagpur": "NAG",
+    "vadodara": "BDQ",
+    "surat": "STV",
+    "rajkot": "RAJ",
+    "visakhapatnam": "VTZ",
+    "vizag": "VTZ",
+    "tirupati": "TIR",
+    "vijayawada": "VGA",
+    "mangalore": "IXE",
+    "coimbatore": "CJB",
+    "madurai": "IXM",
+    "trichy": "TRZ",
+    "calicut": "CCJ",
+    "kannur": "CNN",
+    "bagdogra": "IXB",
+    "darjeeling": "IXB",
+    "gangtok": "IXB",
+    "dubai": "DXB",
+    "singapore": "SIN",
+    "bangkok": "BKK",
+    "bali": "DPS",
+    "denpasar": "DPS",
+    "kuala lumpur": "KUL",
+    "london": "LHR",
+    "new york": "JFK",
+    "paris": "CDG",
+    "tokyo": "NRT",
+}
+
+KNOWN_IATA_CODES = {
+    "BOM", "DEL", "GOI", "GOX", "BLR", "MAA", "CCU", "HYD", "AMD", "PNQ",
+    "JAI", "LKO", "KNU", "COK", "TRV", "SXR", "IXL", "KUU", "DED", "IXZ",
+    "PAT", "GAU", "BBI", "ATQ", "IXC", "UDR", "JDH", "BDQ", "NAG", "VTZ",
+    "IDR", "BHO", "RPR", "IXR", "VNS", "AGR", "GWL", "IXB", "IXA", "IMF",
+    "SHL", "DMU", "AJL", "IXS", "TEZ", "IXE", "CJB", "TRZ", "IXM", "CNN",
+    "CCJ", "TIR", "VGA", "STV", "RAJ", "HJR", "JSA", "BKB", "DXB", "SIN",
+    "BKK", "DPS", "KUL", "LHR", "JFK", "CDG", "NRT",
+}
 
 DEMO_AIRPORTS = [
     {
         "skyId": "BOM",
-        "entityId": "95673320",
+        "entityId": "BOM",
         "name": "Chhatrapati Shivaji Maharaj International Airport",
         "city": "Mumbai",
         "country": "India",
     },
     {
         "skyId": "DEL",
-        "entityId": "95673497",
+        "entityId": "DEL",
         "name": "Indira Gandhi International Airport",
         "city": "Delhi",
         "country": "India",
     },
     {
         "skyId": "GOI",
-        "entityId": "95790306",
-        "name": "Dabolim Airport",
+        "entityId": "GOI",
+        "name": "Dabolim International Airport",
         "city": "Goa",
         "country": "India",
     },
     {
         "skyId": "GOX",
-        "entityId": "213260973",
+        "entityId": "GOX",
         "name": "Manohar International Airport (Mopa)",
         "city": "Goa",
         "country": "India",
     },
     {
         "skyId": "BLR",
-        "entityId": "95673523",
+        "entityId": "BLR",
         "name": "Kempegowda International Airport",
         "city": "Bengaluru",
         "country": "India",
     },
     {
         "skyId": "MAA",
-        "entityId": "95673456",
+        "entityId": "MAA",
         "name": "Chennai International Airport",
         "city": "Chennai",
         "country": "India",
     },
     {
         "skyId": "CCU",
-        "entityId": "95673333",
+        "entityId": "CCU",
         "name": "Netaji Subhash Chandra Bose Airport",
         "city": "Kolkata",
         "country": "India",
     },
     {
         "skyId": "HYD",
-        "entityId": "95673444",
+        "entityId": "HYD",
         "name": "Rajiv Gandhi International Airport",
         "city": "Hyderabad",
         "country": "India",
     },
     {
         "skyId": "JAI",
-        "entityId": "95673555",
+        "entityId": "JAI",
         "name": "Jaipur International Airport",
         "city": "Jaipur",
         "country": "India",
     },
     {
-        "skyId": "KNU",
-        "entityId": "95673666",
-        "name": "Kanpur / Lucknow Airport",
+        "skyId": "COK",
+        "entityId": "COK",
+        "name": "Cochin International Airport",
+        "city": "Kochi",
+        "country": "India",
+    },
+    {
+        "skyId": "KUU",
+        "entityId": "KUU",
+        "name": "Kullu Manali Bhuntar Airport",
+        "city": "Manali",
+        "country": "India",
+    },
+    {
+        "skyId": "UDR",
+        "entityId": "UDR",
+        "name": "Maharana Pratap Airport",
+        "city": "Udaipur",
+        "country": "India",
+    },
+    {
+        "skyId": "SXR",
+        "entityId": "SXR",
+        "name": "Sheikh ul-Alam International Airport",
+        "city": "Srinagar",
+        "country": "India",
+    },
+    {
+        "skyId": "IXL",
+        "entityId": "IXL",
+        "name": "Kushok Bakula Rimpochee Airport",
+        "city": "Leh",
+        "country": "India",
+    },
+    {
+        "skyId": "DED",
+        "entityId": "DED",
+        "name": "Jolly Grant Airport",
+        "city": "Dehradun",
+        "country": "India",
+    },
+    {
+        "skyId": "LKO",
+        "entityId": "LKO",
+        "name": "Chaudhary Charan Singh International Airport",
         "city": "Lucknow",
         "country": "India",
     },
     {
+        "skyId": "AMD",
+        "entityId": "AMD",
+        "name": "Sardar Vallabhbhai Patel International Airport",
+        "city": "Ahmedabad",
+        "country": "India",
+    },
+    {
+        "skyId": "PNQ",
+        "entityId": "PNQ",
+        "name": "Pune International Airport",
+        "city": "Pune",
+        "country": "India",
+    },
+    {
+        "skyId": "IXZ",
+        "entityId": "IXZ",
+        "name": "Veer Savarkar International Airport",
+        "city": "Port Blair",
+        "country": "India",
+    },
+    {
         "skyId": "DXB",
-        "entityId": "27539733",
+        "entityId": "DXB",
         "name": "Dubai International Airport",
         "city": "Dubai",
         "country": "United Arab Emirates",
     },
     {
         "skyId": "SIN",
-        "entityId": "27539799",
+        "entityId": "SIN",
         "name": "Singapore Changi Airport",
         "city": "Singapore",
         "country": "Singapore",
     },
     {
         "skyId": "LHR",
-        "entityId": "27544008",
+        "entityId": "LHR",
         "name": "London Heathrow Airport",
         "city": "London",
         "country": "United Kingdom",
@@ -105,8 +259,65 @@ DEMO_AIRPORTS = [
 ]
 
 
+def resolve_iata_code(query: str) -> str:
+    """
+    Resolves any city name, airport name, or code into a standard 3-letter IATA code.
+    Prioritizes curated mapping over substring guesses.
+    """
+    q = (query or "").strip().lower()
+    if not q:
+        return "DEL"
+
+    # Check exact city/region match in lookup
+    if q in IATA_LOOKUP:
+        return IATA_LOOKUP[q]
+
+    # Check known IATA code
+    if q.upper() in KNOWN_IATA_CODES:
+        return q.upper()
+
+    # Check parentheses e.g. "Goa Dabolim (GOI)"
+    paren_match = re.search(r"\(([A-Za-z]{3})\)", query)
+    if paren_match:
+        code = paren_match.group(1).upper()
+        if code in KNOWN_IATA_CODES:
+            return code
+
+    # Check partial key matches
+    for key, code in IATA_LOOKUP.items():
+        if key in q:
+            return code
+
+    # Fallback to uppercase 3 letters if alphabetic
+    if len(q) == 3 and q.isalpha():
+        return q.upper()
+
+    return "DEL"
+
+
+def extract_price(val: Any) -> float:
+    """Robust extractor that handles int, float, dict with nested price fields, or formatted currency strings."""
+    if val is None:
+        return 0.0
+    if isinstance(val, (int, float)):
+        return float(val)
+    if isinstance(val, dict):
+        for k in ["extracted_lowest", "extracted_before_taxes_fees", "raw", "amount", "value", "lowest"]:
+            if k in val and val[k] is not None:
+                p = extract_price(val[k])
+                if p > 0:
+                    return p
+    if isinstance(val, str):
+        cleaned = re.sub(r"[^\d.]", "", val.replace(",", ""))
+        try:
+            return float(cleaned) if cleaned else 0.0
+        except ValueError:
+            return 0.0
+    return 0.0
+
+
 class TravelSearchAPIError(Exception):
-    """Internal exception raised when upstream RapidAPI travel search fails or times out."""
+    """Internal exception raised when upstream travel search fails or times out."""
 
     def __init__(self, message: str, status_code: int = 502):
         super().__init__(message)
@@ -116,73 +327,78 @@ class TravelSearchAPIError(Exception):
 
 class TravelSearchClient:
     """
-    Async HTTP client for Sky Scrapper RapidAPI travel search service.
-    Wraps airport lookups, flight searches, hotel destination resolution, and hotel searches.
-    Gracefully falls back to realistic live-formatted demo data if RapidAPI quota is exceeded or not configured.
+    Async HTTP client for SerpApi travel search (Google Flights & Google Hotels engines).
+    Fetches real-time live airline fares, flight schedules, hotel prices, star ratings, and photos.
+    Gracefully falls back to realistic demo data if API key is not configured or upstream limits are reached.
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        api_host: Optional[str] = None,
-        timeout: float = 15.0,
+        timeout: float = 20.0,
     ):
-        self.api_key = api_key if api_key is not None else settings.RAPIDAPI_KEY
-        self.api_host = api_host if api_host is not None else settings.RAPIDAPI_HOST
+        self._custom_api_key = api_key
         self.timeout = timeout
 
     @property
-    def base_headers(self) -> Dict[str, str]:
-        return {
-            "x-rapidapi-key": self.api_key,
-            "x-rapidapi-host": self.api_host,
-        }
+    def api_key(self) -> str:
+        if self._custom_api_key is not None:
+            return self._custom_api_key.strip()
+        return settings.serpapi_key
 
     async def _request(
         self,
-        method: str,
-        path: str,
-        params: Optional[Dict[str, Any]] = None,
+        engine: str,
+        params: Dict[str, Any],
     ) -> Any:
-        url = f"https://{self.api_host}{path}"
-        headers = self.base_headers
-
+        """Makes an asynchronous GET request to SerpApi."""
         if not self.api_key:
             raise TravelSearchAPIError(
-                "RapidAPI key is not configured on the server",
+                "SerpApi API key is not configured on the server",
                 status_code=502,
             )
 
+        query_params = {
+            "engine": engine,
+            "api_key": self.api_key,
+            **params,
+        }
+
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    params=params,
+                response = await client.get(
+                    url=SERPAPI_SEARCH_URL,
+                    params=query_params,
                 )
-                response.raise_for_status()
-                return response.json()
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, dict) and "error" in data:
+                        raise TravelSearchAPIError(
+                            f"SerpApi returned error: {data['error']}",
+                            status_code=502,
+                        )
+                    return data
+
+                # Check for 4xx or 5xx
+                raise TravelSearchAPIError(
+                    f"SerpApi returned HTTP {response.status_code}: {response.text[:200]}",
+                    status_code=502,
+                )
         except httpx.TimeoutException as exc:
             raise TravelSearchAPIError(
-                f"Upstream travel search request timed out: {exc}",
+                f"SerpApi request timed out: {exc}",
                 status_code=504,
-            ) from exc
-        except httpx.HTTPStatusError as exc:
-            raise TravelSearchAPIError(
-                f"Upstream travel search API returned HTTP {exc.response.status_code}: {exc.response.text[:200]}",
-                status_code=502,
             ) from exc
         except httpx.RequestError as exc:
             raise TravelSearchAPIError(
-                f"Network communication failed with travel search API: {exc}",
+                f"Network communication failed with SerpApi: {exc}",
                 status_code=502,
             ) from exc
         except Exception as exc:
             if isinstance(exc, TravelSearchAPIError):
                 raise
             raise TravelSearchAPIError(
-                f"Unexpected error while calling travel search API: {exc}",
+                f"Unexpected error while calling SerpApi: {exc}",
                 status_code=502,
             ) from exc
 
@@ -194,10 +410,11 @@ class TravelSearchClient:
             if q in a["skyId"].lower() or q in a["city"].lower() or q in a["name"].lower()
         ]
         if not matches:
+            resolved_iata = resolve_iata_code(query)
             matches = [
                 {
-                    "skyId": (q[:3].upper() if len(q) >= 3 else "APT"),
-                    "entityId": f"entity-{q}",
+                    "skyId": resolved_iata,
+                    "entityId": resolved_iata,
                     "name": f"{query.title()} Airport",
                     "city": query.title(),
                     "country": "India",
@@ -238,8 +455,11 @@ class TravelSearchClient:
         multiplier = max(1, adults)
         demo_itineraries = [
             {
-                "id": "flight-indigo-6361",
-                "price": {"raw": 4250.0 * multiplier, "formatted": f"₹{int(4250 * multiplier):,}"},
+                "id": f"flight-indigo-{origin_sky_id}-{dest_sky_id}-6361",
+                "airline": "IndiGo",
+                "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/6E.png",
+                "flight_number": "6E 6361",
+                "price": 4250.0 * multiplier,
                 "legs": [
                     {
                         "origin": {"name": f"{origin_sky_id} Airport", "displayCode": origin_sky_id},
@@ -251,11 +471,14 @@ class TravelSearchClient:
                         "carriers": {"marketing": [{"name": "IndiGo"}]},
                     }
                 ],
-                "deeplink": f"https://www.goindigo.in/booking/select?origin={origin_sky_id}&dest={dest_sky_id}&date={date}",
+                "deeplink": f"https://www.google.com/travel/flights?q=Flights%20from%20{origin_sky_id}%20to%20{dest_sky_id}%20on%20{date}",
             },
             {
-                "id": "flight-akasa-1322",
-                "price": {"raw": 3890.0 * multiplier, "formatted": f"₹{int(3890 * multiplier):,}"},
+                "id": f"flight-akasa-{origin_sky_id}-{dest_sky_id}-1322",
+                "airline": "Akasa Air",
+                "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/QP.png",
+                "flight_number": "QP 1322",
+                "price": 3890.0 * multiplier,
                 "legs": [
                     {
                         "origin": {"name": f"{origin_sky_id} Airport", "displayCode": origin_sky_id},
@@ -267,11 +490,14 @@ class TravelSearchClient:
                         "carriers": {"marketing": [{"name": "Akasa Air"}]},
                     }
                 ],
-                "deeplink": "https://www.akasaair.com",
+                "deeplink": f"https://www.google.com/travel/flights?q=Flights%20from%20{origin_sky_id}%20to%20{dest_sky_id}%20on%20{date}",
             },
             {
-                "id": "flight-airindia-655",
-                "price": {"raw": 5120.0 * multiplier, "formatted": f"₹{int(5120 * multiplier):,}"},
+                "id": f"flight-airindia-{origin_sky_id}-{dest_sky_id}-655",
+                "airline": "Air India",
+                "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AI.png",
+                "flight_number": "AI 655",
+                "price": 5120.0 * multiplier,
                 "legs": [
                     {
                         "origin": {"name": f"{origin_sky_id} Airport", "displayCode": origin_sky_id},
@@ -283,11 +509,14 @@ class TravelSearchClient:
                         "carriers": {"marketing": [{"name": "Air India"}]},
                     }
                 ],
-                "deeplink": "https://www.airindia.com",
+                "deeplink": f"https://www.google.com/travel/flights?q=Flights%20from%20{origin_sky_id}%20to%20{dest_sky_id}%20on%20{date}",
             },
             {
-                "id": "flight-vistara-810",
-                "price": {"raw": 6850.0 * multiplier, "formatted": f"₹{int(6850 * multiplier):,}"},
+                "id": f"flight-vistara-{origin_sky_id}-{dest_sky_id}-810",
+                "airline": "Vistara",
+                "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/UK.png",
+                "flight_number": "UK 810",
+                "price": 6850.0 * multiplier,
                 "legs": [
                     {
                         "origin": {"name": f"{origin_sky_id} Airport", "displayCode": origin_sky_id},
@@ -299,11 +528,14 @@ class TravelSearchClient:
                         "carriers": {"marketing": [{"name": "Vistara"}]},
                     }
                 ],
-                "deeplink": "https://www.airvistara.com",
+                "deeplink": f"https://www.google.com/travel/flights?q=Flights%20from%20{origin_sky_id}%20to%20{dest_sky_id}%20on%20{date}",
             },
             {
-                "id": "flight-spicejet-204",
-                "price": {"raw": 3499.0 * multiplier, "formatted": f"₹{int(3499 * multiplier):,}"},
+                "id": f"flight-spicejet-{origin_sky_id}-{dest_sky_id}-204",
+                "airline": "SpiceJet",
+                "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/SG.png",
+                "flight_number": "SG 204",
+                "price": 3499.0 * multiplier,
                 "legs": [
                     {
                         "origin": {"name": f"{origin_sky_id} Airport", "displayCode": origin_sky_id},
@@ -315,43 +547,36 @@ class TravelSearchClient:
                         "carriers": {"marketing": [{"name": "SpiceJet"}]},
                     }
                 ],
-                "deeplink": "https://www.spicejet.com",
+                "deeplink": f"https://www.google.com/travel/flights?q=Flights%20from%20{origin_sky_id}%20to%20{dest_sky_id}%20on%20{date}",
             },
         ]
         return {"data": {"itineraries": demo_itineraries}}
 
     def _get_demo_hotel_destinations(self, query: str) -> Dict[str, Any]:
-        """Provides realistic destination autosuggest matches when upstream API is limited or unavailable."""
+        """Provides realistic destination autosuggest matches."""
         q = query.strip().lower()
 
         curated = [
-            # Goa
-            {"entityId": "hotel-entity-goa-all", "entityName": "Goa (All Regions), India", "entityType": "Destination", "keywords": ["goa", "north goa", "south goa"]},
-            {"entityId": "hotel-entity-goa-north", "entityName": "North Goa (Calangute, Baga & Candolim)", "entityType": "Beach Resort", "keywords": ["goa", "north goa", "calangute", "baga", "candolim"]},
-            {"entityId": "hotel-entity-goa-south", "entityName": "South Goa (Colva, Benaulim & Palolem)", "entityType": "Beach Resort", "keywords": ["goa", "south goa", "benaulim", "palolem", "colva"]},
-            {"entityId": "hotel-entity-goa-panaji", "entityName": "Panaji (Capital & Fontainhas Heritage)", "entityType": "City", "keywords": ["goa", "panaji", "panjim"]},
-            # Manali & Himachal
-            {"entityId": "hotel-entity-manali-all", "entityName": "Manali (Mall Road & Old Manali), Himachal Pradesh", "entityType": "Hill Station", "keywords": ["manali", "himachal", "old manali"]},
-            {"entityId": "hotel-entity-manali-solang", "entityName": "Solang Valley & Rohtang, Manali", "entityType": "Adventure Valley", "keywords": ["manali", "solang", "rohtang"]},
-            {"entityId": "hotel-entity-shimla", "entityName": "Shimla (The Ridge & Mall Road), Himachal Pradesh", "entityType": "Hill Station", "keywords": ["shimla", "himachal"]},
-            # Jaipur & Rajasthan
-            {"entityId": "hotel-entity-jaipur-all", "entityName": "Jaipur (Pink City & Hawa Mahal), Rajasthan", "entityType": "City", "keywords": ["jaipur", "rajasthan", "pink city"]},
-            {"entityId": "hotel-entity-jaipur-amer", "entityName": "Amer & Kukas Heritage Palaces, Jaipur", "entityType": "Heritage", "keywords": ["jaipur", "amer", "amber"]},
-            {"entityId": "hotel-entity-udaipur", "entityName": "Udaipur (Lake Pichola & City Palace), Rajasthan", "entityType": "Lakeside", "keywords": ["udaipur", "pichola", "rajasthan"]},
-            # Mumbai
-            {"entityId": "hotel-entity-mumbai-south", "entityName": "South Mumbai (Colaba & Marine Drive), Maharashtra", "entityType": "City", "keywords": ["mumbai", "bombay", "colaba"]},
-            {"entityId": "hotel-entity-mumbai-juhu", "entityName": "Bandra & Juhu Beachfront, Mumbai", "entityType": "Beach District", "keywords": ["mumbai", "juhu", "bandra"]},
-            {"entityId": "hotel-entity-mumbai-airport", "entityName": "Mumbai International Airport Area (Andheri East)", "entityType": "Transit Hub", "keywords": ["mumbai", "airport", "andheri"]},
-            # Delhi
-            {"entityId": "hotel-entity-delhi-central", "entityName": "Central Delhi (Connaught Place & India Gate)", "entityType": "Capital District", "keywords": ["delhi", "new delhi", "connaught"]},
-            {"entityId": "hotel-entity-delhi-aerocity", "entityName": "Aerocity & IGI Airport, New Delhi", "entityType": "Transit Hub", "keywords": ["delhi", "aerocity", "igi airport"]},
-            # Kerala
-            {"entityId": "hotel-entity-kerala-kochi", "entityName": "Fort Kochi & Marine Drive, Kerala", "entityType": "Port City", "keywords": ["kerala", "kochi", "cochin", "fort kochi"]},
-            {"entityId": "hotel-entity-kerala-munnar", "entityName": "Munnar (Tea Estates & Misty Hills), Kerala", "entityType": "Hill Station", "keywords": ["kerala", "munnar"]},
-            {"entityId": "hotel-entity-kerala-alleppey", "entityName": "Alleppey / Alappuzha Backwaters & Houseboats", "entityType": "Backwaters", "keywords": ["kerala", "alleppey", "alappuzha"]},
-            # Bangalore
-            {"entityId": "hotel-entity-bangalore-central", "entityName": "Central Bengaluru (MG Road & Indiranagar), Karnataka", "entityType": "City", "keywords": ["bangalore", "bengaluru", "indiranagar"]},
-            {"entityId": "hotel-entity-bangalore-whitefield", "entityName": "Whitefield & IT Corridor, Bengaluru", "entityType": "Business District", "keywords": ["bangalore", "bengaluru", "whitefield"]},
+            {"entityId": "Goa, India", "entityName": "Goa (All Regions), India", "entityType": "Destination", "keywords": ["goa", "north goa", "south goa"]},
+            {"entityId": "North Goa, India", "entityName": "North Goa (Calangute, Baga & Candolim)", "entityType": "Beach Resort", "keywords": ["goa", "north goa", "calangute", "baga", "candolim"]},
+            {"entityId": "South Goa, India", "entityName": "South Goa (Colva, Benaulim & Palolem)", "entityType": "Beach Resort", "keywords": ["goa", "south goa", "benaulim", "palolem", "colva"]},
+            {"entityId": "Panaji, Goa, India", "entityName": "Panaji (Capital & Fontainhas Heritage)", "entityType": "City", "keywords": ["goa", "panaji", "panjim"]},
+            {"entityId": "Manali, Himachal Pradesh, India", "entityName": "Manali (Mall Road & Old Manali), Himachal Pradesh", "entityType": "Hill Station", "keywords": ["manali", "himachal", "old manali"]},
+            {"entityId": "Solang Valley, Manali, India", "entityName": "Solang Valley & Rohtang, Manali", "entityType": "Adventure Valley", "keywords": ["manali", "solang", "rohtang"]},
+            {"entityId": "Shimla, Himachal Pradesh, India", "entityName": "Shimla (The Ridge & Mall Road), Himachal Pradesh", "entityType": "Hill Station", "keywords": ["shimla", "himachal"]},
+            {"entityId": "Jaipur, Rajasthan, India", "entityName": "Jaipur (Pink City & Hawa Mahal), Rajasthan", "entityType": "City", "keywords": ["jaipur", "rajasthan", "pink city"]},
+            {"entityId": "Amer, Jaipur, Rajasthan, India", "entityName": "Amer & Kukas Heritage Palaces, Jaipur", "entityType": "Heritage", "keywords": ["jaipur", "amer", "amber"]},
+            {"entityId": "Udaipur, Rajasthan, India", "entityName": "Udaipur (Lake Pichola & City Palace), Rajasthan", "entityType": "Lakeside", "keywords": ["udaipur", "pichola", "rajasthan"]},
+            {"entityId": "South Mumbai, Maharashtra, India", "entityName": "South Mumbai (Colaba & Marine Drive), Maharashtra", "entityType": "City", "keywords": ["mumbai", "bombay", "colaba"]},
+            {"entityId": "Bandra, Mumbai, Maharashtra, India", "entityName": "Bandra & Juhu Beachfront, Mumbai", "entityType": "Beach District", "keywords": ["mumbai", "juhu", "bandra"]},
+            {"entityId": "Central Delhi, Delhi, India", "entityName": "Central Delhi (Connaught Place & India Gate)", "entityType": "Capital District", "keywords": ["delhi", "new delhi", "connaught"]},
+            {"entityId": "Aerocity, New Delhi, India", "entityName": "Aerocity & IGI Airport, New Delhi", "entityType": "Transit Hub", "keywords": ["delhi", "aerocity", "igi airport"]},
+            {"entityId": "Fort Kochi, Kerala, India", "entityName": "Fort Kochi & Marine Drive, Kerala", "entityType": "Port City", "keywords": ["kerala", "kochi", "cochin", "fort kochi"]},
+            {"entityId": "Munnar, Kerala, India", "entityName": "Munnar (Tea Estates & Misty Hills), Kerala", "entityType": "Hill Station", "keywords": ["kerala", "munnar"]},
+            {"entityId": "Alleppey, Kerala, India", "entityName": "Alleppey / Alappuzha Backwaters & Houseboats", "entityType": "Backwaters", "keywords": ["kerala", "alleppey", "alappuzha"]},
+            {"entityId": "Bengaluru, Karnataka, India", "entityName": "Central Bengaluru (MG Road & Indiranagar), Karnataka", "entityType": "City", "keywords": ["bangalore", "bengaluru", "indiranagar"]},
+            {"entityId": "Srinagar, Kashmir, India", "entityName": "Srinagar (Dal Lake & Mughal Gardens), Kashmir", "entityType": "Hill Station", "keywords": ["srinagar", "kashmir", "dal lake"]},
+            {"entityId": "Leh, Ladakh, India", "entityName": "Leh (Pangong & Nubra Valley Gateway), Ladakh", "entityType": "Mountain Valley", "keywords": ["leh", "ladakh"]},
         ]
 
         matches = [
@@ -361,11 +586,10 @@ class TravelSearchClient:
         if matches:
             return {"data": matches}
 
-        slug = q.replace(" ", "-")
         return {
             "data": [
                 {
-                    "entityId": f"hotel-entity-{slug}",
+                    "entityId": f"{query.title()}, India",
                     "entityName": f"{query.title()}, India",
                     "entityType": "Destination",
                 }
@@ -386,6 +610,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": "Hadimba Forest Sanctuary, Manali",
                     "reviewSummary": {"value": 4.8, "count": 1120},
+                    "link": "https://www.google.com/travel/hotels/s/manali-himalayan",
                 },
                 {
                     "hotelId": "hotel-manali-solang",
@@ -395,6 +620,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": "Solang Valley Snow Point, Manali",
                     "reviewSummary": {"value": 4.7, "count": 890},
+                    "link": "https://www.google.com/travel/hotels/s/manali-solang",
                 },
                 {
                     "hotelId": "hotel-manali-apple",
@@ -404,6 +630,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": "Log Huts Area, Old Manali",
                     "reviewSummary": {"value": 4.4, "count": 630},
+                    "link": "https://www.google.com/travel/hotels/s/manali-apple",
                 },
                 {
                     "hotelId": "hotel-manali-snowvalley",
@@ -413,6 +640,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": "Circuit House Road, Manali",
                     "reviewSummary": {"value": 4.3, "count": 780},
+                    "link": "https://www.google.com/travel/hotels/s/manali-snowvalley",
                 },
                 {
                     "hotelId": "hotel-manali-pine",
@@ -422,6 +650,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": "Aleo Riverside, Manali",
                     "reviewSummary": {"value": 4.2, "count": 350},
+                    "link": "https://www.google.com/travel/hotels/s/manali-pine",
                 },
             ]
         elif "jaipur" in d or "rajasthan" in d:
@@ -434,6 +663,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": "Bhawani Singh Road, Jaipur",
                     "reviewSummary": {"value": 4.9, "count": 2150},
+                    "link": "https://www.google.com/travel/hotels/s/jaipur-rambagh",
                 },
                 {
                     "hotelId": "hotel-jaipur-itc",
@@ -443,6 +673,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": "Gopalbari, Station Road, Jaipur",
                     "reviewSummary": {"value": 4.7, "count": 1640},
+                    "link": "https://www.google.com/travel/hotels/s/jaipur-itc",
                 },
                 {
                     "hotelId": "hotel-jaipur-trident",
@@ -452,6 +683,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": "Amber Fort Road, Opposite Jal Mahal",
                     "reviewSummary": {"value": 4.6, "count": 990},
+                    "link": "https://www.google.com/travel/hotels/s/jaipur-trident",
                 },
                 {
                     "hotelId": "hotel-jaipur-umaid",
@@ -461,6 +693,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": "Bani Park, Jaipur",
                     "reviewSummary": {"value": 4.4, "count": 820},
+                    "link": "https://www.google.com/travel/hotels/s/jaipur-umaid",
                 },
                 {
                     "hotelId": "hotel-jaipur-haveli",
@@ -470,6 +703,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": "Sansar Chandra Road, Jaipur",
                     "reviewSummary": {"value": 4.3, "count": 460},
+                    "link": "https://www.google.com/travel/hotels/s/jaipur-haveli",
                 },
             ]
         elif "kerala" in d or "kochi" in d or "munnar" in d or "alleppey" in d:
@@ -482,6 +716,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": "Vembanad Lake Shore, Kumarakom",
                     "reviewSummary": {"value": 4.9, "count": 1820},
+                    "link": "https://www.google.com/travel/hotels/s/kerala-kumarakom",
                 },
                 {
                     "hotelId": "hotel-kerala-brunton",
@@ -491,6 +726,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": "Fort Kochi Harbor, Kochi",
                     "reviewSummary": {"value": 4.7, "count": 940},
+                    "link": "https://www.google.com/travel/hotels/s/kerala-brunton",
                 },
                 {
                     "hotelId": "hotel-kerala-spicetree",
@@ -500,6 +736,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": "Munnar Tea Valley, Kerala",
                     "reviewSummary": {"value": 4.6, "count": 710},
+                    "link": "https://www.google.com/travel/hotels/s/kerala-spicetree",
                 },
                 {
                     "hotelId": "hotel-kerala-coconut",
@@ -509,6 +746,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": "Kottayam Backwaters, Kerala",
                     "reviewSummary": {"value": 4.5, "count": 650},
+                    "link": "https://www.google.com/travel/hotels/s/kerala-coconut",
                 },
                 {
                     "hotelId": "hotel-kerala-palms",
@@ -518,6 +756,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": "Marari Beachfront, Kerala",
                     "reviewSummary": {"value": 4.2, "count": 420},
+                    "link": "https://www.google.com/travel/hotels/s/kerala-palms",
                 },
             ]
         elif "mumbai" in d or "bombay" in d:
@@ -530,6 +769,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": "Apollo Bunder, Colaba, Mumbai",
                     "reviewSummary": {"value": 4.9, "count": 3200},
+                    "link": "https://www.google.com/travel/hotels/s/mumbai-taj",
                 },
                 {
                     "hotelId": "hotel-mumbai-oberoi",
@@ -539,6 +779,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": "Marine Drive, Nariman Point, Mumbai",
                     "reviewSummary": {"value": 4.8, "count": 2400},
+                    "link": "https://www.google.com/travel/hotels/s/mumbai-oberoi",
                 },
                 {
                     "hotelId": "hotel-mumbai-jw",
@@ -548,6 +789,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": "Juhu Tara Road, Juhu Beach, Mumbai",
                     "reviewSummary": {"value": 4.7, "count": 1850},
+                    "link": "https://www.google.com/travel/hotels/s/mumbai-jw",
                 },
                 {
                     "hotelId": "hotel-mumbai-lemontree",
@@ -557,6 +799,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": "Andheri East, Near International Airport",
                     "reviewSummary": {"value": 4.3, "count": 920},
+                    "link": "https://www.google.com/travel/hotels/s/mumbai-lemon",
                 },
                 {
                     "hotelId": "hotel-mumbai-bloom",
@@ -566,6 +809,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": "Pali Hill, Bandra West, Mumbai",
                     "reviewSummary": {"value": 4.2, "count": 510},
+                    "link": "https://www.google.com/travel/hotels/s/mumbai-bloom",
                 },
             ]
         elif "delhi" in d:
@@ -578,6 +822,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": "Janpath, Connaught Place, New Delhi",
                     "reviewSummary": {"value": 4.8, "count": 2100},
+                    "link": "https://www.google.com/travel/hotels/s/delhi-imperial",
                 },
                 {
                     "hotelId": "hotel-delhi-leela",
@@ -587,6 +832,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": "Diplomatic Enclave, Chanakyapuri",
                     "reviewSummary": {"value": 4.9, "count": 1780},
+                    "link": "https://www.google.com/travel/hotels/s/delhi-leela",
                 },
                 {
                     "hotelId": "hotel-delhi-itc",
@@ -596,6 +842,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": "Sardar Patel Marg, New Delhi",
                     "reviewSummary": {"value": 4.7, "count": 2600},
+                    "link": "https://www.google.com/travel/hotels/s/delhi-itc",
                 },
                 {
                     "hotelId": "hotel-delhi-radisson",
@@ -605,6 +852,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": "National Highway 8, Mahipalpur",
                     "reviewSummary": {"value": 4.4, "count": 1340},
+                    "link": "https://www.google.com/travel/hotels/s/delhi-radisson",
                 },
                 {
                     "hotelId": "hotel-delhi-bloom",
@@ -614,6 +862,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": "Janpath Lane, Connaught Place",
                     "reviewSummary": {"value": 4.3, "count": 890},
+                    "link": "https://www.google.com/travel/hotels/s/delhi-bloom",
                 },
             ]
         elif "udaipur" in d:
@@ -626,6 +875,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": "Haridas Ji Ki Magri, Lake Pichola, Udaipur",
                     "reviewSummary": {"value": 4.9, "count": 2890},
+                    "link": "https://www.google.com/travel/hotels/s/udaipur-oberoi",
                 },
                 {
                     "hotelId": "hotel-udaipur-tajlake",
@@ -635,6 +885,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": "Island of Jag Niwas, Lake Pichola",
                     "reviewSummary": {"value": 4.9, "count": 3100},
+                    "link": "https://www.google.com/travel/hotels/s/udaipur-tajlake",
                 },
                 {
                     "hotelId": "hotel-udaipur-leela",
@@ -644,6 +895,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": "Lake Pichola, Udaipur",
                     "reviewSummary": {"value": 4.8, "count": 1950},
+                    "link": "https://www.google.com/travel/hotels/s/udaipur-leela",
                 },
                 {
                     "hotelId": "hotel-udaipur-trident",
@@ -653,6 +905,7 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": "Haridas Ji Ki Magri, Mulla Talai",
                     "reviewSummary": {"value": 4.6, "count": 1120},
+                    "link": "https://www.google.com/travel/hotels/s/udaipur-trident",
                 },
                 {
                     "hotelId": "hotel-udaipur-jagat",
@@ -662,73 +915,105 @@ class TravelSearchClient:
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": "Lal Ghat, Behind Jagdish Temple",
                     "reviewSummary": {"value": 4.4, "count": 670},
+                    "link": "https://www.google.com/travel/hotels/s/udaipur-jagat",
                 },
             ]
         else:
             dest_title = (destination or "Goa").title()
             hotels = [
                 {
-                    "hotelId": "hotel-demo-taj",
+                    "hotelId": f"hotel-{dest_title.lower()}-taj",
                     "name": f"Taj Exotica Resort & Spa, {dest_title}",
                     "stars": 5.0,
                     "price": {"raw": 14500.0 * multiplier},
                     "heroImage": {"url": "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80"},
                     "location": f"Benaulim Coast, {dest_title}",
                     "reviewSummary": {"value": 4.8, "count": 1420},
+                    "link": f"https://www.google.com/travel/hotels/s/{dest_title.lower()}-taj",
                 },
                 {
-                    "hotelId": "hotel-demo-marriott",
+                    "hotelId": f"hotel-{dest_title.lower()}-marriott",
                     "name": f"{dest_title} Marriott Resort & Spa",
                     "stars": 4.5,
                     "price": {"raw": 10800.0 * multiplier},
                     "heroImage": {"url": "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80"},
                     "location": f"Miramar Promenade, {dest_title}",
                     "reviewSummary": {"value": 4.7, "count": 980},
+                    "link": f"https://www.google.com/travel/hotels/s/{dest_title.lower()}-marriott",
                 },
                 {
-                    "hotelId": "hotel-demo-hyatt",
+                    "hotelId": f"hotel-{dest_title.lower()}-hyatt",
                     "name": f"Grand Hyatt & Villas, {dest_title}",
                     "stars": 5.0,
                     "price": {"raw": 16200.0 * multiplier},
                     "heroImage": {"url": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=600&q=80"},
                     "location": f"Waterfront Bay, {dest_title}",
                     "reviewSummary": {"value": 4.9, "count": 2100},
+                    "link": f"https://www.google.com/travel/hotels/s/{dest_title.lower()}-hyatt",
                 },
                 {
-                    "hotelId": "hotel-demo-lemon-tree",
+                    "hotelId": f"hotel-{dest_title.lower()}-lemon-tree",
                     "name": f"Lemon Tree Premier, {dest_title}",
                     "stars": 4.0,
                     "price": {"raw": 5400.0 * multiplier},
                     "heroImage": {"url": "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80"},
                     "location": f"Central District, {dest_title}",
                     "reviewSummary": {"value": 4.3, "count": 640},
+                    "link": f"https://www.google.com/travel/hotels/s/{dest_title.lower()}-lemon",
                 },
                 {
-                    "hotelId": "hotel-demo-bloom",
+                    "hotelId": f"hotel-{dest_title.lower()}-bloom",
                     "name": f"Bloom Boutique Suites, {dest_title}",
                     "stars": 3.5,
                     "price": {"raw": 3200.0 * multiplier},
                     "heroImage": {"url": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80"},
                     "location": f"City Circle, {dest_title}",
                     "reviewSummary": {"value": 4.2, "count": 410},
+                    "link": f"https://www.google.com/travel/hotels/s/{dest_title.lower()}-bloom",
                 },
             ]
         return {"data": {"hotels": hotels}}
 
     async def search_airports(self, query: str) -> Any:
         """
-        Resolves city/airport name to skyId and entityId before searching flights.
-        Falls back gracefully to demo airports if upstream quota is exceeded or key is unset.
+        Resolves city/airport name to 3-letter IATA code and presentation object.
+        Queries SerpApi google_flights_autocomplete if key is available, else matches known hubs.
         """
         if self.api_key:
             try:
-                return await self._request(
-                    method="GET",
-                    path=SEARCH_AIRPORT_PATH,
-                    params={"query": query},
+                res = await self._request(
+                    engine="google_flights_autocomplete",
+                    params={"q": query, "hl": "en"},
                 )
-            except TravelSearchAPIError:
+                if isinstance(res, dict) and "suggestions" in res:
+                    suggestions = res["suggestions"]
+                    if suggestions and isinstance(suggestions, list):
+                        formatted = []
+                        for s in suggestions:
+                            code = s.get("id") or s.get("iata_code") or resolve_iata_code(s.get("name", query))
+                            formatted.append({
+                                "skyId": code,
+                                "entityId": code,
+                                "presentation": {
+                                    "title": s.get("city") or s.get("name") or query.title(),
+                                    "suggestionTitle": s.get("name") or f"{query.title()} Airport",
+                                    "subtitle": s.get("country") or "India",
+                                },
+                                "navigation": {
+                                    "entityId": code,
+                                    "localizedName": s.get("name") or query.title(),
+                                    "relevantFlightParams": {
+                                        "skyId": code,
+                                        "entityId": code,
+                                        "localizedName": s.get("city") or query.title(),
+                                    },
+                                },
+                            })
+                        if formatted:
+                            return {"status": True, "data": formatted}
+            except Exception:
                 pass
+
         return self._get_demo_airports(query)
 
     async def search_flights(
@@ -745,48 +1030,56 @@ class TravelSearchClient:
     ) -> Any:
         """
         Searches available flights between origin and destination.
-        Calls GET /api/v1/flights/searchFlights
-        Falls back gracefully to realistic demo itineraries if upstream quota is exceeded or key is unset.
+        Calls SerpApi with engine=google_flights.
+        Falls back gracefully to realistic demo itineraries if SerpApi key is unset or error occurs.
         """
-        params: Dict[str, Any] = {
-            "originSkyId": origin_sky_id,
-            "destinationSkyId": dest_sky_id,
-            "originEntityId": origin_entity_id,
-            "destinationEntityId": dest_entity_id,
-            "date": date,
-            "adults": adults,
-            "cabinClass": cabin_class,
-            "currency": currency,
-        }
-        if return_date:
-            params["returnDate"] = return_date
+        origin_iata = resolve_iata_code(origin_sky_id or origin_entity_id)
+        dest_iata = resolve_iata_code(dest_sky_id or dest_entity_id)
 
         if self.api_key:
             try:
-                return await self._request(
-                    method="GET",
-                    path=SEARCH_FLIGHTS_PATH,
+                params: Dict[str, Any] = {
+                    "departure_id": origin_iata,
+                    "arrival_id": dest_iata,
+                    "outbound_date": date,
+                    "currency": currency,
+                    "adults": max(1, adults),
+                    "hl": "en",
+                    "gl": "in",
+                }
+                if return_date:
+                    params["return_date"] = return_date
+                    params["type"] = "1"  # Round trip
+                else:
+                    params["type"] = "2"  # One way
+
+                class_map = {
+                    "economy": "1",
+                    "premium_economy": "2",
+                    "business": "3",
+                    "first": "4",
+                }
+                if cabin_class.lower() in class_map:
+                    params["travel_class"] = class_map[cabin_class.lower()]
+
+                serp_res = await self._request(
+                    engine="google_flights",
                     params=params,
                 )
-            except TravelSearchAPIError:
+                if (
+                    isinstance(serp_res, dict)
+                    and ("best_flights" in serp_res or "other_flights" in serp_res)
+                ):
+                    return serp_res
+            except Exception:
                 pass
 
-        return self._get_demo_flights(origin_sky_id, dest_sky_id, date, adults)
+        return self._get_demo_flights(origin_iata, dest_iata, date, adults)
 
     async def search_hotel_destination(self, query: str) -> Any:
         """
-        Resolves a city/place name to a hotel-search entity id via autosuggest.
+        Resolves a city/place name to hotel destination suggestions.
         """
-        if self.api_key:
-            try:
-                return await self._request(
-                    method="GET",
-                    path=SEARCH_HOTEL_DESTINATION_PATH,
-                    params={"query": query},
-                )
-            except TravelSearchAPIError:
-                pass
-
         return self._get_demo_hotel_destinations(query)
 
     async def search_hotels(
@@ -800,27 +1093,33 @@ class TravelSearchClient:
         destination: Optional[str] = None,
     ) -> Any:
         """
-        Searches hotels for a given destination entity id and date range.
+        Searches hotels for a given destination and date range.
+        Calls SerpApi with engine=google_hotels.
+        Falls back gracefully to realistic hotel options if key is unset or error occurs.
         """
-        params: Dict[str, Any] = {
-            "entityId": entity_id,
-            "checkin": check_in,
-            "checkout": check_out,
-            "adults": adults,
-            "rooms": rooms,
-            "currency": currency,
-        }
+        target_destination = destination or entity_id or "Goa"
+
         if self.api_key:
             try:
-                return await self._request(
-                    method="GET",
-                    path=SEARCH_HOTELS_PATH,
+                params: Dict[str, Any] = {
+                    "q": f"Hotels in {target_destination}",
+                    "check_in_date": check_in,
+                    "check_out_date": check_out,
+                    "adults": max(1, adults),
+                    "currency": currency,
+                    "hl": "en",
+                    "gl": "in",
+                }
+                serp_res = await self._request(
+                    engine="google_hotels",
                     params=params,
                 )
-            except TravelSearchAPIError:
+                if isinstance(serp_res, dict) and "properties" in serp_res:
+                    return serp_res
+            except Exception:
                 pass
 
-        return self._get_demo_hotels(rooms=rooms, destination=destination)
+        return self._get_demo_hotels(rooms=rooms, destination=target_destination)
 
 
 travel_search_client = TravelSearchClient()

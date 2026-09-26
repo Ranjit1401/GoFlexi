@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     RAPIDAPI_KEY: str = ""
     RAPIDAPI_HOST: str = "sky-scrapper.p.rapidapi.com"
 
+    # SerpApi Live Flight & Hotel Search
+    SERPAPI_API_KEY: str = ""
+    SERPAPI_KEY: str = ""
+
+    @property
+    def serpapi_key(self) -> str:
+        return (self.SERPAPI_API_KEY or self.SERPAPI_KEY or "").strip()
+
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

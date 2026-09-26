@@ -242,7 +242,7 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
           Search Available Flights
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Real-time airline routes, fares, and transit durations powered by Sky Scrapper.
+          Real-time airline routes, fares, and transit durations powered by Google Flights.
         </p>
       </div>
 
@@ -380,7 +380,7 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
 
       {/* Results Area */}
       {isLoading && (
-        <LoadingState message="Fetching live flights from Sky Scrapper..." />
+        <LoadingState message="Fetching live flights from Google Flights..." />
       )}
 
       {!isLoading && errorMessage && (
@@ -445,13 +445,28 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     {/* Airline & Route Info */}
                     <div className="flex items-start sm:items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
-                        <Plane className="w-5 h-5 text-brand-600" />
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0 overflow-hidden">
+                        {flight.airline_logo ? (
+                          <img
+                            src={flight.airline_logo}
+                            alt={flight.airline}
+                            className="w-8 h-8 object-contain"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).style.display = 'none';
+                              (e.currentTarget.parentElement as HTMLElement).innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-600"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>';
+                            }}
+                          />
+                        ) : (
+                          <Plane className="w-5 h-5 text-brand-600" />
+                        )}
                       </div>
 
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-navy-950">{flight.airline}</span>
+                          {flight.flight_number && (
+                            <span className="text-[11px] text-slate-400 font-mono">{flight.flight_number}</span>
+                          )}
                           <Badge
                             variant={flight.stops === 0 ? 'success' : 'neutral'}
                             size="sm"

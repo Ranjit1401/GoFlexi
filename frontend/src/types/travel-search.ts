@@ -28,6 +28,8 @@ export interface FlightOption {
   origin_airport: string;
   destination_airport: string;
   booking_deeplink?: string | null;
+  airline_logo?: string | null;
+  flight_number?: string | null;
 }
 
 export interface FlightSearchResponse {
@@ -55,6 +57,7 @@ export interface HotelOption {
   address?: string | null;
   rating_score?: number | null;
   review_count?: number | null;
+  booking_link?: string | null;
 }
 
 export interface HotelSearchResponse {

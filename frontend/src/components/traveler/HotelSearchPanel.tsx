@@ -198,7 +198,7 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
           Explore Stays & Resorts
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Real-time rates, star ratings, and property reviews via Sky Scrapper.
+          Real-time rates, star ratings, and property reviews via Google Hotels.
         </p>
       </div>
 

@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -16,13 +17,14 @@ from app.schemas.travel_search import (
 from app.services.travel_search_service import (
     TravelSearchAPIError,
     travel_search_client,
+    extract_price,
 )
 
 router = APIRouter(prefix="/travel-search", tags=["Travel Search"])
 
 
 def _parse_airport_suggestions(raw: Any) -> List[AirportSuggestion]:
-    """Parses raw RapidAPI airport response into list of AirportSuggestion schemas."""
+    """Parses airport autocomplete response into list of AirportSuggestion schemas."""
     items: List[AirportSuggestion] = []
     if isinstance(raw, dict):
         raw_items = raw.get("data") or raw.get("results") or []
@@ -39,7 +41,7 @@ def _parse_airport_suggestions(raw: Any) -> List[AirportSuggestion]:
         flight_params = navigation.get("relevantFlightParams") or {}
         presentation = item.get("presentation") or {}
 
-        # Extract Sky Scrapper nested skyId and entityId
+        # Extract skyId and entityId (from SerpApi autocomplete or demo data)
         sky_id = (
             item.get("skyId")
             or flight_params.get("skyId")
@@ -85,12 +87,90 @@ def _parse_airport_suggestions(raw: Any) -> List[AirportSuggestion]:
 
 
 def _parse_flight_options(raw: Any, default_currency: str = "INR") -> List[FlightOption]:
-    """Parses raw RapidAPI flight response into list of FlightOption schemas."""
+    """
+    Parses flight search response into list of FlightOption schemas.
+    Handles both:
+      - SerpApi google_flights response: best_flights + other_flights arrays
+      - Legacy demo/fallback: data -> itineraries
+    """
     options: List[FlightOption] = []
     if not isinstance(raw, dict):
         return options
 
-    # Pre-shaped or mocked response
+    # ---------- SerpApi google_flights response ----------
+    serpapi_flights = []
+    for key in ("best_flights", "other_flights"):
+        serpapi_flights.extend(raw.get(key) or [])
+
+    if serpapi_flights:
+        for group in serpapi_flights:
+            if not isinstance(group, dict):
+                continue
+
+            flights_arr = group.get("flights") or []
+            total_duration = int(group.get("total_duration") or 0)
+            price_val = extract_price(group.get("price"))
+            booking_token = group.get("booking_token") or ""
+
+            # Build leg details from first flight segment
+            airline = "Commercial Airline"
+            airline_logo = None
+            flight_number = ""
+            depart_time = ""
+            arrive_time = ""
+            origin_apt = ""
+            dest_apt = ""
+            total_stops = max(0, len(flights_arr) - 1)
+
+            if flights_arr:
+                first_leg = flights_arr[0]
+                last_leg = flights_arr[-1]
+
+                airline = first_leg.get("airline") or airline
+                airline_logo = first_leg.get("airline_logo")
+                flight_number = first_leg.get("flight_number") or ""
+
+                dep_airport = first_leg.get("departure_airport") or {}
+                arr_airport = last_leg.get("arrival_airport") or {}
+
+                depart_time = dep_airport.get("time") or ""
+                arrive_time = arr_airport.get("time") or ""
+                origin_apt = dep_airport.get("name") or dep_airport.get("id") or ""
+                dest_apt = arr_airport.get("name") or arr_airport.get("id") or ""
+
+                if total_duration == 0:
+                    total_duration = sum(int(f.get("duration") or 0) for f in flights_arr)
+
+                # Count layovers
+                layovers = group.get("layovers") or []
+                if layovers:
+                    total_stops = len(layovers)
+
+            # Build a booking deeplink from Google Flights
+            deeplink = None
+            if booking_token:
+                deeplink = f"https://www.google.com/travel/flights/booking?token={booking_token}"
+
+            options.append(
+                FlightOption(
+                    id=str(uuid.uuid4()),
+                    airline=airline,
+                    price=price_val,
+                    currency=default_currency,
+                    depart_time=depart_time,
+                    arrive_time=arrive_time,
+                    duration_minutes=total_duration,
+                    stops=total_stops,
+                    origin_airport=origin_apt,
+                    destination_airport=dest_apt,
+                    booking_deeplink=deeplink,
+                    airline_logo=airline_logo,
+                    flight_number=flight_number,
+                )
+            )
+        return options
+
+    # ---------- Pre-shaped / mocked response ----------
     if "results" in raw and isinstance(raw["results"], list):
         for item in raw["results"]:
             if isinstance(item, dict):
@@ -107,11 +187,13 @@ def _parse_flight_options(raw: Any, default_currency: str = "INR") -> List[Fligh
                         origin_airport=str(item.get("origin_airport") or ""),
                         destination_airport=str(item.get("destination_airport") or ""),
                         booking_deeplink=item.get("booking_deeplink"),
+                        airline_logo=item.get("airline_logo"),
+                        flight_number=item.get("flight_number"),
                     )
                 )
         return options
 
-    # Standard Sky Scrapper response structure: data -> itineraries
+    # ---------- Legacy demo/fallback: data -> itineraries ----------
     data = raw.get("data") or raw
     itineraries = data.get("itineraries") if isinstance(data, dict) else []
     if isinstance(itineraries, list):
@@ -128,13 +210,15 @@ def _parse_flight_options(raw: Any, default_currency: str = "INR") -> List[Fligh
                 price_val = float(price_obj)
 
             legs = itin.get("legs") or []
-            airline = "Commercial Airline"
+            airline = itin.get("airline") or "Commercial Airline"
             depart_time = ""
             arrive_time = ""
             duration = 0
             stops = 0
             origin_apt = ""
             dest_apt = ""
+            logo = itin.get("airline_logo")
+            fnum = itin.get("flight_number")
 
             if legs and isinstance(legs[0], dict):
                 leg = legs[0]
@@ -171,6 +255,8 @@ def _parse_flight_options(raw: Any, default_currency: str = "INR") -> List[Fligh
                     origin_airport=origin_apt,
                     destination_airport=dest_apt,
                     booking_deeplink=itin.get("deeplink") or itin.get("booking_deeplink"),
+                    airline_logo=logo,
+                    flight_number=fnum,
                 )
             )
 
@@ -198,7 +284,6 @@ def _parse_hotel_destinations(raw: Any) -> List[Dict[str, str]]:
             or item.get("suggestionTitle")
             or entity_id
         )
-        import re
         clean_name = re.sub(r"<[^>]+>|\{[^}]+\}", "", name).strip()
         entity_type = str(item.get("entityType") or item.get("class") or "Destination")
         if entity_id:
@@ -211,12 +296,94 @@ def _parse_hotel_destinations(raw: Any) -> List[Dict[str, str]]:
 
 
 def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelOption]:
-    """Parses raw RapidAPI hotel search response into list of HotelOption schemas."""
+    """
+    Parses hotel search response into list of HotelOption schemas.
+    Handles both:
+      - SerpApi google_hotels response: properties array
+      - Legacy demo/fallback: data -> hotels
+    """
     options: List[HotelOption] = []
     if not isinstance(raw, dict):
         return options
 
-    # Pre-shaped or mocked response
+    # ---------- SerpApi google_hotels response: properties ----------
+    properties = raw.get("properties")
+    if isinstance(properties, list) and properties:
+        for prop in properties:
+            if not isinstance(prop, dict):
+                continue
+
+            hotel_id = str(prop.get("property_token") or prop.get("name") or uuid.uuid4())
+
+            # Price per night
+            rate = prop.get("rate_per_night") or {}
+            price_val = extract_price(rate)
+            if price_val == 0.0:
+                price_val = extract_price(prop.get("total_rate"))
+            if price_val == 0.0:
+                price_val = extract_price(prop.get("price"))
+
+            # Star rating
+            star_rating = None
+            if prop.get("extracted_hotel_class") is not None:
+                try:
+                    star_rating = float(prop["extracted_hotel_class"])
+                except (ValueError, TypeError):
+                    pass
+            elif prop.get("hotel_class") is not None:
+                try:
+                    star_rating = float(str(prop["hotel_class"]).replace("-star", "").strip())
+                except (ValueError, TypeError):
+                    pass
+
+            # Thumbnail
+            thumbnail = None
+            images = prop.get("images") or []
+            if isinstance(images, list) and images:
+                first_img = images[0]
+                if isinstance(first_img, dict):
+                    thumbnail = first_img.get("thumbnail") or first_img.get("original_image")
+                elif isinstance(first_img, str):
+                    thumbnail = first_img
+
+            # Rating & reviews
+            rating_score = None
+            if prop.get("overall_rating") is not None:
+                try:
+                    rating_score = float(prop["overall_rating"])
+                except (ValueError, TypeError):
+                    pass
+
+            review_count = None
+            if prop.get("reviews") is not None:
+                try:
+                    review_count = int(prop["reviews"])
+                except (ValueError, TypeError):
+                    pass
+
+            # Address / description
+            address = prop.get("neighborhood") or prop.get("description") or None
+
+            # Booking link
+            booking_link = prop.get("link") or prop.get("serpapi_property_details_link") or None
+
+            options.append(
+                HotelOption(
+                    id=hotel_id,
+                    name=str(prop.get("name") or "Hotel"),
+                    star_rating=star_rating,
+                    price_per_night=price_val,
+                    currency=default_currency,
+                    thumbnail_url=thumbnail,
+                    address=address,
+                    rating_score=rating_score,
+                    review_count=review_count,
+                    booking_link=booking_link,
+                )
+            )
+        return options
+
+    # ---------- Pre-shaped or mocked response ----------
     if "results" in raw and isinstance(raw["results"], list):
         for item in raw["results"]:
             if isinstance(item, dict):
@@ -243,11 +410,12 @@ def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelO
                             if item.get("review_count") is not None
                             else None
                         ),
+                        booking_link=item.get("booking_link"),
                     )
                 )
         return options
 
-    # Standard Sky Scrapper structure: data -> hotels
+    # ---------- Legacy demo/fallback: data -> hotels ----------
     data = raw.get("data") or raw
     hotels = data.get("hotels") if isinstance(data, dict) else []
     if isinstance(hotels, list):
@@ -306,6 +474,7 @@ def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelO
                 count_val = int(h["review_count"])
 
             address_str = h.get("distance") or h.get("location") or h.get("address")
+            booking_link = h.get("link") or h.get("booking_link") or None
 
             options.append(
                 HotelOption(
@@ -322,6 +491,7 @@ def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelO
                     address=address_str,
                     rating_score=rating_val,
                     review_count=count_val,
+                    booking_link=booking_link,
                 )
             )
 
@@ -395,7 +565,7 @@ async def post_search_flights(
     """
     Searches available flights.
     1. Resolves origin/destination airport entities.
-    2. Queries live Sky Scrapper flights API.
+    2. Queries live SerpApi Google Flights.
     3. Returns sorted flight options by price ascending.
     """
     try:
@@ -419,7 +589,7 @@ async def post_search_flights(
             )
         dest_match = _pick_best_airport(dest_suggestions, request.destination)
 
-        # Step 3: Query flights
+        # Step 3: Query flights via SerpApi
         raw_flights = await travel_search_client.search_flights(
             origin_sky_id=origin_match.skyId,
             dest_sky_id=dest_match.skyId,
@@ -484,7 +654,7 @@ async def post_search_hotels(
     """
     Searches hotels for a destination and date range.
     1. Resolves destination entity ID via autosuggest.
-    2. Queries live Sky Scrapper hotel search API.
+    2. Queries live SerpApi Google Hotels.
     3. Returns sorted hotel options by price ascending.
     """
     try:

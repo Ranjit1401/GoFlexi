@@ -35,6 +35,8 @@ class FlightOption(BaseModel):
     origin_airport: str
     destination_airport: str
     booking_deeplink: Optional[str] = None
+    airline_logo: Optional[str] = None
+    flight_number: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,6 +66,7 @@ class HotelOption(BaseModel):
     address: Optional[str] = None
     rating_score: Optional[float] = None
     review_count: Optional[int] = None
+    booking_link: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
