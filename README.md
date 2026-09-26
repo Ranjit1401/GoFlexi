@@ -2,6 +2,8 @@
 
 GoFlexi is a modern, full-stack travel platform designed to bridge the gap between personalized travel experiences and high-efficiency tour operations. It provides a specialized dual-portal experience for **Travelers** and **Tour Agents**, powered by a React frontend, FastAPI backend, and Neon Serverless PostgreSQL database.
 
+> 📖 **Comprehensive Project Documentation**: For the complete system architecture, data models, 8-step recommendation engine design, REST API reference, and deployment guide, see [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md).
+
 ---
 
 ## 🌟 Key Features
