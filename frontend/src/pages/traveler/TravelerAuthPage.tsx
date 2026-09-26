@@ -148,7 +148,7 @@ export const TravelerAuthPage: React.FC = () => {
 
           <Input
             label="Password"
-            type="password"
+            type="password" autoComplete="current-password"
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -201,7 +201,7 @@ export const TravelerAuthPage: React.FC = () => {
 
           <Input
             label="Password"
-            type="password"
+            type="password" autoComplete="current-password"
             placeholder="At least 6 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -211,7 +211,7 @@ export const TravelerAuthPage: React.FC = () => {
 
           <Input
             label="Confirm Password"
-            type="password"
+            type="password" autoComplete="current-password"
             placeholder="Confirm your password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
