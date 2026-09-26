@@ -1,1 +1,1 @@
-# Voyara Database Layer
+# GoFlexi Database Layer

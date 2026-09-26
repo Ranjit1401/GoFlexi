@@ -82,7 +82,7 @@ export const TravelerOnboardingPage: React.FC = () => {
           showToast('error', result.error || 'Failed to save travel preferences to server. Please try again.');
           return;
         }
-        showToast('success', 'Your personalized travel profile has been created!', 'Welcome to Voyara');
+        showToast('success', 'Your personalized travel profile has been created!', 'Welcome to GoFlexi');
         navigate('/user/dashboard');
       } catch (err: any) {
         showToast('error', err?.message || 'Failed to save travel preferences to server. Please try again.');
@@ -107,7 +107,7 @@ export const TravelerOnboardingPage: React.FC = () => {
           <div className="w-10 h-10 rounded-2xl bg-navy-900 text-white flex items-center justify-center shadow-md">
             <Compass className="w-5 h-5 text-brand-400" />
           </div>
-          <span className="text-xl font-bold text-navy-950">Voyara</span>
+          <span className="text-xl font-bold text-navy-950">GoFlexi</span>
         </div>
         <div className="text-xs font-semibold text-slate-500">
           Personalized Preference Setup
@@ -121,7 +121,7 @@ export const TravelerOnboardingPage: React.FC = () => {
             Let's personalize your travel experience.
           </h1>
           <p className="text-sm text-slate-500 mt-2">
-            Voyara tunes every route and accommodation to your real style.
+            GoFlexi tunes every route and accommodation to your real style.
           </p>
         </div>
 

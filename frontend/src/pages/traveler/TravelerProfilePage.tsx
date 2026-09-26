@@ -189,7 +189,7 @@ export const TravelerProfilePage: React.FC = () => {
           </div>
 
           <p className="text-xs text-slate-500 leading-relaxed">
-            Voyara prioritizes flight connections and private chauffeured cabs based on these selections.
+            GoFlexi prioritizes flight connections and private chauffeured cabs based on these selections.
           </p>
         </Card>
 

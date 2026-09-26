@@ -6,7 +6,7 @@ from app.api.routes import auth, users, agents, destinations, recommendations, c
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Voyara — Personalized Dynamic Tour Planning & Tour Operations Platform API",
+    description="GoFlexi — Personalized Dynamic Tour Planning & Tour Operations Platform API",
     docs_url="/docs",
     openapi_url="/openapi.json"
 )

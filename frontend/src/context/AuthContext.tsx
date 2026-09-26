@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [preferences, setPreferences] = useState<TravelPreferences | null>(() => {
     try {
-      const stored = localStorage.getItem('voyara_preferences');
+      const stored = localStorage.getItem('GoFlexi_preferences');
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -121,16 +121,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const loadedPrefs = toTravelPreferences(prefResp);
               setPreferences(loadedPrefs);
               setOnboardingStatus('completed');
-              localStorage.setItem('voyara_preferences', JSON.stringify(loadedPrefs));
-              localStorage.setItem('voyara_onboarding', 'true');
+              localStorage.setItem('GoFlexi_preferences', JSON.stringify(loadedPrefs));
+              localStorage.setItem('GoFlexi_onboarding', 'true');
             } else {
               setPreferences(null);
               setOnboardingStatus('pending');
-              localStorage.removeItem('voyara_preferences');
-              localStorage.removeItem('voyara_onboarding');
+              localStorage.removeItem('GoFlexi_preferences');
+              localStorage.removeItem('GoFlexi_onboarding');
             }
           } catch {
-            const cachedOnboarding = localStorage.getItem('voyara_onboarding') === 'true';
+            const cachedOnboarding = localStorage.getItem('GoFlexi_onboarding') === 'true';
             setOnboardingStatus(cachedOnboarding ? 'completed' : 'pending');
           }
         }
@@ -143,8 +143,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setPreferences(null);
         setOnboardingStatus('pending');
         try {
-          localStorage.removeItem('voyara_preferences');
-          localStorage.removeItem('voyara_onboarding');
+          localStorage.removeItem('GoFlexi_preferences');
+          localStorage.removeItem('GoFlexi_onboarding');
         } catch {
           // ignore
         }
@@ -174,17 +174,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const loadedPrefs = toTravelPreferences(prefResp);
           setPreferences(loadedPrefs);
           setOnboardingStatus('completed');
-          localStorage.setItem('voyara_preferences', JSON.stringify(loadedPrefs));
-          localStorage.setItem('voyara_onboarding', 'true');
+          localStorage.setItem('GoFlexi_preferences', JSON.stringify(loadedPrefs));
+          localStorage.setItem('GoFlexi_onboarding', 'true');
           isCompleted = true;
         } else {
           setPreferences(null);
           setOnboardingStatus('pending');
-          localStorage.removeItem('voyara_preferences');
-          localStorage.removeItem('voyara_onboarding');
+          localStorage.removeItem('GoFlexi_preferences');
+          localStorage.removeItem('GoFlexi_onboarding');
         }
       } catch {
-        const cached = localStorage.getItem('voyara_onboarding') === 'true';
+        const cached = localStorage.getItem('GoFlexi_onboarding') === 'true';
         setOnboardingStatus(cached ? 'completed' : 'pending');
         isCompleted = cached;
       }
@@ -262,8 +262,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setPreferences(null);
     setOnboardingStatus('pending');
     try {
-      localStorage.removeItem('voyara_preferences');
-      localStorage.removeItem('voyara_onboarding');
+      localStorage.removeItem('GoFlexi_preferences');
+      localStorage.removeItem('GoFlexi_onboarding');
       clearCachedRecommendations();
     } catch {
       // ignore
@@ -279,8 +279,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const updatedPrefs = toTravelPreferences(resp);
       setPreferences(updatedPrefs);
       setOnboardingStatus('completed');
-      localStorage.setItem('voyara_preferences', JSON.stringify(updatedPrefs));
-      localStorage.setItem('voyara_onboarding', 'true');
+      localStorage.setItem('GoFlexi_preferences', JSON.stringify(updatedPrefs));
+      localStorage.setItem('GoFlexi_onboarding', 'true');
       clearCachedRecommendations();
       return { success: true };
     } catch (error) {

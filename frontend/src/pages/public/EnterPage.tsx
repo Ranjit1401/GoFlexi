@@ -14,7 +14,7 @@ export const EnterPage: React.FC = () => {
           <div className="w-10 h-10 rounded-2xl bg-navy-900 text-white flex items-center justify-center shadow-md">
             <Compass className="w-5 h-5 text-brand-400" />
           </div>
-          <span className="text-2xl font-black text-navy-950 tracking-tight">Voyara</span>
+          <span className="text-2xl font-black text-navy-950 tracking-tight">GoFlexi</span>
         </Link>
 
         <Link
@@ -34,7 +34,7 @@ export const EnterPage: React.FC = () => {
             Select Your Role
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-navy-950 tracking-tight">
-            Welcome to Voyara
+            Welcome to GoFlexi
           </h1>
           <p className="text-base sm:text-lg text-slate-500 mt-2 max-w-xl mx-auto">
             Choose how you want to use the platform.

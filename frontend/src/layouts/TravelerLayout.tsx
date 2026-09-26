@@ -60,7 +60,7 @@ export const TravelerLayout: React.FC = () => {
               <Compass className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-extrabold text-white tracking-tight">Voyara</span>
+              <span className="text-xl font-extrabold text-white tracking-tight">GoFlexi</span>
               <span className="text-[10px] font-semibold text-brand-400 uppercase tracking-wider">Traveler Portal</span>
             </div>
           </NavLink>
@@ -112,7 +112,7 @@ export const TravelerLayout: React.FC = () => {
             />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{user?.name || 'Traveler'}</p>
-              <p className="text-[11px] text-slate-400 truncate">{user?.email || 'traveler@voyara.com'}</p>
+              <p className="text-[11px] text-slate-400 truncate">{user?.email || 'traveler@GoFlexi.com'}</p>
             </div>
           </div>
 
@@ -139,7 +139,7 @@ export const TravelerLayout: React.FC = () => {
                 <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center">
                   <Compass className="w-5 h-5" />
                 </div>
-                <span className="text-xl font-bold text-white">Voyara</span>
+                <span className="text-xl font-bold text-white">GoFlexi</span>
               </div>
               <button
                 onClick={() => setMobileSidebarOpen(false)}

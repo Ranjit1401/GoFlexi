@@ -1,5 +1,5 @@
 """
-Voyara Personalized Destination Recommendation Engine (Phase 5)
+GoFlexi Personalized Destination Recommendation Engine (Phase 5)
 Deterministic, content-based recommendation service matching traveler preferences
 against the Destination Knowledge Base stored in Neon PostgreSQL.
 

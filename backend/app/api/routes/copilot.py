@@ -23,6 +23,6 @@ def create_trip_plan(
 ):
     """
     Generates a personalized, structured multi-agent trip plan using the
-    Voyara Destination Knowledge Base and saved Neon traveler preferences.
+    GoFlexi Destination Knowledge Base and saved Neon traveler preferences.
     """
     return generate_trip_plan(request=request, user=traveler, db=db)

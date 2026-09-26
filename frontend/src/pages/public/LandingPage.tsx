@@ -47,7 +47,7 @@ export const LandingPage: React.FC = () => {
     {
       title: 'IMPACT DETECTED',
       badge: 'Step 03',
-      desc: 'Voyara system identifies catamaran cruise cancellation risk and notifies the assigned tour agent.',
+      desc: 'GoFlexi system identifies catamaran cruise cancellation risk and notifies the assigned tour agent.',
       status: 'Schedule Conflict Identified',
       color: 'bg-rose-500/10 text-rose-600 border-rose-200'
     },
@@ -218,7 +218,7 @@ export const LandingPage: React.FC = () => {
               How It Works
             </h2>
             <p className="text-slate-500 text-base mt-3">
-              From the first inspiration spark to real-time travel changes, Voyara guides your journey effortlessly.
+              From the first inspiration spark to real-time travel changes, GoFlexi guides your journey effortlessly.
             </p>
           </div>
 
@@ -268,7 +268,7 @@ export const LandingPage: React.FC = () => {
                 <span className="text-brand-600">"Your trip, built around you."</span>
               </h2>
               <p className="text-slate-600 text-base leading-relaxed">
-                Gone are rigid packages and generic tourist checklists. Voyara builds dynamic journeys tuned to your personal travel style, companion preferences, and pace.
+                Gone are rigid packages and generic tourist checklists. GoFlexi builds dynamic journeys tuned to your personal travel style, companion preferences, and pace.
               </p>
 
               <div className="space-y-4 pt-2">
@@ -449,7 +449,7 @@ export const LandingPage: React.FC = () => {
               Dynamic Travel: Plans That Adapt In Real Time
             </h2>
             <p className="text-slate-500 text-base mt-3">
-              Watch how Voyara dynamically intercepts disruptions and recalculates optimal itineraries. Click each stage to simulate the workflow.
+              Watch how GoFlexi dynamically intercepts disruptions and recalculates optimal itineraries. Click each stage to simulate the workflow.
             </p>
           </div>
 
@@ -604,7 +604,7 @@ export const LandingPage: React.FC = () => {
             Ready to plan differently?
           </h2>
           <p className="text-slate-300 text-base sm:text-lg max-w-xl mx-auto font-normal">
-            Enter the Voyara experience as a Traveler discovering tailor-made routes, or as a Tour Agent managing active expeditions.
+            Enter the GoFlexi experience as a Traveler discovering tailor-made routes, or as a Tour Agent managing active expeditions.
           </p>
           <div className="pt-4 flex justify-center">
             <Button
@@ -613,7 +613,7 @@ export const LandingPage: React.FC = () => {
               onClick={() => navigate('/enter')}
               className="rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold px-8 shadow-xl shadow-brand-500/30 group"
             >
-              <span>Enter Voyara</span>
+              <span>Enter GoFlexi</span>
               <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
           </div>

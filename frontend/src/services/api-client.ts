@@ -8,7 +8,7 @@ export const API_BASE_URL =
   (typeof import.meta !== 'undefined' && (import.meta as { env?: Record<string, string> }).env?.VITE_API_URL) ||
   '/api';
 
-export const TOKEN_STORAGE_KEY = 'voyara_access_token';
+export const TOKEN_STORAGE_KEY = 'GoFlexi_access_token';
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

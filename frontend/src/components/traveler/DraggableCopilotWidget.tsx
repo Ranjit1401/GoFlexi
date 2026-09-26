@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, Sparkles } from 'lucide-react';
 
-const STORAGE_KEY = 'voyara_copilot_fab_pos';
+const STORAGE_KEY = 'GoFlexi_copilot_fab_pos';
 const WIDGET_SIZE = 56; // 56px (w-14 h-14)
 const PADDING = 16;
 
