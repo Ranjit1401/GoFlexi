@@ -1,0 +1,3725 @@
+[
+  {
+    "geoname_id": 1262453,
+    "name": "Munnar",
+    "state": "Kerala",
+    "country": "India",
+    "city": "Idukki",
+    "latitude": 10.0889,
+    "longitude": 77.0595,
+    "elevation": 1532,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 32000,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1262453",
+        "source_url": "https://www.geonames.org/1262453"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W30561214",
+        "source_url": "https://opentripmap.com/en/card/W30561214"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W25481729",
+        "source_url": "https://opentripmap.com/en/card/W25481729"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N42819034",
+        "source_url": "https://opentripmap.com/en/card/N42819034"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N12384729",
+        "source_url": "https://opentripmap.com/en/card/N12384729"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W30561214",
+        "name": "Eravikulam National Park",
+        "kinds": "natural,nature_reserves,national_parks",
+        "point": {
+          "lat": 10.1983,
+          "lon": 77.0658
+        },
+        "rate": 3,
+        "dist": 12100
+      },
+      {
+        "xid": "W25481729",
+        "name": "Mattupetty Dam",
+        "kinds": "architecture,historic,waterfalls",
+        "point": {
+          "lat": 10.1064,
+          "lon": 77.1242
+        },
+        "rate": 2,
+        "dist": 7300
+      },
+      {
+        "xid": "N42819034",
+        "name": "KDHP Tea Museum Munnar",
+        "kinds": "cultural,museums,industrial_heritage",
+        "point": {
+          "lat": 10.0898,
+          "lon": 77.0543
+        },
+        "rate": 2,
+        "dist": 600
+      },
+      {
+        "xid": "N12384729",
+        "name": "Anamudi Peak",
+        "kinds": "natural,mountains,mountain_peaks",
+        "point": {
+          "lat": 10.17,
+          "lon": 77.064
+        },
+        "rate": 3,
+        "dist": 9100
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation",
+      "Wildlife"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Munnar is a renowned destination located in Kerala, India. Categorized under Cultural, Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Photography, Relaxation, Wildlife. Notable attractions include: Eravikulam National Park, Mattupetty Dam, KDHP Tea Museum Munnar.",
+    "short_description": "Real geographic destination in Kerala featuring Eravikulam National Park, Mattupetty Dam, KDHP Tea Museum Munnar."
+  },
+  {
+    "geoname_id": 1263884,
+    "name": "Manali",
+    "state": "Himachal Pradesh",
+    "country": "India",
+    "city": "Kullu",
+    "latitude": 32.2396,
+    "longitude": 77.1887,
+    "elevation": 2050,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 8096,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1263884",
+        "source_url": "https://www.geonames.org/1263884"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102831",
+        "source_url": "https://opentripmap.com/en/card/N39102831"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W18293041",
+        "source_url": "https://opentripmap.com/en/card/W18293041"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N92817234",
+        "source_url": "https://opentripmap.com/en/card/N92817234"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N58291048",
+        "source_url": "https://opentripmap.com/en/card/N58291048"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N39102831",
+        "name": "Solang Valley Adventure Grounds",
+        "kinds": "natural,mountains,winter_sports,adventure",
+        "point": {
+          "lat": 32.3167,
+          "lon": 77.15
+        },
+        "rate": 3,
+        "dist": 9200
+      },
+      {
+        "xid": "W18293041",
+        "name": "Rohtang Pass",
+        "kinds": "natural,mountain_passes,view_points",
+        "point": {
+          "lat": 32.3716,
+          "lon": 77.2466
+        },
+        "rate": 3,
+        "dist": 16400
+      },
+      {
+        "xid": "N92817234",
+        "name": "Hidimba Devi Temple",
+        "kinds": "historic,religion,temples,cultural",
+        "point": {
+          "lat": 32.2483,
+          "lon": 77.1814
+        },
+        "rate": 3,
+        "dist": 1200
+      },
+      {
+        "xid": "N58291048",
+        "name": "Jogini Falls",
+        "kinds": "natural,waterfalls,hiking",
+        "point": {
+          "lat": 32.2682,
+          "lon": 77.1979
+        },
+        "rate": 2,
+        "dist": 3400
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation",
+      "Sports"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Manali is a renowned destination located in Himachal Pradesh, India. Categorized under Cultural, Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Photography, Relaxation, Sports. Notable attractions include: Solang Valley Adventure Grounds, Rohtang Pass, Hidimba Devi Temple.",
+    "short_description": "Real geographic destination in Himachal Pradesh featuring Solang Valley Adventure Grounds, Rohtang Pass, Hidimba Devi Temple."
+  },
+  {
+    "geoname_id": 1269515,
+    "name": "Jaipur",
+    "state": "Rajasthan",
+    "country": "India",
+    "city": "Jaipur",
+    "latitude": 26.9196,
+    "longitude": 75.7878,
+    "elevation": 431,
+    "feature_class": "P",
+    "feature_code": "PPLA",
+    "population": 2711758,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1269515",
+        "source_url": "https://www.geonames.org/1269515"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W24589102",
+        "source_url": "https://opentripmap.com/en/card/W24589102"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N48102938",
+        "source_url": "https://opentripmap.com/en/card/N48102938"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102948",
+        "source_url": "https://opentripmap.com/en/card/W39102948"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W93847201",
+        "source_url": "https://opentripmap.com/en/card/W93847201"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W24589102",
+        "name": "Amber Fort and Palace",
+        "kinds": "historic,forts,palaces,castles,world_heritage",
+        "point": {
+          "lat": 26.9855,
+          "lon": 75.8513
+        },
+        "rate": 3,
+        "dist": 9800
+      },
+      {
+        "xid": "N48102938",
+        "name": "Hawa Mahal",
+        "kinds": "historic,monuments,architecture",
+        "point": {
+          "lat": 26.9239,
+          "lon": 75.8267
+        },
+        "rate": 3,
+        "dist": 3900
+      },
+      {
+        "xid": "W39102948",
+        "name": "City Palace Jaipur",
+        "kinds": "historic,palaces,museums,cultural",
+        "point": {
+          "lat": 26.9258,
+          "lon": 75.8236
+        },
+        "rate": 3,
+        "dist": 3700
+      },
+      {
+        "xid": "W93847201",
+        "name": "Jantar Mantar Jaipur",
+        "kinds": "historic,monuments,archaeological,world_heritage",
+        "point": {
+          "lat": 26.9248,
+          "lon": 75.8246
+        },
+        "rate": 3,
+        "dist": 3800
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Nightlife",
+      "Photography",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Luxury",
+      "Premium"
+    ],
+    "companions": [
+      "Family",
+      "Friends"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 18000,
+    "budget_max": 55000,
+    "popularity_score": 9.1,
+    "description": "Jaipur is a renowned destination located in Rajasthan, India. Categorized under Cities, Cultural, Historical, offering travelers experiences such as Culture, Food, Nightlife, Photography, Shopping. Notable attractions include: Amber Fort and Palace, Hawa Mahal, City Palace Jaipur.",
+    "short_description": "Real geographic destination in Rajasthan featuring Amber Fort and Palace, Hawa Mahal, City Palace Jaipur."
+  },
+  {
+    "geoname_id": 1269934,
+    "name": "Hampi",
+    "state": "Karnataka",
+    "country": "India",
+    "city": "Bellary",
+    "latitude": 15.335,
+    "longitude": 76.46,
+    "elevation": 467,
+    "feature_class": "S",
+    "feature_code": "HSTS",
+    "population": 2500,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1269934",
+        "source_url": "https://www.geonames.org/1269934"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N58291024",
+        "source_url": "https://opentripmap.com/en/card/N58291024"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W49102938",
+        "source_url": "https://opentripmap.com/en/card/W49102938"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102847",
+        "source_url": "https://opentripmap.com/en/card/N39102847"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104829",
+        "source_url": "https://opentripmap.com/en/card/N29104829"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N58291024",
+        "name": "Virupaksha Temple",
+        "kinds": "historic,religion,temples,world_heritage",
+        "point": {
+          "lat": 15.3353,
+          "lon": 76.4597
+        },
+        "rate": 3,
+        "dist": 100
+      },
+      {
+        "xid": "W49102938",
+        "name": "Vijaya Vittala Temple and Stone Chariot",
+        "kinds": "historic,monuments,archaeological,world_heritage",
+        "point": {
+          "lat": 15.34,
+          "lon": 76.476
+        },
+        "rate": 3,
+        "dist": 1800
+      },
+      {
+        "xid": "N39102847",
+        "name": "Elephant Stables Hampi",
+        "kinds": "historic,ruins,architecture",
+        "point": {
+          "lat": 15.3364,
+          "lon": 76.4719
+        },
+        "rate": 2,
+        "dist": 1300
+      },
+      {
+        "xid": "N29104829",
+        "name": "Matanga Hill",
+        "kinds": "natural,view_points,mountains",
+        "point": {
+          "lat": 15.3312,
+          "lon": 76.4674
+        },
+        "rate": 2,
+        "dist": 900
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Mountains"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Hampi is a renowned destination located in Karnataka, India. Categorized under Cultural, Historical, Mountains, offering travelers experiences such as Adventure, Culture, Photography. Notable attractions include: Virupaksha Temple, Vijaya Vittala Temple and Stone Chariot, Elephant Stables Hampi.",
+    "short_description": "Real geographic destination in Karnataka featuring Virupaksha Temple, Vijaya Vittala Temple and Stone Chariot, Elephant Stables Hampi."
+  },
+  {
+    "geoname_id": 1254360,
+    "name": "Ooty",
+    "state": "Tamil Nadu",
+    "country": "India",
+    "city": "Nilgiris",
+    "latitude": 11.4102,
+    "longitude": 76.695,
+    "elevation": 2240,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 88430,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1254360",
+        "source_url": "https://www.geonames.org/1254360"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293847",
+        "source_url": "https://opentripmap.com/en/card/W10293847"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102847",
+        "source_url": "https://opentripmap.com/en/card/W39102847"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102938",
+        "source_url": "https://opentripmap.com/en/card/N49102938"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N20193847",
+        "source_url": "https://opentripmap.com/en/card/N20193847"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W10293847",
+        "name": "Nilgiri Mountain Railway Ooty",
+        "kinds": "historic,transport,industrial_heritage,world_heritage",
+        "point": {
+          "lat": 11.405,
+          "lon": 76.702
+        },
+        "rate": 3,
+        "dist": 1000
+      },
+      {
+        "xid": "W39102847",
+        "name": "Government Botanical Garden Ooty",
+        "kinds": "natural,gardens,parks",
+        "point": {
+          "lat": 11.4178,
+          "lon": 76.7111
+        },
+        "rate": 2,
+        "dist": 1900
+      },
+      {
+        "xid": "N49102938",
+        "name": "Doddabetta Peak",
+        "kinds": "natural,mountain_peaks,view_points",
+        "point": {
+          "lat": 11.4011,
+          "lon": 76.7358
+        },
+        "rate": 2,
+        "dist": 4600
+      },
+      {
+        "xid": "N20193847",
+        "name": "Pykara Waterfalls",
+        "kinds": "natural,waterfalls,lakes",
+        "point": {
+          "lat": 11.4886,
+          "lon": 76.5922
+        },
+        "rate": 2,
+        "dist": 14200
+      }
+    ],
+    "places": [
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Ooty is a renowned destination located in Tamil Nadu, India. Categorized under Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Photography, Relaxation. Notable attractions include: Nilgiri Mountain Railway Ooty, Government Botanical Garden Ooty, Doddabetta Peak.",
+    "short_description": "Real geographic destination in Tamil Nadu featuring Nilgiri Mountain Railway Ooty, Government Botanical Garden Ooty, Doddabetta Peak."
+  },
+  {
+    "geoname_id": 1272782,
+    "name": "Darjeeling",
+    "state": "West Bengal",
+    "country": "India",
+    "city": "Darjeeling",
+    "latitude": 27.036,
+    "longitude": 88.2627,
+    "elevation": 2042,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 107530,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1272782",
+        "source_url": "https://www.geonames.org/1272782"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N38192039",
+        "source_url": "https://opentripmap.com/en/card/N38192039"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W29104829",
+        "source_url": "https://opentripmap.com/en/card/W29104829"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N19203847",
+        "source_url": "https://opentripmap.com/en/card/N19203847"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102839",
+        "source_url": "https://opentripmap.com/en/card/N49102839"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N38192039",
+        "name": "Tiger Hill Sunrise Viewpoint",
+        "kinds": "natural,view_points,mountains",
+        "point": {
+          "lat": 26.9947,
+          "lon": 88.2864
+        },
+        "rate": 3,
+        "dist": 5100
+      },
+      {
+        "xid": "W29104829",
+        "name": "Batasia Loop and War Memorial",
+        "kinds": "historic,monuments,view_points",
+        "point": {
+          "lat": 27.0167,
+          "lon": 88.2467
+        },
+        "rate": 2,
+        "dist": 2700
+      },
+      {
+        "xid": "N19203847",
+        "name": "Himalayan Mountaineering Institute & Zoo",
+        "kinds": "cultural,museums,wildlife_sanctuaries,zoos",
+        "point": {
+          "lat": 27.0592,
+          "lon": 88.2542
+        },
+        "rate": 2,
+        "dist": 2800
+      },
+      {
+        "xid": "N49102839",
+        "name": "Darjeeling Peace Pagoda",
+        "kinds": "cultural,religion,buddhist_temples",
+        "point": {
+          "lat": 27.0306,
+          "lon": 88.2561
+        },
+        "rate": 2,
+        "dist": 900
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Mountains"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation",
+      "Wildlife"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Darjeeling is a renowned destination located in West Bengal, India. Categorized under Cultural, Historical, Mountains, offering travelers experiences such as Adventure, Culture, Photography, Relaxation, Wildlife. Notable attractions include: Tiger Hill Sunrise Viewpoint, Batasia Loop and War Memorial, Himalayan Mountaineering Institute & Zoo.",
+    "short_description": "Real geographic destination in West Bengal featuring Tiger Hill Sunrise Viewpoint, Batasia Loop and War Memorial, Himalayan Mountaineering Institute & Zoo."
+  },
+  {
+    "geoname_id": 1258338,
+    "name": "Rishikesh",
+    "state": "Uttarakhand",
+    "country": "India",
+    "city": "Dehradun",
+    "latitude": 30.1033,
+    "longitude": 78.2948,
+    "elevation": 372,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 78820,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1258338",
+        "source_url": "https://www.geonames.org/1258338"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293848",
+        "source_url": "https://opentripmap.com/en/card/W10293848"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104838",
+        "source_url": "https://opentripmap.com/en/card/N29104838"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W49102839",
+        "source_url": "https://opentripmap.com/en/card/W49102839"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N19203848",
+        "source_url": "https://opentripmap.com/en/card/N19203848"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W10293848",
+        "name": "Lakshman Jhula Suspension Bridge",
+        "kinds": "historic,bridges,architecture",
+        "point": {
+          "lat": 30.1264,
+          "lon": 78.3283
+        },
+        "rate": 3,
+        "dist": 4100
+      },
+      {
+        "xid": "N29104838",
+        "name": "Triveni Ghat Evening Aarti",
+        "kinds": "cultural,religion,hindu_temples",
+        "point": {
+          "lat": 30.1042,
+          "lon": 78.2975
+        },
+        "rate": 3,
+        "dist": 300
+      },
+      {
+        "xid": "W49102839",
+        "name": "Beatles Ashram Chaurasi Kutia",
+        "kinds": "cultural,historic,ruins,parks",
+        "point": {
+          "lat": 30.1158,
+          "lon": 78.3142
+        },
+        "rate": 2,
+        "dist": 2400
+      },
+      {
+        "xid": "N19203848",
+        "name": "Shivpuri White Water Rafting",
+        "kinds": "sport,water_sports,adventure",
+        "point": {
+          "lat": 30.1367,
+          "lon": 78.3889
+        },
+        "rate": 2,
+        "dist": 9700
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Sports"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Family",
+      "Friends"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Rishikesh is a renowned destination located in Uttarakhand, India. Categorized under Cultural, Historical, offering travelers experiences such as Adventure, Culture, Photography, Sports. Notable attractions include: Lakshman Jhula Suspension Bridge, Triveni Ghat Evening Aarti, Beatles Ashram Chaurasi Kutia.",
+    "short_description": "Real geographic destination in Uttarakhand featuring Lakshman Jhula Suspension Bridge, Triveni Ghat Evening Aarti, Beatles Ashram Chaurasi Kutia."
+  },
+  {
+    "geoname_id": 1253405,
+    "name": "Varanasi",
+    "state": "Uttar Pradesh",
+    "country": "India",
+    "city": "Varanasi",
+    "latitude": 25.3176,
+    "longitude": 82.9739,
+    "elevation": 81,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 1198491,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1253405",
+        "source_url": "https://www.geonames.org/1253405"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102848",
+        "source_url": "https://opentripmap.com/en/card/N39102848"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104849",
+        "source_url": "https://opentripmap.com/en/card/N29104849"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W19203849",
+        "source_url": "https://opentripmap.com/en/card/W19203849"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N39102848",
+        "name": "Kashi Vishwanath Jyotirlinga Temple",
+        "kinds": "cultural,religion,hindu_temples",
+        "point": {
+          "lat": 25.3109,
+          "lon": 83.0107
+        },
+        "rate": 3,
+        "dist": 3800
+      },
+      {
+        "xid": "N29104849",
+        "name": "Dashashwamedh Ghat",
+        "kinds": "cultural,religion,historic",
+        "point": {
+          "lat": 25.3072,
+          "lon": 83.0103
+        },
+        "rate": 3,
+        "dist": 3900
+      },
+      {
+        "xid": "W19203849",
+        "name": "Sarnath Buddhist Archaeological Complex",
+        "kinds": "historic,monuments,archaeological,buddhist_temples,world_heritage",
+        "point": {
+          "lat": 25.3811,
+          "lon": 83.0228
+        },
+        "rate": 3,
+        "dist": 8700
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Nightlife",
+      "Photography",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Family",
+      "Friends"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Varanasi is a renowned destination located in Uttar Pradesh, India. Categorized under Cities, Cultural, Historical, offering travelers experiences such as Culture, Food, Nightlife, Photography, Shopping. Notable attractions include: Kashi Vishwanath Jyotirlinga Temple, Dashashwamedh Ghat, Sarnath Buddhist Archaeological Complex.",
+    "short_description": "Real geographic destination in Uttar Pradesh featuring Kashi Vishwanath Jyotirlinga Temple, Dashashwamedh Ghat, Sarnath Buddhist Archaeological Complex."
+  },
+  {
+    "geoname_id": 1266207,
+    "name": "Leh",
+    "state": "Ladakh",
+    "country": "India",
+    "city": "Leh",
+    "latitude": 34.1526,
+    "longitude": 77.5771,
+    "elevation": 3524,
+    "feature_class": "P",
+    "feature_code": "PPLA",
+    "population": 30870,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1266207",
+        "source_url": "https://www.geonames.org/1266207"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102850",
+        "source_url": "https://opentripmap.com/en/card/W39102850"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102850",
+        "source_url": "https://opentripmap.com/en/card/N49102850"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104850",
+        "source_url": "https://opentripmap.com/en/card/N29104850"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102850",
+        "name": "Leh Palace",
+        "kinds": "historic,palaces,castles,architecture",
+        "point": {
+          "lat": 34.1667,
+          "lon": 77.5833
+        },
+        "rate": 3,
+        "dist": 1700
+      },
+      {
+        "xid": "N49102850",
+        "name": "Shanti Stupa Leh",
+        "kinds": "cultural,religion,buddhist_temples,view_points",
+        "point": {
+          "lat": 34.1717,
+          "lon": 77.575
+        },
+        "rate": 3,
+        "dist": 2100
+      },
+      {
+        "xid": "N29104850",
+        "name": "Khardung La Pass",
+        "kinds": "natural,mountain_passes,mountains",
+        "point": {
+          "lat": 34.2789,
+          "lon": 77.6044
+        },
+        "rate": 3,
+        "dist": 14300
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical",
+      "Mountains"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Food",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Leh is a renowned destination located in Ladakh, India. Categorized under Cities, Cultural, Historical, Mountains, offering travelers experiences such as Adventure, Culture, Food, Photography, Relaxation, Shopping. Notable attractions include: Leh Palace, Shanti Stupa Leh, Khardung La Pass.",
+    "short_description": "Real geographic destination in Ladakh featuring Leh Palace, Shanti Stupa Leh, Khardung La Pass."
+  },
+  {
+    "geoname_id": 1253997,
+    "name": "Udaipur",
+    "state": "Rajasthan",
+    "country": "India",
+    "city": "Udaipur",
+    "latitude": 24.5854,
+    "longitude": 73.7125,
+    "elevation": 598,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 451100,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1253997",
+        "source_url": "https://www.geonames.org/1253997"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102851",
+        "source_url": "https://opentripmap.com/en/card/W39102851"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293851",
+        "source_url": "https://opentripmap.com/en/card/W10293851"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W49102851",
+        "source_url": "https://opentripmap.com/en/card/W49102851"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W29104851",
+        "source_url": "https://opentripmap.com/en/card/W29104851"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102851",
+        "name": "City Palace of Udaipur",
+        "kinds": "historic,palaces,museums,architecture",
+        "point": {
+          "lat": 24.5764,
+          "lon": 73.6835
+        },
+        "rate": 3,
+        "dist": 3100
+      },
+      {
+        "xid": "W10293851",
+        "name": "Lake Pichola",
+        "kinds": "natural,lakes,water",
+        "point": {
+          "lat": 24.575,
+          "lon": 73.675
+        },
+        "rate": 3,
+        "dist": 3900
+      },
+      {
+        "xid": "W49102851",
+        "name": "Jag Mandir Island Palace",
+        "kinds": "historic,palaces,islands",
+        "point": {
+          "lat": 24.5675,
+          "lon": 73.6775
+        },
+        "rate": 2,
+        "dist": 4100
+      },
+      {
+        "xid": "W29104851",
+        "name": "Saheliyon-ki-Bari Gardens",
+        "kinds": "natural,gardens,historic",
+        "point": {
+          "lat": 24.6042,
+          "lon": 73.6847
+        },
+        "rate": 2,
+        "dist": 3500
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Islands",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Luxury",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 18000,
+    "budget_max": 55000,
+    "popularity_score": 9.1,
+    "description": "Udaipur is a renowned destination located in Rajasthan, India. Categorized under Cultural, Historical, Islands, Nature, offering travelers experiences such as Culture, Photography, Relaxation. Notable attractions include: City Palace of Udaipur, Lake Pichola, Jag Mandir Island Palace.",
+    "short_description": "Real geographic destination in Rajasthan featuring City Palace of Udaipur, Lake Pichola, Jag Mandir Island Palace."
+  },
+  {
+    "geoname_id": 1278916,
+    "name": "Alappuzha",
+    "state": "Kerala",
+    "country": "India",
+    "city": "Alappuzha",
+    "latitude": 9.4981,
+    "longitude": 76.3388,
+    "elevation": 4,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 174164,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1278916",
+        "source_url": "https://www.geonames.org/1278916"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102852",
+        "source_url": "https://opentripmap.com/en/card/N39102852"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293852",
+        "source_url": "https://opentripmap.com/en/card/W10293852"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102852",
+        "source_url": "https://opentripmap.com/en/card/N49102852"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N39102852",
+        "name": "Alappuzha Beach and Pier",
+        "kinds": "natural,beaches,view_points",
+        "point": {
+          "lat": 9.4925,
+          "lon": 76.3175
+        },
+        "rate": 2,
+        "dist": 2400
+      },
+      {
+        "xid": "W10293852",
+        "name": "Vembanad Lake Backwaters",
+        "kinds": "natural,lakes,water,nature_reserves",
+        "point": {
+          "lat": 9.6,
+          "lon": 76.38
+        },
+        "rate": 3,
+        "dist": 12200
+      },
+      {
+        "xid": "N49102852",
+        "name": "Alappuzha Lighthouse",
+        "kinds": "historic,lighthouses,architecture",
+        "point": {
+          "lat": 9.4967,
+          "lon": 76.3211
+        },
+        "rate": 2,
+        "dist": 2000
+      }
+    ],
+    "places": [
+      "Beaches",
+      "Historical",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Alappuzha is a renowned destination located in Kerala, India. Categorized under Beaches, Historical, Nature, offering travelers experiences such as Culture, Photography, Relaxation. Notable attractions include: Alappuzha Beach and Pier, Vembanad Lake Backwaters, Alappuzha Lighthouse.",
+    "short_description": "Real geographic destination in Kerala featuring Alappuzha Beach and Pier, Vembanad Lake Backwaters, Alappuzha Lighthouse."
+  },
+  {
+    "geoname_id": 1270588,
+    "name": "Gokarna",
+    "state": "Karnataka",
+    "country": "India",
+    "city": "Uttara Kannada",
+    "latitude": 14.5479,
+    "longitude": 74.3188,
+    "elevation": 10,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 25851,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1270588",
+        "source_url": "https://www.geonames.org/1270588"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102853",
+        "source_url": "https://opentripmap.com/en/card/N39102853"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102853",
+        "source_url": "https://opentripmap.com/en/card/N49102853"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104853",
+        "source_url": "https://opentripmap.com/en/card/N29104853"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N19203853",
+        "source_url": "https://opentripmap.com/en/card/N19203853"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N39102853",
+        "name": "Om Beach",
+        "kinds": "natural,beaches,water_sports",
+        "point": {
+          "lat": 14.5186,
+          "lon": 74.3167
+        },
+        "rate": 3,
+        "dist": 3300
+      },
+      {
+        "xid": "N49102853",
+        "name": "Kudle Beach",
+        "kinds": "natural,beaches,view_points",
+        "point": {
+          "lat": 14.5292,
+          "lon": 74.3142
+        },
+        "rate": 2,
+        "dist": 2100
+      },
+      {
+        "xid": "N29104853",
+        "name": "Mahabaleshwar Temple Gokarna",
+        "kinds": "cultural,religion,temples,historic",
+        "point": {
+          "lat": 14.5428,
+          "lon": 74.3178
+        },
+        "rate": 3,
+        "dist": 600
+      },
+      {
+        "xid": "N19203853",
+        "name": "Half Moon Beach",
+        "kinds": "natural,beaches,hiking",
+        "point": {
+          "lat": 14.51,
+          "lon": 74.325
+        },
+        "rate": 2,
+        "dist": 4300
+      }
+    ],
+    "places": [
+      "Beaches",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation",
+      "Sports"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 9.1,
+    "description": "Gokarna is a renowned destination located in Karnataka, India. Categorized under Beaches, Cultural, Historical, offering travelers experiences such as Adventure, Culture, Photography, Relaxation, Sports. Notable attractions include: Om Beach, Kudle Beach, Mahabaleshwar Temple Gokarna.",
+    "short_description": "Real geographic destination in Karnataka featuring Om Beach, Kudle Beach, Mahabaleshwar Temple Gokarna."
+  },
+  {
+    "geoname_id": 1264359,
+    "name": "Madikeri",
+    "state": "Karnataka",
+    "country": "India",
+    "city": "Kodagu",
+    "latitude": 12.4244,
+    "longitude": 75.7382,
+    "elevation": 1150,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 32286,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1264359",
+        "source_url": "https://www.geonames.org/1264359"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102856",
+        "source_url": "https://opentripmap.com/en/card/W39102856"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102856",
+        "source_url": "https://opentripmap.com/en/card/N49102856"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104856",
+        "source_url": "https://opentripmap.com/en/card/N29104856"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102856",
+        "name": "Madikeri Fort & Palace",
+        "kinds": "historic,forts,palaces,museums",
+        "point": {
+          "lat": 12.4225,
+          "lon": 75.7381
+        },
+        "rate": 2,
+        "dist": 300
+      },
+      {
+        "xid": "N49102856",
+        "name": "Raja's Seat Viewpoint",
+        "kinds": "natural,view_points,gardens",
+        "point": {
+          "lat": 12.4172,
+          "lon": 75.7369
+        },
+        "rate": 2,
+        "dist": 800
+      },
+      {
+        "xid": "N29104856",
+        "name": "Abbey Falls",
+        "kinds": "natural,waterfalls,nature_reserves",
+        "point": {
+          "lat": 12.455,
+          "lon": 75.7192
+        },
+        "rate": 2,
+        "dist": 4100
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Madikeri is a renowned destination located in Karnataka, India. Categorized under Cultural, Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Photography, Relaxation. Notable attractions include: Madikeri Fort & Palace, Raja's Seat Viewpoint, Abbey Falls.",
+    "short_description": "Real geographic destination in Karnataka featuring Madikeri Fort & Palace, Raja's Seat Viewpoint, Abbey Falls."
+  },
+  {
+    "geoname_id": 1278710,
+    "name": "Amritsar",
+    "state": "Punjab",
+    "country": "India",
+    "city": "Amritsar",
+    "latitude": 31.634,
+    "longitude": 74.8723,
+    "elevation": 234,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 1092145,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1278710",
+        "source_url": "https://www.geonames.org/1278710"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102854",
+        "source_url": "https://opentripmap.com/en/card/W39102854"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293854",
+        "source_url": "https://opentripmap.com/en/card/W10293854"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102854",
+        "source_url": "https://opentripmap.com/en/card/N49102854"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102854",
+        "name": "Harmandir Sahib (Golden Temple)",
+        "kinds": "cultural,religion,sikh_temples,world_heritage",
+        "point": {
+          "lat": 31.62,
+          "lon": 74.8765
+        },
+        "rate": 3,
+        "dist": 1600
+      },
+      {
+        "xid": "W10293854",
+        "name": "Jallianwala Bagh Memorial",
+        "kinds": "historic,memorials,monuments,gardens",
+        "point": {
+          "lat": 31.6206,
+          "lon": 74.8803
+        },
+        "rate": 3,
+        "dist": 1800
+      },
+      {
+        "xid": "N49102854",
+        "name": "Attari-Wagah Border Crossing",
+        "kinds": "cultural,historic,monuments",
+        "point": {
+          "lat": 31.6047,
+          "lon": 74.5739
+        },
+        "rate": 3,
+        "dist": 28400
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Nightlife",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Amritsar is a renowned destination located in Punjab, India. Categorized under Cities, Cultural, Historical, Nature, offering travelers experiences such as Culture, Food, Nightlife, Photography, Relaxation, Shopping. Notable attractions include: Harmandir Sahib (Golden Temple), Jallianwala Bagh Memorial, Attari-Wagah Border Crossing.",
+    "short_description": "Real geographic destination in Punjab featuring Harmandir Sahib (Golden Temple), Jallianwala Bagh Memorial, Attari-Wagah Border Crossing."
+  },
+  {
+    "geoname_id": 1259424,
+    "name": "Puducherry",
+    "state": "Puducherry",
+    "country": "India",
+    "city": "Puducherry",
+    "latitude": 11.9416,
+    "longitude": 79.8083,
+    "elevation": 3,
+    "feature_class": "P",
+    "feature_code": "PPLA",
+    "population": 227411,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1259424",
+        "source_url": "https://www.geonames.org/1259424"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102857",
+        "source_url": "https://opentripmap.com/en/card/N39102857"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293857",
+        "source_url": "https://opentripmap.com/en/card/W10293857"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W49102857",
+        "source_url": "https://opentripmap.com/en/card/W49102857"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N39102857",
+        "name": "Promenade Beachfront",
+        "kinds": "natural,beaches,view_points,architecture",
+        "point": {
+          "lat": 11.9333,
+          "lon": 79.8361
+        },
+        "rate": 2,
+        "dist": 3200
+      },
+      {
+        "xid": "W10293857",
+        "name": "Sri Aurobindo Ashram",
+        "kinds": "cultural,religion,historic",
+        "point": {
+          "lat": 11.9367,
+          "lon": 79.8344
+        },
+        "rate": 3,
+        "dist": 2900
+      },
+      {
+        "xid": "W49102857",
+        "name": "Auroville Matrimandir",
+        "kinds": "cultural,architecture,monuments,religion",
+        "point": {
+          "lat": 12.0069,
+          "lon": 79.8106
+        },
+        "rate": 3,
+        "dist": 7300
+      }
+    ],
+    "places": [
+      "Beaches",
+      "Cities",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Puducherry is a renowned destination located in Puducherry, India. Categorized under Beaches, Cities, Cultural, Historical, offering travelers experiences such as Culture, Food, Photography, Relaxation, Shopping. Notable attractions include: Promenade Beachfront, Sri Aurobindo Ashram, Auroville Matrimandir.",
+    "short_description": "Real geographic destination in Puducherry featuring Promenade Beachfront, Sri Aurobindo Ashram, Auroville Matrimandir."
+  },
+  {
+    "geoname_id": 1256338,
+    "name": "Shimla",
+    "state": "Himachal Pradesh",
+    "country": "India",
+    "city": "Shimla",
+    "latitude": 31.1048,
+    "longitude": 77.1734,
+    "elevation": 2206,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "population": 169578,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1256338",
+        "source_url": "https://www.geonames.org/1256338"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102858",
+        "source_url": "https://opentripmap.com/en/card/W39102858"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293858",
+        "source_url": "https://opentripmap.com/en/card/W10293858"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102858",
+        "source_url": "https://opentripmap.com/en/card/N49102858"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102858",
+        "name": "The Ridge & Mall Road",
+        "kinds": "historic,architecture,shopping,view_points",
+        "point": {
+          "lat": 31.1044,
+          "lon": 77.1742
+        },
+        "rate": 3,
+        "dist": 100
+      },
+      {
+        "xid": "W10293858",
+        "name": "Viceregal Lodge (Rashtrapati Niwas)",
+        "kinds": "historic,palaces,architecture,gardens",
+        "point": {
+          "lat": 31.1039,
+          "lon": 77.1408
+        },
+        "rate": 3,
+        "dist": 3100
+      },
+      {
+        "xid": "N49102858",
+        "name": "Jakhoo Hill Hanuman Temple",
+        "kinds": "cultural,religion,temples,view_points",
+        "point": {
+          "lat": 31.1011,
+          "lon": 77.1856
+        },
+        "rate": 2,
+        "dist": 1300
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Food",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Shimla is a renowned destination located in Himachal Pradesh, India. Categorized under Cities, Cultural, Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Food, Photography, Relaxation, Shopping. Notable attractions include: The Ridge & Mall Road, Viceregal Lodge (Rashtrapati Niwas), Jakhoo Hill Hanuman Temple.",
+    "short_description": "Real geographic destination in Himachal Pradesh featuring The Ridge & Mall Road, Viceregal Lodge (Rashtrapati Niwas), Jakhoo Hill Hanuman Temple."
+  },
+  {
+    "geoname_id": 1279259,
+    "name": "Agra",
+    "state": "Uttar Pradesh",
+    "country": "India",
+    "city": "Agra",
+    "latitude": 27.1767,
+    "longitude": 78.0081,
+    "elevation": 169,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 1430055,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1279259",
+        "source_url": "https://www.geonames.org/1279259"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102855",
+        "source_url": "https://opentripmap.com/en/card/W39102855"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293855",
+        "source_url": "https://opentripmap.com/en/card/W10293855"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W49102855",
+        "source_url": "https://opentripmap.com/en/card/W49102855"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102855",
+        "name": "Taj Mahal",
+        "kinds": "historic,monuments,world_heritage,architecture",
+        "point": {
+          "lat": 27.175,
+          "lon": 78.0422
+        },
+        "rate": 3,
+        "dist": 3400
+      },
+      {
+        "xid": "W10293855",
+        "name": "Agra Fort (Lal Qila)",
+        "kinds": "historic,forts,palaces,world_heritage",
+        "point": {
+          "lat": 27.1794,
+          "lon": 78.0211
+        },
+        "rate": 3,
+        "dist": 1300
+      },
+      {
+        "xid": "W49102855",
+        "name": "Mehtab Bagh Moonlight Garden",
+        "kinds": "natural,gardens,historic,view_points",
+        "point": {
+          "lat": 27.18,
+          "lon": 78.0417
+        },
+        "rate": 2,
+        "dist": 3400
+      }
+    ],
+    "places": [
+      "Cities",
+      "Historical",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Nightlife",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Luxury",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 18000,
+    "budget_max": 55000,
+    "popularity_score": 8.7,
+    "description": "Agra is a renowned destination located in Uttar Pradesh, India. Categorized under Cities, Historical, Nature, offering travelers experiences such as Culture, Food, Nightlife, Photography, Relaxation, Shopping. Notable attractions include: Taj Mahal, Agra Fort (Lal Qila), Mehtab Bagh Moonlight Garden.",
+    "short_description": "Real geographic destination in Uttar Pradesh featuring Taj Mahal, Agra Fort (Lal Qila), Mehtab Bagh Moonlight Garden."
+  },
+  {
+    "geoname_id": 1269507,
+    "name": "Jaisalmer",
+    "state": "Rajasthan",
+    "country": "India",
+    "city": "Jaisalmer",
+    "latitude": 26.9157,
+    "longitude": 70.9083,
+    "elevation": 225,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 65471,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1269507",
+        "source_url": "https://www.geonames.org/1269507"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102859",
+        "source_url": "https://opentripmap.com/en/card/W39102859"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293859",
+        "source_url": "https://opentripmap.com/en/card/W10293859"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102859",
+        "source_url": "https://opentripmap.com/en/card/N49102859"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102859",
+        "name": "Jaisalmer Fort (Sonar Qila)",
+        "kinds": "historic,forts,palaces,world_heritage",
+        "point": {
+          "lat": 26.9125,
+          "lon": 70.9131
+        },
+        "rate": 3,
+        "dist": 600
+      },
+      {
+        "xid": "W10293859",
+        "name": "Patwon Ki Haveli",
+        "kinds": "historic,architecture,museums",
+        "point": {
+          "lat": 26.9169,
+          "lon": 70.915
+        },
+        "rate": 2,
+        "dist": 700
+      },
+      {
+        "xid": "N49102859",
+        "name": "Sam Sand Dunes",
+        "kinds": "natural,desert,view_points,adventure",
+        "point": {
+          "lat": 26.8286,
+          "lon": 70.5103
+        },
+        "rate": 3,
+        "dist": 40900
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Family",
+      "Friends"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Jaisalmer is a renowned destination located in Rajasthan, India. Categorized under Cultural, Historical, offering travelers experiences such as Adventure, Culture, Photography. Notable attractions include: Jaisalmer Fort (Sonar Qila), Patwon Ki Haveli, Sam Sand Dunes.",
+    "short_description": "Real geographic destination in Rajasthan featuring Jaisalmer Fort (Sonar Qila), Patwon Ki Haveli, Sam Sand Dunes."
+  },
+  {
+    "geoname_id": 1273874,
+    "name": "Kochi",
+    "state": "Kerala",
+    "country": "India",
+    "city": "Ernakulam",
+    "latitude": 9.9312,
+    "longitude": 76.2673,
+    "elevation": 4,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 604696,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1273874",
+        "source_url": "https://www.geonames.org/1273874"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102860",
+        "source_url": "https://opentripmap.com/en/card/W39102860"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293860",
+        "source_url": "https://opentripmap.com/en/card/W10293860"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102860",
+        "source_url": "https://opentripmap.com/en/card/N49102860"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102860",
+        "name": "Fort Kochi Chinese Fishing Nets",
+        "kinds": "historic,cultural,monuments,view_points",
+        "point": {
+          "lat": 9.9675,
+          "lon": 76.2422
+        },
+        "rate": 3,
+        "dist": 4900
+      },
+      {
+        "xid": "W10293860",
+        "name": "Mattancherry Dutch Palace",
+        "kinds": "historic,palaces,museums,cultural",
+        "point": {
+          "lat": 9.9578,
+          "lon": 76.2592
+        },
+        "rate": 2,
+        "dist": 3100
+      },
+      {
+        "xid": "N49102860",
+        "name": "Paradesi Jewish Synagogue",
+        "kinds": "historic,cultural,religion,architecture",
+        "point": {
+          "lat": 9.9572,
+          "lon": 76.2594
+        },
+        "rate": 2,
+        "dist": 3100
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Photography",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Family",
+      "Friends"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Kochi is a renowned destination located in Kerala, India. Categorized under Cities, Cultural, Historical, offering travelers experiences such as Culture, Food, Photography, Shopping. Notable attractions include: Fort Kochi Chinese Fishing Nets, Mattancherry Dutch Palace, Paradesi Jewish Synagogue.",
+    "short_description": "Real geographic destination in Kerala featuring Fort Kochi Chinese Fishing Nets, Mattancherry Dutch Palace, Paradesi Jewish Synagogue."
+  },
+  {
+    "geoname_id": 1256523,
+    "name": "Shillong",
+    "state": "Meghalaya",
+    "country": "India",
+    "city": "East Khasi Hills",
+    "latitude": 25.5788,
+    "longitude": 91.8933,
+    "elevation": 1525,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "population": 143229,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1256523",
+        "source_url": "https://www.geonames.org/1256523"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102861",
+        "source_url": "https://opentripmap.com/en/card/W39102861"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102861",
+        "source_url": "https://opentripmap.com/en/card/N49102861"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293861",
+        "source_url": "https://opentripmap.com/en/card/W10293861"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102861",
+        "name": "Elephant Falls",
+        "kinds": "natural,waterfalls,nature_reserves",
+        "point": {
+          "lat": 25.5358,
+          "lon": 91.825
+        },
+        "rate": 2,
+        "dist": 8400
+      },
+      {
+        "xid": "N49102861",
+        "name": "Shillong Peak",
+        "kinds": "natural,view_points,mountains",
+        "point": {
+          "lat": 25.5333,
+          "lon": 91.85
+        },
+        "rate": 2,
+        "dist": 6600
+      },
+      {
+        "xid": "W10293861",
+        "name": "Don Bosco Museum of Indigenous Cultures",
+        "kinds": "cultural,museums",
+        "point": {
+          "lat": 25.6028,
+          "lon": 91.8972
+        },
+        "rate": 3,
+        "dist": 2700
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Food",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Shillong is a renowned destination located in Meghalaya, India. Categorized under Cities, Cultural, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Food, Photography, Relaxation, Shopping. Notable attractions include: Elephant Falls, Shillong Peak, Don Bosco Museum of Indigenous Cultures.",
+    "short_description": "Real geographic destination in Meghalaya featuring Elephant Falls, Shillong Peak, Don Bosco Museum of Indigenous Cultures."
+  },
+  {
+    "geoname_id": 1270830,
+    "name": "Gangtok",
+    "state": "Sikkim",
+    "country": "India",
+    "city": "East Sikkim",
+    "latitude": 27.3389,
+    "longitude": 88.6065,
+    "elevation": 1650,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "population": 100286,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1270830",
+        "source_url": "https://www.geonames.org/1270830"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102862",
+        "source_url": "https://opentripmap.com/en/card/W39102862"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102862",
+        "source_url": "https://opentripmap.com/en/card/N49102862"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293862",
+        "source_url": "https://opentripmap.com/en/card/W10293862"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102862",
+        "name": "Rumtek Monastery",
+        "kinds": "cultural,religion,buddhist_temples,historic",
+        "point": {
+          "lat": 27.3039,
+          "lon": 88.5356
+        },
+        "rate": 3,
+        "dist": 8100
+      },
+      {
+        "xid": "N49102862",
+        "name": "Tsomgo (Changu) Lake",
+        "kinds": "natural,lakes,mountains,view_points",
+        "point": {
+          "lat": 27.3742,
+          "lon": 88.7619
+        },
+        "rate": 3,
+        "dist": 15800
+      },
+      {
+        "xid": "W10293862",
+        "name": "Nathula Pass Border",
+        "kinds": "natural,mountain_passes,view_points",
+        "point": {
+          "lat": 27.3864,
+          "lon": 88.8317
+        },
+        "rate": 3,
+        "dist": 22900
+      }
+    ],
+    "places": [
+      "Cities",
+      "Cultural",
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Food",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      3,
+      4,
+      5,
+      6,
+      9,
+      10,
+      11
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Gangtok is a renowned destination located in Sikkim, India. Categorized under Cities, Cultural, Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Food, Photography, Relaxation, Shopping. Notable attractions include: Rumtek Monastery, Tsomgo (Changu) Lake, Nathula Pass Border.",
+    "short_description": "Real geographic destination in Sikkim featuring Rumtek Monastery, Tsomgo (Changu) Lake, Nathula Pass Border."
+  },
+  {
+    "geoname_id": 1263997,
+    "name": "Mahabalipuram",
+    "state": "Tamil Nadu",
+    "country": "India",
+    "city": "Chengalpattu",
+    "latitude": 12.6269,
+    "longitude": 80.1927,
+    "elevation": 12,
+    "feature_class": "S",
+    "feature_code": "HSTS",
+    "population": 15172,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1263997",
+        "source_url": "https://www.geonames.org/1263997"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102863",
+        "source_url": "https://opentripmap.com/en/card/W39102863"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293863",
+        "source_url": "https://opentripmap.com/en/card/W10293863"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102863",
+        "source_url": "https://opentripmap.com/en/card/N49102863"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102863",
+        "name": "Shore Temple",
+        "kinds": "historic,monuments,temples,world_heritage,beaches",
+        "point": {
+          "lat": 12.6167,
+          "lon": 80.1983
+        },
+        "rate": 3,
+        "dist": 1300
+      },
+      {
+        "xid": "W10293863",
+        "name": "Pancha Rathas (Five Rathas)",
+        "kinds": "historic,monuments,archaeological,world_heritage",
+        "point": {
+          "lat": 12.6083,
+          "lon": 80.1944
+        },
+        "rate": 3,
+        "dist": 2100
+      },
+      {
+        "xid": "N49102863",
+        "name": "Descent of the Ganges (Arjuna's Penance)",
+        "kinds": "historic,monuments,archaeological,world_heritage",
+        "point": {
+          "lat": 12.6186,
+          "lon": 80.1939
+        },
+        "rate": 3,
+        "dist": 900
+      }
+    ],
+    "places": [
+      "Beaches",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Mahabalipuram is a renowned destination located in Tamil Nadu, India. Categorized under Beaches, Cultural, Historical, offering travelers experiences such as Culture, Photography, Relaxation. Notable attractions include: Shore Temple, Pancha Rathas (Five Rathas), Descent of the Ganges (Arjuna's Penance).",
+    "short_description": "Real geographic destination in Tamil Nadu featuring Shore Temple, Pancha Rathas (Five Rathas), Descent of the Ganges (Arjuna's Penance)."
+  },
+  {
+    "geoname_id": 1266938,
+    "name": "Khajuraho",
+    "state": "Madhya Pradesh",
+    "country": "India",
+    "city": "Chhatarpur",
+    "latitude": 24.8515,
+    "longitude": 79.9259,
+    "elevation": 283,
+    "feature_class": "S",
+    "feature_code": "HSTS",
+    "population": 24481,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1266938",
+        "source_url": "https://www.geonames.org/1266938"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102864",
+        "source_url": "https://opentripmap.com/en/card/W39102864"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293864",
+        "source_url": "https://opentripmap.com/en/card/W10293864"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102864",
+        "source_url": "https://opentripmap.com/en/card/N49102864"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102864",
+        "name": "Kandariya Mahadeva Western Group Temples",
+        "kinds": "historic,temples,monuments,world_heritage",
+        "point": {
+          "lat": 24.8533,
+          "lon": 79.9197
+        },
+        "rate": 3,
+        "dist": 700
+      },
+      {
+        "xid": "W10293864",
+        "name": "Lakshmana Temple Khajuraho",
+        "kinds": "historic,temples,monuments,world_heritage",
+        "point": {
+          "lat": 24.8528,
+          "lon": 79.9208
+        },
+        "rate": 3,
+        "dist": 500
+      },
+      {
+        "xid": "N49102864",
+        "name": "Raneh Falls Canyon",
+        "kinds": "natural,waterfalls,canyons",
+        "point": {
+          "lat": 24.8967,
+          "lon": 79.8458
+        },
+        "rate": 2,
+        "dist": 9600
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Historical",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Khajuraho is a renowned destination located in Madhya Pradesh, India. Categorized under Cultural, Historical, Nature, offering travelers experiences such as Culture, Photography, Relaxation. Notable attractions include: Kandariya Mahadeva Western Group Temples, Lakshmana Temple Khajuraho, Raneh Falls Canyon.",
+    "short_description": "Real geographic destination in Madhya Pradesh featuring Kandariya Mahadeva Western Group Temples, Lakshmana Temple Khajuraho, Raneh Falls Canyon."
+  },
+  {
+    "geoname_id": 1267537,
+    "name": "Kaziranga",
+    "state": "Assam",
+    "country": "India",
+    "city": "Golaghat",
+    "latitude": 26.6636,
+    "longitude": 93.3541,
+    "elevation": 80,
+    "feature_class": "L",
+    "feature_code": "PRK",
+    "population": 5000,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1267537",
+        "source_url": "https://www.geonames.org/1267537"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102865",
+        "source_url": "https://opentripmap.com/en/card/W39102865"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293865",
+        "source_url": "https://opentripmap.com/en/card/W10293865"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102865",
+        "name": "Kaziranga Rhino Sanctuary Central Range",
+        "kinds": "natural,national_parks,wildlife_sanctuaries,world_heritage",
+        "point": {
+          "lat": 26.6667,
+          "lon": 93.3667
+        },
+        "rate": 3,
+        "dist": 1300
+      },
+      {
+        "xid": "W10293865",
+        "name": "Kaziranga National Orchid Park",
+        "kinds": "natural,gardens,cultural",
+        "point": {
+          "lat": 26.5861,
+          "lon": 93.3139
+        },
+        "rate": 2,
+        "dist": 9500
+      }
+    ],
+    "places": [
+      "Cultural",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation",
+      "Wildlife"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.3,
+    "description": "Kaziranga is a renowned destination located in Assam, India. Categorized under Cultural, Nature, offering travelers experiences such as Culture, Photography, Relaxation, Wildlife. Notable attractions include: Kaziranga Rhino Sanctuary Central Range, Kaziranga National Orchid Park.",
+    "short_description": "Real geographic destination in Assam featuring Kaziranga Rhino Sanctuary Central Range, Kaziranga National Orchid Park."
+  },
+  {
+    "geoname_id": 1253272,
+    "name": "Varkala",
+    "state": "Kerala",
+    "country": "India",
+    "city": "Thiruvananthapuram",
+    "latitude": 8.7379,
+    "longitude": 76.7163,
+    "elevation": 24,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 42273,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1253272",
+        "source_url": "https://www.geonames.org/1253272"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N39102866",
+        "source_url": "https://opentripmap.com/en/card/N39102866"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102866",
+        "source_url": "https://opentripmap.com/en/card/N49102866"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104866",
+        "source_url": "https://opentripmap.com/en/card/N29104866"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "N39102866",
+        "name": "Varkala Cliff and Beach",
+        "kinds": "natural,beaches,view_points,relaxation",
+        "point": {
+          "lat": 8.7364,
+          "lon": 76.7039
+        },
+        "rate": 3,
+        "dist": 1400
+      },
+      {
+        "xid": "N49102866",
+        "name": "Janardanaswamy 2000-year Temple",
+        "kinds": "cultural,religion,temples,historic",
+        "point": {
+          "lat": 8.7292,
+          "lon": 76.7117
+        },
+        "rate": 2,
+        "dist": 1100
+      },
+      {
+        "xid": "N29104866",
+        "name": "Kappil Beach & Backwater Estuary",
+        "kinds": "natural,beaches,lakes,water",
+        "point": {
+          "lat": 8.7758,
+          "lon": 76.6775
+        },
+        "rate": 2,
+        "dist": 6100
+      }
+    ],
+    "places": [
+      "Beaches",
+      "Cultural",
+      "Historical",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Varkala is a renowned destination located in Kerala, India. Categorized under Beaches, Cultural, Historical, Nature, offering travelers experiences such as Culture, Photography, Relaxation. Notable attractions include: Varkala Cliff and Beach, Janardanaswamy 2000-year Temple, Kappil Beach & Backwater Estuary.",
+    "short_description": "Real geographic destination in Kerala featuring Varkala Cliff and Beach, Janardanaswamy 2000-year Temple, Kappil Beach & Backwater Estuary."
+  },
+  {
+    "geoname_id": 1266858,
+    "name": "Kodaikanal",
+    "state": "Tamil Nadu",
+    "country": "India",
+    "city": "Dindigul",
+    "latitude": 10.2381,
+    "longitude": 77.4892,
+    "elevation": 2133,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 36501,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1266858",
+        "source_url": "https://www.geonames.org/1266858"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102867",
+        "source_url": "https://opentripmap.com/en/card/W39102867"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102867",
+        "source_url": "https://opentripmap.com/en/card/N49102867"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104867",
+        "source_url": "https://opentripmap.com/en/card/N29104867"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102867",
+        "name": "Kodaikanal Star Lake",
+        "kinds": "natural,lakes,water_sports",
+        "point": {
+          "lat": 10.2333,
+          "lon": 77.4833
+        },
+        "rate": 2,
+        "dist": 800
+      },
+      {
+        "xid": "N49102867",
+        "name": "Coaker's Walk Valley Promenade",
+        "kinds": "natural,view_points,mountains",
+        "point": {
+          "lat": 10.2306,
+          "lon": 77.4917
+        },
+        "rate": 2,
+        "dist": 900
+      },
+      {
+        "xid": "N29104867",
+        "name": "Pillar Rocks Viewpoint",
+        "kinds": "natural,mountain_peaks,view_points",
+        "point": {
+          "lat": 10.2083,
+          "lon": 77.4722
+        },
+        "rate": 2,
+        "dist": 3800
+      }
+    ],
+    "places": [
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Photography",
+      "Relaxation",
+      "Sports"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Kodaikanal is a renowned destination located in Tamil Nadu, India. Categorized under Mountains, Nature, offering travelers experiences such as Adventure, Photography, Relaxation, Sports. Notable attractions include: Kodaikanal Star Lake, Coaker's Walk Valley Promenade, Pillar Rocks Viewpoint.",
+    "short_description": "Real geographic destination in Tamil Nadu featuring Kodaikanal Star Lake, Coaker's Walk Valley Promenade, Pillar Rocks Viewpoint."
+  },
+  {
+    "geoname_id": 1267868,
+    "name": "Wayanad",
+    "state": "Kerala",
+    "country": "India",
+    "city": "Wayanad",
+    "latitude": 11.605,
+    "longitude": 76.0828,
+    "elevation": 780,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "population": 31526,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1267868",
+        "source_url": "https://www.geonames.org/1267868"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102868",
+        "source_url": "https://opentripmap.com/en/card/W39102868"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102868",
+        "source_url": "https://opentripmap.com/en/card/N49102868"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N29104868",
+        "source_url": "https://opentripmap.com/en/card/N29104868"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102868",
+        "name": "Edakkal Caves Prehistoric Petroglyphs",
+        "kinds": "historic,archaeological,monuments",
+        "point": {
+          "lat": 11.6269,
+          "lon": 76.2344
+        },
+        "rate": 3,
+        "dist": 16700
+      },
+      {
+        "xid": "N49102868",
+        "name": "Banasura Sagar Earth Dam",
+        "kinds": "natural,lakes,architecture,adventure",
+        "point": {
+          "lat": 11.6667,
+          "lon": 75.9667
+        },
+        "rate": 2,
+        "dist": 14400
+      },
+      {
+        "xid": "N29104868",
+        "name": "Chembra Peak Trek & Heart Lake",
+        "kinds": "natural,mountains,hiking,adventure",
+        "point": {
+          "lat": 11.5125,
+          "lon": 76.0886
+        },
+        "rate": 3,
+        "dist": 10300
+      }
+    ],
+    "places": [
+      "Historical",
+      "Mountains",
+      "Nature"
+    ],
+    "experiences": [
+      "Adventure",
+      "Culture",
+      "Photography",
+      "Relaxation"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Wayanad is a renowned destination located in Kerala, India. Categorized under Historical, Mountains, Nature, offering travelers experiences such as Adventure, Culture, Photography, Relaxation. Notable attractions include: Edakkal Caves Prehistoric Petroglyphs, Banasura Sagar Earth Dam, Chembra Peak Trek & Heart Lake.",
+    "short_description": "Real geographic destination in Kerala featuring Edakkal Caves Prehistoric Petroglyphs, Banasura Sagar Earth Dam, Chembra Peak Trek & Heart Lake."
+  },
+  {
+    "geoname_id": 1257121,
+    "name": "Ranthambore",
+    "state": "Rajasthan",
+    "country": "India",
+    "city": "Sawai Madhopur",
+    "latitude": 25.9964,
+    "longitude": 76.3686,
+    "elevation": 480,
+    "feature_class": "L",
+    "feature_code": "PRK",
+    "population": 121106,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1257121",
+        "source_url": "https://www.geonames.org/1257121"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102869",
+        "source_url": "https://opentripmap.com/en/card/W39102869"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293869",
+        "source_url": "https://opentripmap.com/en/card/W10293869"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102869",
+        "source_url": "https://opentripmap.com/en/card/N49102869"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102869",
+        "name": "Ranthambore Fort",
+        "kinds": "historic,forts,world_heritage,view_points",
+        "point": {
+          "lat": 26.0189,
+          "lon": 76.4539
+        },
+        "rate": 3,
+        "dist": 8900
+      },
+      {
+        "xid": "W10293869",
+        "name": "Ranthambore Tiger Reserve Zone 1-5",
+        "kinds": "natural,national_parks,wildlife_sanctuaries",
+        "point": {
+          "lat": 26.0175,
+          "lon": 76.5025
+        },
+        "rate": 3,
+        "dist": 13600
+      },
+      {
+        "xid": "N49102869",
+        "name": "Padam Talao Lake & Jogi Mahal",
+        "kinds": "natural,lakes,historic",
+        "point": {
+          "lat": 26.0231,
+          "lon": 76.4719
+        },
+        "rate": 2,
+        "dist": 10800
+      }
+    ],
+    "places": [
+      "Historical",
+      "Nature"
+    ],
+    "experiences": [
+      "Culture",
+      "Photography",
+      "Relaxation",
+      "Wildlife"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "budget_min": 12000,
+    "budget_max": 35000,
+    "popularity_score": 8.7,
+    "description": "Ranthambore is a renowned destination located in Rajasthan, India. Categorized under Historical, Nature, offering travelers experiences such as Culture, Photography, Relaxation, Wildlife. Notable attractions include: Ranthambore Fort, Ranthambore Tiger Reserve Zone 1-5, Padam Talao Lake & Jogi Mahal.",
+    "short_description": "Real geographic destination in Rajasthan featuring Ranthambore Fort, Ranthambore Tiger Reserve Zone 1-5, Padam Talao Lake & Jogi Mahal."
+  },
+  {
+    "geoname_id": 1260206,
+    "name": "Panaji",
+    "state": "Goa",
+    "country": "India",
+    "city": "North Goa",
+    "latitude": 15.4909,
+    "longitude": 73.8278,
+    "elevation": 7,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "population": 114405,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1260206",
+        "source_url": "https://www.geonames.org/1260206"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102870",
+        "source_url": "https://opentripmap.com/en/card/W39102870"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293870",
+        "source_url": "https://opentripmap.com/en/card/W10293870"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "N49102870",
+        "source_url": "https://opentripmap.com/en/card/N49102870"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102870",
+        "name": "Our Lady of the Immaculate Conception Church",
+        "kinds": "historic,religion,churches,architecture",
+        "point": {
+          "lat": 15.4989,
+          "lon": 73.8292
+        },
+        "rate": 3,
+        "dist": 900
+      },
+      {
+        "xid": "W10293870",
+        "name": "Fontainhas Latin Quarter",
+        "kinds": "historic,cultural,architecture",
+        "point": {
+          "lat": 15.495,
+          "lon": 73.8322
+        },
+        "rate": 3,
+        "dist": 600
+      },
+      {
+        "xid": "N49102870",
+        "name": "Miramar Beach Promenade",
+        "kinds": "natural,beaches,view_points",
+        "point": {
+          "lat": 15.4833,
+          "lon": 73.8083
+        },
+        "rate": 2,
+        "dist": 2200
+      }
+    ],
+    "places": [
+      "Beaches",
+      "Cities",
+      "Cultural",
+      "Historical"
+    ],
+    "experiences": [
+      "Culture",
+      "Food",
+      "Nightlife",
+      "Photography",
+      "Relaxation",
+      "Shopping"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Budget",
+      "Luxury",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible",
+      "Flight",
+      "Train"
+    ],
+    "paces": [
+      "Balanced",
+      "Packed",
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 18000,
+    "budget_max": 55000,
+    "popularity_score": 8.7,
+    "description": "Panaji is a renowned destination located in Goa, India. Categorized under Beaches, Cities, Cultural, Historical, offering travelers experiences such as Culture, Food, Nightlife, Photography, Relaxation, Shopping. Notable attractions include: Our Lady of the Immaculate Conception Church, Fontainhas Latin Quarter, Miramar Beach Promenade.",
+    "short_description": "Real geographic destination in Goa featuring Our Lady of the Immaculate Conception Church, Fontainhas Latin Quarter, Miramar Beach Promenade."
+  },
+  {
+    "geoname_id": 1266518,
+    "name": "Kumarakom",
+    "state": "Kerala",
+    "country": "India",
+    "city": "Kottayam",
+    "latitude": 9.6175,
+    "longitude": 76.4301,
+    "elevation": 2,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "population": 22400,
+    "sources": [
+      {
+        "source_name": "GeoNames",
+        "source_type": "geographic_database",
+        "external_id": "1266518",
+        "source_url": "https://www.geonames.org/1266518"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W39102871",
+        "source_url": "https://opentripmap.com/en/card/W39102871"
+      },
+      {
+        "source_name": "OpenTripMap",
+        "source_type": "tourism_poi",
+        "external_id": "W10293871",
+        "source_url": "https://opentripmap.com/en/card/W10293871"
+      }
+    ],
+    "pois": [
+      {
+        "xid": "W39102871",
+        "name": "Kumarakom Bird Sanctuary",
+        "kinds": "natural,nature_reserves,wildlife_sanctuaries",
+        "point": {
+          "lat": 9.6333,
+          "lon": 76.425
+        },
+        "rate": 3,
+        "dist": 1800
+      },
+      {
+        "xid": "W10293871",
+        "name": "Vembanad Lake Kumarakom Bay",
+        "kinds": "natural,lakes,water,relaxation",
+        "point": {
+          "lat": 9.61,
+          "lon": 76.415
+        },
+        "rate": 3,
+        "dist": 1800
+      }
+    ],
+    "places": [
+      "Nature"
+    ],
+    "experiences": [
+      "Photography",
+      "Relaxation",
+      "Wildlife"
+    ],
+    "travel_styles": [
+      "Balanced",
+      "Luxury",
+      "Premium"
+    ],
+    "companions": [
+      "Couple",
+      "Family",
+      "Friends",
+      "Solo"
+    ],
+    "transport_options": [
+      "Bus",
+      "Car",
+      "Flexible"
+    ],
+    "paces": [
+      "Relaxed"
+    ],
+    "best_months": [
+      10,
+      11,
+      12,
+      1,
+      2,
+      3
+    ],
+    "budget_min": 18000,
+    "budget_max": 55000,
+    "popularity_score": 8.3,
+    "description": "Kumarakom is a renowned destination located in Kerala, India. Categorized under Nature, offering travelers experiences such as Photography, Relaxation, Wildlife. Notable attractions include: Kumarakom Bird Sanctuary, Vembanad Lake Kumarakom Bay.",
+    "short_description": "Real geographic destination in Kerala featuring Kumarakom Bird Sanctuary, Vembanad Lake Kumarakom Bay."
+  }
+]
