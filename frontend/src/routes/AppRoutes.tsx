@@ -22,6 +22,7 @@ import { TravelerTripsPage } from '../pages/traveler/TravelerTripsPage';
 import { TravelerNewTripPage } from '../pages/traveler/TravelerNewTripPage';
 import { TravelerProfilePage } from '../pages/traveler/TravelerProfilePage';
 import { AiTripCopilotPage } from '../pages/traveler/AiTripCopilotPage';
+import { TravelerBillingPage } from '../pages/traveler/TravelerBillingPage';
 
 // Agent Pages
 import { AgentAuthPage } from '../pages/agent/AgentAuthPage';
@@ -77,6 +78,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="trips" element={<TravelerTripsPage />} />
         <Route path="trips/new" element={<TravelerNewTripPage />} />
         <Route path="profile" element={<TravelerProfilePage />} />
+        <Route path="billing" element={<TravelerBillingPage />} />
       </Route>
 
       {/* Agent Auth */}

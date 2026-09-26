@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   Compass as ExploreIcon,
   Luggage,
+  ReceiptText,
   User,
   LogOut,
   Bell,
@@ -34,6 +35,7 @@ export const TravelerLayout: React.FC = () => {
     { label: 'Explore', path: '/user/explore', icon: ExploreIcon },
     { label: 'AI Trip Co-Pilot', path: '/user/ai-trip-copilot', icon: Sparkles },
     { label: 'My Trips', path: '/user/trips', icon: Luggage },
+    { label: 'Billing', path: '/user/billing', icon: ReceiptText },
     { label: 'Profile', path: '/user/profile', icon: User },
   ];
 
