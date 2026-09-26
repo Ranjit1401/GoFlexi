@@ -77,6 +77,12 @@ class Destination(Base):
         cascade="all, delete-orphan",
         order_by="DestinationBestMonth.month"
     )
+    sources: Mapped[List["DestinationSource"]] = relationship(
+        "DestinationSource",
+        back_populates="destination",
+        cascade="all, delete-orphan",
+        order_by="DestinationSource.id"
+    )
 
     __table_args__ = (
         UniqueConstraint("name", "state", name="uq_destination_name_state"),
@@ -262,3 +268,41 @@ class DestinationBestMonth(Base):
     __table_args__ = (
         UniqueConstraint("destination_id", "month", name="uq_destination_best_month"),
     )
+
+
+class DestinationSource(Base):
+    __tablename__ = "destination_sources"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        GUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        index=True
+    )
+    destination_id: Mapped[uuid.UUID] = mapped_column(
+        GUID,
+        ForeignKey("destinations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    source_name: Mapped[str] = mapped_column(String(100), nullable=False, index=True)   # GeoNames, OpenTripMap, OpenStreetMap
+    source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    source_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)   # geographic_database, tourism_poi, openstreetmap
+    external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    verified_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
+    destination: Mapped["Destination"] = relationship("Destination", back_populates="sources")
+
+    __table_args__ = (
+        UniqueConstraint("destination_id", "source_name", "external_id", name="uq_destination_source"),
+    )
+

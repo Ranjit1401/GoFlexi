@@ -9,6 +9,7 @@ from app.models.destination import (
     DestinationTransport,
     DestinationPace,
     DestinationBestMonth,
+    DestinationSource,
 )
 
 __all__ = [
@@ -24,4 +25,6 @@ __all__ = [
     "DestinationTransport",
     "DestinationPace",
     "DestinationBestMonth",
+    "DestinationSource",
 ]
+

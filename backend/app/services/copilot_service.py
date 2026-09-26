@@ -248,11 +248,34 @@ def generate_trip_plan(
 
     # 4. Sights and Activities
     city_key = dest_city.lower() if dest_city else dest_name.lower()
-    sights_template = CURATED_SIGHTS.get("goa")
-    for k in CURATED_SIGHTS.keys():
-        if k in city_key or k in dest_name.lower():
-            sights_template = CURATED_SIGHTS[k]
-            break
+    
+    from app.services.dataset_service import query_local_places, ai_recommend_spots
+    import asyncio
+
+    raw_spots = query_local_places(city_key, 'tourist', limit=20)
+    try:
+        try:
+            loop = asyncio.get_running_loop()
+            sights_template = loop.run_until_complete(ai_recommend_spots(raw_spots, budget_range, duration))
+        except RuntimeError:
+            sights_template = asyncio.run(ai_recommend_spots(raw_spots, budget_range, duration))
+    except Exception:
+        sights_template = [{"name": s["name"], "lat_offset": 0, "lon_offset": 0, "type": "activity", "desc": s.get("reason", "Local spot")} for s in raw_spots]
+    
+    if not sights_template:
+        sights_template = [{"name": "Local Spot", "lat_offset": 0, "lon_offset": 0, "type": "activity", "desc": "Curated place"}]
+
+    # Re-map format from LLM output to what the code expects
+    formatted_sights = []
+    for s in sights_template:
+        formatted_sights.append({
+            "name": s.get("name", "Activity"),
+            "type": "activity",
+            "lat_offset": s.get("lat", dest_lat) - dest_lat,
+            "lon_offset": s.get("lon", dest_lon) - dest_lon,
+            "desc": s.get("reason", "Curated activity")
+        })
+    sights_template = formatted_sights
 
     # 5. Build Tree Nodes Hierarchy
     tree_nodes: List[TripPlanNodeSchema] = []
