@@ -3,20 +3,19 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Modal } from '../../components/ui/Modal';
+import { FlightSearchPanel } from '../../components/traveler/FlightSearchPanel';
+import { HotelSearchPanel } from '../../components/traveler/HotelSearchPanel';
+import { useToast } from '../../context/ToastContext';
+import { FlightOption, HotelOption } from '../../types/travel-search';
 import {
   MapPin,
   Calendar,
   Users,
-  CreditCard,
-  Heart,
-  Sliders,
   Sparkles,
   ArrowRight,
   ArrowLeft,
   Check,
-  Info,
-  Clock
+  Clock,
 } from 'lucide-react';
 
 export const TravelerNewTripPage: React.FC = () => {
@@ -24,9 +23,9 @@ export const TravelerNewTripPage: React.FC = () => {
   const initialDest = searchParams.get('dest') || '';
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [step, setStep] = useState(1);
-  const totalSteps = 6;
-  const [showEngineModal, setShowEngineModal] = useState(false);
+  const totalSteps = 8;
 
   // Form state
   const [destination, setDestination] = useState(initialDest || 'Goa');
@@ -34,13 +33,38 @@ export const TravelerNewTripPage: React.FC = () => {
   const [endDate, setEndDate] = useState('2026-10-19');
   const [travelersCount, setTravelersCount] = useState(2);
   const [budgetTier, setBudgetTier] = useState('₹25,000 – ₹50,000');
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(['Beaches', 'Food', 'Sunset Cruise']);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([
+    'Beaches',
+    'Food',
+    'Sunset Cruise',
+  ]);
   const [travelStyle, setTravelStyle] = useState('Balanced');
 
-  const popularDestinations = ['Goa', 'Manali', 'Kerala', 'Meghalaya', 'Rajasthan', 'Andaman', 'Kashmir', 'Sikkim'];
+  // Flight & Hotel selections
+  const [selectedFlight, setSelectedFlight] = useState<FlightOption | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<HotelOption | null>(null);
+
+  const popularDestinations = [
+    'Goa',
+    'Manali',
+    'Kerala',
+    'Meghalaya',
+    'Rajasthan',
+    'Andaman',
+    'Kashmir',
+    'Sikkim',
+  ];
   const allInterests = [
-    'Beaches', 'Food', 'Sunset Cruise', 'Mountain Treks', 'Water Sports',
-    'Heritage Forts', 'Houseboat Stay', 'Nightlife', 'Wellness & Spa', 'Photography'
+    'Beaches',
+    'Food',
+    'Sunset Cruise',
+    'Mountain Treks',
+    'Water Sports',
+    'Heritage Forts',
+    'Houseboat Stay',
+    'Nightlife',
+    'Wellness & Spa',
+    'Photography',
   ];
 
   const toggleInterest = (item: string) => {
@@ -56,8 +80,16 @@ export const TravelerNewTripPage: React.FC = () => {
     if (step < totalSteps) {
       setStep((prev) => prev + 1);
     } else {
-      // Final step: trigger modal stating engine will be connected soon
-      setShowEngineModal(true);
+      let message = `Your trip to ${destination} has been planned with ${travelersCount} traveler${travelersCount > 1 ? 's' : ''}!`;
+      if (selectedFlight && selectedHotel) {
+        message = `Trip to ${destination} booked with ${selectedFlight.airline} & ${selectedHotel.name}!`;
+      } else if (selectedHotel) {
+        message = `Trip to ${destination} planned with stay at ${selectedHotel.name}!`;
+      } else if (selectedFlight) {
+        message = `Trip to ${destination} planned with ${selectedFlight.airline} flight!`;
+      }
+      showToast('success', message, 'Trip Complete');
+      navigate('/user/trips');
     }
   };
 
@@ -79,7 +111,7 @@ export const TravelerNewTripPage: React.FC = () => {
           Plan Your Next Journey
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Configure destinations, dates, and pacing to shape your personalized itinerary prototype.
+          Configure destinations, dates, flights, and accommodations for your personalized itinerary.
         </p>
       </div>
 
@@ -94,9 +126,13 @@ export const TravelerNewTripPage: React.FC = () => {
         {step === 1 && (
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">Step 1 of 6</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">
+                Step 1 of {totalSteps}
+              </span>
               <h2 className="text-xl sm:text-2xl font-bold text-navy-950">Where are you heading?</h2>
-              <p className="text-xs text-slate-500 mt-1">Select from popular regions or type any custom destination.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Select from popular regions or type any custom destination.
+              </p>
             </div>
 
             <Input
@@ -108,7 +144,9 @@ export const TravelerNewTripPage: React.FC = () => {
             />
 
             <div>
-              <span className="text-xs font-semibold text-slate-500 block mb-2">Or select a featured destination:</span>
+              <span className="text-xs font-semibold text-slate-500 block mb-2">
+                Or select a featured destination:
+              </span>
               <div className="flex flex-wrap gap-2">
                 {popularDestinations.map((dest) => (
                   <button
@@ -133,9 +171,13 @@ export const TravelerNewTripPage: React.FC = () => {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">Step 2 of 6</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">
+                Step 2 of {totalSteps}
+              </span>
               <h2 className="text-xl sm:text-2xl font-bold text-navy-950">When do you plan to travel?</h2>
-              <p className="text-xs text-slate-500 mt-1">Choose departure and return dates for pacing calculations.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Choose departure and return dates for pacing calculations.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -168,9 +210,15 @@ export const TravelerNewTripPage: React.FC = () => {
         {step === 3 && (
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">Step 3 of 6</span>
-              <h2 className="text-xl sm:text-2xl font-bold text-navy-950">How many travelers are in your party?</h2>
-              <p className="text-xs text-slate-500 mt-1">Sets appropriate room allocations and private transport fleet.</p>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">
+                Step 3 of {totalSteps}
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-navy-950">
+                How many travelers are in your party?
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Sets appropriate room allocations and private transport fleet.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -178,7 +226,7 @@ export const TravelerNewTripPage: React.FC = () => {
                 { count: 1, label: 'Solo Traveler', desc: '1 Person' },
                 { count: 2, label: 'Couple / Pair', desc: '2 People' },
                 { count: 4, label: 'Small Group', desc: '3-4 People' },
-                { count: 6, label: 'Family / Party', desc: '5+ People' }
+                { count: 6, label: 'Family / Party', desc: '5+ People' },
               ].map((item) => (
                 <button
                   key={item.count}
@@ -190,7 +238,11 @@ export const TravelerNewTripPage: React.FC = () => {
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <Users className={`w-5 h-5 mb-2 ${travelersCount === item.count ? 'text-brand-600' : 'text-slate-400'}`} />
+                  <Users
+                    className={`w-5 h-5 mb-2 ${
+                      travelersCount === item.count ? 'text-brand-600' : 'text-slate-400'
+                    }`}
+                  />
                   <div>
                     <div className="text-sm font-bold text-slate-900">{item.label}</div>
                     <div className="text-[11px] text-slate-500">{item.desc}</div>
@@ -205,7 +257,7 @@ export const TravelerNewTripPage: React.FC = () => {
               min={1}
               max={25}
               value={travelersCount}
-              onChange={(e) => setTravelersCount(parseInt(e.target.value) || 1)}
+              onChange={(e) => setTravelersCount(parseInt(e.target.value, 10) || 1)}
             />
           </div>
         )}
@@ -214,9 +266,15 @@ export const TravelerNewTripPage: React.FC = () => {
         {step === 4 && (
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">Step 4 of 6</span>
-              <h2 className="text-xl sm:text-2xl font-bold text-navy-950">What is your estimated total budget?</h2>
-              <p className="text-xs text-slate-500 mt-1">Per person budget bracket for stays, tours, and activities.</p>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">
+                Step 4 of {totalSteps}
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-navy-950">
+                What is your estimated total budget?
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Per person budget bracket for stays, tours, and activities.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -225,7 +283,7 @@ export const TravelerNewTripPage: React.FC = () => {
                 '₹10,000 – ₹25,000',
                 '₹25,000 – ₹50,000',
                 '₹50,000 – ₹1,00,000',
-                '₹1,00,000+'
+                '₹1,00,000+',
               ].map((tier) => (
                 <button
                   key={tier}
@@ -253,9 +311,13 @@ export const TravelerNewTripPage: React.FC = () => {
         {step === 5 && (
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">Step 5 of 6</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">
+                Step 5 of {totalSteps}
+              </span>
               <h2 className="text-xl sm:text-2xl font-bold text-navy-950">Select your key interests</h2>
-              <p className="text-xs text-slate-500 mt-1">Choose activities you would like integrated into the days.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Choose activities you would like integrated into the days.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2.5">
@@ -285,9 +347,13 @@ export const TravelerNewTripPage: React.FC = () => {
         {step === 6 && (
           <div className="space-y-6">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">Step 6 of 6</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 block mb-1">
+                Step 6 of {totalSteps}
+              </span>
               <h2 className="text-xl sm:text-2xl font-bold text-navy-950">Confirm your travel style</h2>
-              <p className="text-xs text-slate-500 mt-1">Dictates overall pacing, transport class, and accommodation tier.</p>
+              <p className="text-xs text-slate-500 mt-1">
+                Dictates overall pacing, transport class, and accommodation tier.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -295,7 +361,7 @@ export const TravelerNewTripPage: React.FC = () => {
                 { name: 'Budget', desc: 'Hostels, local transit, pocket-friendly meals.' },
                 { name: 'Balanced', desc: '3-4 star boutique stays, private cab transfers.' },
                 { name: 'Premium', desc: '4-5 star resorts, premium excursions, private guides.' },
-                { name: 'Luxury', desc: 'Bespoke 5-star suites, private catamaran, VIP hospitality.' }
+                { name: 'Luxury', desc: 'Bespoke 5-star suites, private catamaran, VIP hospitality.' },
               ].map((style) => (
                 <button
                   key={style.name}
@@ -322,6 +388,50 @@ export const TravelerNewTripPage: React.FC = () => {
           </div>
         )}
 
+        {/* STEP 7: FLIGHT SEARCH */}
+        {step === 7 && (
+          <div className="space-y-6">
+            <FlightSearchPanel
+              initialOrigin="Mumbai"
+              initialDestination={destination}
+              initialDepartDate={startDate}
+              initialReturnDate={endDate}
+              initialAdults={travelersCount}
+              selectedFlightId={selectedFlight?.id}
+              onSelectFlight={(flight) => {
+                setSelectedFlight(flight);
+                showToast(
+                  'success',
+                  `Selected ${flight.airline} flight (₹${flight.price.toLocaleString('en-IN')})`,
+                  'Flight Chosen'
+                );
+              }}
+            />
+          </div>
+        )}
+
+        {/* STEP 8: HOTEL SEARCH */}
+        {step === 8 && (
+          <div className="space-y-6">
+            <HotelSearchPanel
+              initialDestination={destination}
+              initialCheckIn={startDate}
+              initialCheckOut={endDate}
+              initialAdults={travelersCount}
+              initialRooms={Math.max(1, Math.ceil(travelersCount / 2))}
+              selectedHotelId={selectedHotel?.id}
+              onSelectHotel={(hotel) => {
+                setSelectedHotel(hotel);
+                showToast(
+                  'success',
+                  `Selected ${hotel.name} (₹${hotel.price_per_night.toLocaleString('en-IN')}/night)`,
+                  'Accommodation Chosen'
+                );
+              }}
+            />
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="pt-8 mt-8 border-t border-slate-100 flex items-center justify-between">
           <Button
@@ -339,54 +449,11 @@ export const TravelerNewTripPage: React.FC = () => {
             onClick={handleNext}
             className="rounded-xl px-6 bg-navy-900 hover:bg-navy-800"
           >
-            <span>{step === totalSteps ? 'Generate My Trip' : 'Continue'}</span>
+            <span>{step === totalSteps ? 'Complete Trip Plan' : 'Continue'}</span>
             <ArrowRight className="w-4 h-4 ml-1.5" />
           </Button>
         </div>
       </div>
-
-      {/* Engine Disclaimer Modal */}
-      <Modal
-        isOpen={showEngineModal}
-        onClose={() => setShowEngineModal(false)}
-        title="Trip Planning Engine"
-        subtitle="Frontend Prototype Notice"
-        maxWidth="md"
-      >
-        <div className="space-y-4 text-center py-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
-            <Info className="w-7 h-7" />
-          </div>
-
-          <h3 className="text-lg font-bold text-navy-950">
-            Trip planning engine will be connected soon.
-          </h3>
-
-          <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
-            Your trip request for <strong>{destination}</strong> ({travelersCount} travelers, {budgetTier}, {travelStyle} style) has been recorded in your prototype session. In the full production release, our dynamic optimization engine will generate day-by-day routes and live vendor bookings.
-          </p>
-
-          <div className="pt-4 flex flex-col sm:flex-row gap-2 justify-center">
-            <Button
-              variant="primary"
-              onClick={() => {
-                setShowEngineModal(false);
-                navigate('/user/trips');
-              }}
-              className="rounded-xl"
-            >
-              View My Trips
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowEngineModal(false)}
-              className="rounded-xl"
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
