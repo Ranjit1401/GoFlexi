@@ -21,6 +21,15 @@ from app.schemas.destination import (
     DestinationDetailResponse,
     DestinationListResponse,
 )
+from app.schemas.travel_search import (
+    AirportSuggestion,
+    FlightSearchRequest,
+    FlightOption,
+    FlightSearchResponse,
+    HotelSearchRequest,
+    HotelOption,
+    HotelSearchResponse,
+)
 
 __all__ = [
     "UserSafeResponse",
@@ -40,4 +49,12 @@ __all__ = [
     "DestinationListItemResponse",
     "DestinationDetailResponse",
     "DestinationListResponse",
+    "AirportSuggestion",
+    "FlightSearchRequest",
+    "FlightOption",
+    "FlightSearchResponse",
+    "HotelSearchRequest",
+    "HotelOption",
+    "HotelSearchResponse",
 ]
+
