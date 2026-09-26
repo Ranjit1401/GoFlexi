@@ -26,6 +26,7 @@ import {
   AlertCircle,
   Compass,
 } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerDashboardPage: React.FC = () => {
   const { user, preferences } = useAuth();
@@ -394,6 +395,21 @@ export const TravelerDashboardPage: React.FC = () => {
           maxWidth="lg"
         >
           <div className="space-y-5">
+            {/* Authentic Destination Photo Banner */}
+            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative bg-slate-100">
+              <img
+                src={getDestinationImage(selectedRecommendation.name || selectedRecommendation.city)}
+                alt={selectedRecommendation.name}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = getDestinationImage(selectedRecommendation.city || selectedRecommendation.state);
+                }}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold text-slate-800 shadow">
+                Est. {selectedRecommendation.budget_min > 0 ? `₹${(selectedRecommendation.budget_min / 1000).toFixed(0)}k – ₹${(selectedRecommendation.budget_max / 1000).toFixed(0)}k` : 'Flexible'}
+              </div>
+            </div>
+
             <div className="p-4 bg-brand-50/50 rounded-2xl border border-brand-100/70 text-xs text-brand-900 leading-relaxed">
               <div className="font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 text-brand-700">
                 <Sparkles className="w-3.5 h-3.5" />

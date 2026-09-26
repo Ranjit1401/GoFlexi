@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Destination } from '../../types/traveler';
 import { Search, SlidersHorizontal, CheckCircle2, X, MapPin } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerExplorePage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -233,10 +234,13 @@ export const TravelerExplorePage: React.FC = () => {
           maxWidth="lg"
         >
           <div className="space-y-5">
-            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative">
+            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative bg-slate-100">
               <img
-                src={selectedDestination.imageUrl}
+                src={selectedDestination.imageUrl || getDestinationImage(selectedDestination.name)}
                 alt={selectedDestination.name}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = getDestinationImage(selectedDestination.name);
+                }}
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold text-slate-800 shadow">

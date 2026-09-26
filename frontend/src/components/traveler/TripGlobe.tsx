@@ -3,6 +3,7 @@ import { Viewer, Entity, PointGraphics, PolylineGraphics, LabelGraphics, CameraF
 import { Cartesian3, Color, ArcType, Ion, createWorldTerrainAsync, Math as CesiumMath, Cartesian2 } from 'cesium';
 import { MapPin } from 'lucide-react';
 import { TripLocation, TripRoute } from '../../types/trip-planner';
+import { getActivityImage } from '../../utils/placeImages';
 
 // Generate a parabolic arc of Cartesian3 points
 function generateArc(lon1: number, lat1: number, lon2: number, lat2: number, maxHeight: number, segments = 50) {
@@ -152,23 +153,34 @@ export const TripGlobe: React.FC<TripGlobeProps> = ({ locations, routes, selecte
 
       {/* Selected Location Quick Card at Bottom-Right */}
       {selectedLocation && (
-        <div className="absolute bottom-4 right-4 z-10 max-w-xs bg-slate-900/90 backdrop-blur-md border border-indigo-500/40 rounded-xl p-3 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center gap-2 mb-1">
-            <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">
-              {selectedLocation.type}
-            </span>
+        <div className="absolute bottom-4 right-4 z-10 w-72 bg-slate-900/95 backdrop-blur-md border border-indigo-500/40 rounded-xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="h-24 w-full relative bg-slate-800">
+            <img
+              src={getActivityImage(selectedLocation.name, selectedLocation.type)}
+              alt={selectedLocation.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = getActivityImage(selectedLocation.type);
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+            <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-slate-900/80 backdrop-blur-xs text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
+              <MapPin className="w-3 h-3 text-indigo-400" />
+              <span className="uppercase">{selectedLocation.type}</span>
+            </div>
           </div>
-          <h4 className="text-sm font-semibold text-white leading-tight">
-            {selectedLocation.name}
-          </h4>
-          {selectedLocation.description && (
-            <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-              {selectedLocation.description}
-            </p>
-          )}
-          <div className="text-[11px] text-slate-500 mt-1 font-mono">
-            {selectedLocation.latitude.toFixed(4)}°N, {selectedLocation.longitude.toFixed(4)}°E
+          <div className="p-3">
+            <h4 className="text-sm font-semibold text-white leading-tight">
+              {selectedLocation.name}
+            </h4>
+            {selectedLocation.description && (
+              <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                {selectedLocation.description}
+              </p>
+            )}
+            <div className="text-[11px] text-slate-500 mt-1 font-mono">
+              {selectedLocation.latitude.toFixed(4)}°N, {selectedLocation.longitude.toFixed(4)}°E
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,7 @@ import { Destination } from '../../types/traveler';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Star, Clock, ArrowRight } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export interface DestinationCardProps {
   destination: Destination;
@@ -12,14 +13,15 @@ export interface DestinationCardProps {
 export const DestinationCard: React.FC<DestinationCardProps> = ({ destination, onExplore }) => {
   const [imgError, setImgError] = useState(false);
 
-  const fallbackImage = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80';
+  const authenticImage = getDestinationImage(destination.name);
+  const displayImage = imgError ? authenticImage : (destination.imageUrl || authenticImage);
 
   return (
     <div className="group bg-white rounded-3xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden flex flex-col hover:-translate-y-1">
       {/* Image container */}
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         <img
-          src={imgError ? fallbackImage : destination.imageUrl}
+          src={displayImage}
           alt={destination.name}
           onError={() => setImgError(true)}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

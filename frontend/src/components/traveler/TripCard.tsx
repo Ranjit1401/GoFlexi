@@ -3,6 +3,7 @@ import { Trip } from '../../types/traveler';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Calendar, Users, MapPin, ArrowRight } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export interface TripCardProps {
   trip: Trip;
@@ -11,7 +12,8 @@ export interface TripCardProps {
 
 export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
   const [imgError, setImgError] = useState(false);
-  const fallback = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+  const authenticImage = getDestinationImage(trip.destination || trip.title);
+  const displayImage = imgError ? authenticImage : (trip.imageUrl || authenticImage);
 
   let statusBadge = <Badge variant="success" size="sm">Upcoming</Badge>;
   if (trip.status === 'Past') {
@@ -25,7 +27,7 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
       {/* Thumbnail */}
       <div className="md:w-36 lg:w-40 h-36 md:h-auto relative overflow-hidden bg-slate-100 flex-shrink-0">
         <img
-          src={imgError ? fallback : trip.imageUrl}
+          src={displayImage}
           alt={trip.destination}
           onError={() => setImgError(true)}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

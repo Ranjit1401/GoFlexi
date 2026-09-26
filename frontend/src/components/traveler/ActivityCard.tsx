@@ -15,6 +15,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { POIResult, POIDetail } from '../../types/trip-planner';
 import { getActivityDetail } from '../../services/trip-wizard';
+import { getActivityImage } from '../../utils/placeImages';
 
 interface ActivityCardProps {
   poi: POIResult;
@@ -98,20 +99,19 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         <div>
           {/* Card Top: Image / Banner */}
           <div className="h-32 bg-slate-100 relative overflow-hidden flex items-center justify-center">
-            {poi.preview_image ? (
-              <img
-                src={poi.preview_image}
-                alt={poi.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-400">
-                <Compass className="w-8 h-8 opacity-60" />
-              </div>
-            )}
+            <img
+              src={poi.preview_image || getActivityImage(poi.name, poi.kinds)}
+              alt={poi.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                const fallback = getActivityImage(poi.name, poi.kinds);
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-transparent to-transparent opacity-30 pointer-events-none" />
 
             {/* Popularity Badge */}
             <div className="absolute top-2.5 left-2.5">
@@ -189,15 +189,22 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         maxWidth="md"
       >
         <div className="space-y-4">
-          {poi.preview_image && (
-            <div className="h-48 rounded-xl overflow-hidden bg-slate-100">
-              <img
-                src={poi.preview_image}
-                alt={poi.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+          {/* Detail Preview Image */}
+          <div className="h-48 rounded-xl overflow-hidden bg-slate-100 relative">
+            <img
+              src={detail?.preview_image || poi.preview_image || getActivityImage(poi.name, poi.kinds)}
+              alt={poi.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                const fallback = getActivityImage(poi.name, poi.kinds);
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-950/60 via-transparent to-transparent opacity-40 pointer-events-none" />
+          </div>
 
           {loadingDetail ? (
             <div className="py-6 text-center text-xs text-slate-500 animate-pulse">

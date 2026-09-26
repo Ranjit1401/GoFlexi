@@ -3,33 +3,12 @@ import { RecommendationItem } from '../../services/recommendations';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Sparkles, MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export interface RecommendationCardProps {
   recommendation: RecommendationItem;
   onExplore?: (recommendation: RecommendationItem) => void;
 }
-
-// Curated landscapes for beautiful image previews
-const DESTINATION_IMAGES: Record<string, string> = {
-  manali: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80',
-  goa: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80',
-  ranthambore: 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?auto=format&fit=crop&w=800&q=80',
-  udaipur: 'https://images.unsplash.com/photo-1615836245337-f5b9b2303f10?auto=format&fit=crop&w=800&q=80',
-  jaipur: 'https://images.unsplash.com/photo-1603262110263-fb010d6e75dc?auto=format&fit=crop&w=800&q=80',
-  munnar: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=800&q=80',
-  ladakh: 'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=800&q=80',
-  varanasi: 'https://images.unsplash.com/photo-1561359313-0639aad49ca6?auto=format&fit=crop&w=800&q=80',
-  shillong: 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=800&q=80',
-  alleppey: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80',
-  rishikesh: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
-  agra: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80',
-  ooty: 'https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=800&q=80',
-  darjeeling: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
-  hampi: 'https://images.unsplash.com/photo-1600100397608-f010f443a532?auto=format&fit=crop&w=800&q=80',
-  coorg: 'https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=800&q=80',
-};
-
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80';
 
 export const RecommendationCard: React.FC<RecommendationCardProps> = ({
   recommendation,
@@ -37,8 +16,8 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  const key = recommendation.name.toLowerCase().trim();
-  const imageUrl = DESTINATION_IMAGES[key] || DEFAULT_IMAGE;
+  const authenticImage = getDestinationImage(recommendation.name || recommendation.city);
+  const imageUrl = imgError ? getDestinationImage(recommendation.city || recommendation.state) : authenticImage;
 
   const budgetDisplay =
     recommendation.budget_min > 0 && recommendation.budget_max > 0
@@ -50,7 +29,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
       {/* Image Container with Match Badge */}
       <div className="relative w-full aspect-[16/9] overflow-hidden bg-slate-100">
         <img
-          src={imgError ? DEFAULT_IMAGE : imageUrl}
+          src={imageUrl}
           alt={recommendation.name}
           onError={() => setImgError(true)}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"

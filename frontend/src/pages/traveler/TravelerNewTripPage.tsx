@@ -58,6 +58,7 @@ import {
   TripLocation,
   WikivoyageSummary,
 } from '../../types/trip-planner';
+import { getDestinationImage, getActivityImage } from '../../utils/placeImages';
 
 // -------------------------------------------------------------
 // Inner Wizard Component (Consumes TripWizardContext)
@@ -421,7 +422,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
       travelersCount: travelersCount,
       budget: `₹${budgetMax.toLocaleString('en-IN')}`,
       status: 'Upcoming' as const,
-      imageUrl: activities[0]?.preview_image || 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=1000&q=80',
+      imageUrl: activities[0]?.preview_image || getDestinationImage(destination),
       itinerarySummary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and flight with ${selectedFlight?.airline || 'Express Carrier'}.`,
       tags: [travelStyle, `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`],
       stops: activities.map((a) => a.name).slice(0, 5),
@@ -581,13 +582,18 @@ const TravelerNewTripWizardContent: React.FC = () => {
                     key={dest}
                     type="button"
                     onClick={() => handleSelectFeaturedDest(dest)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                       destination.toLowerCase() === dest.toLowerCase()
                         ? 'bg-navy-950 text-white border-navy-950 shadow-xs'
-                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    {dest}
+                    <img
+                      src={getDestinationImage(dest)}
+                      alt={dest}
+                      className="w-4 h-4 rounded-full object-cover shrink-0 shadow-2xs"
+                    />
+                    <span>{dest}</span>
                   </button>
                 ))}
               </div>
