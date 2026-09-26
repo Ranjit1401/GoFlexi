@@ -1,5 +1,5 @@
 import uuid
-from typing import Tuple, Optional
+from typing import Tuple
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
@@ -79,32 +79,6 @@ def get_current_traveler(
             detail="Access forbidden: Traveler privileges required",
         )
     return current_user
-
-
-def get_optional_traveler(
-    auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
-    db: Session = Depends(get_db)
-) -> Optional[User]:
-    """
-    Extracts Bearer token if present. If valid traveler token, returns User.
-    If missing, expired, invalid, or non-traveler, returns None without raising an exception.
-    """
-    if not auth or not auth.credentials:
-        return None
-    try:
-        payload = decode_access_token(auth.credentials)
-        user_id_str: str = payload.get("sub")
-        if not user_id_str:
-            return None
-        user_id = uuid.UUID(user_id_str)
-        stmt = select(User).where(User.id == user_id)
-        user = db.execute(stmt).scalar_one_or_none()
-        if user and user.role == "traveler":
-            return user
-        return None
-    except Exception:
-        return None
-
 
 
 def get_current_agent(
