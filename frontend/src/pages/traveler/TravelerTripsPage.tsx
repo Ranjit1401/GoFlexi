@@ -13,7 +13,20 @@ export const TravelerTripsPage: React.FC = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const navigate = useNavigate();
 
-  const filteredTrips = mockTrips.filter((t) => t.status === activeTab);
+  const [allTrips] = useState<Trip[]>(() => {
+    try {
+      const stored = localStorage.getItem('goflexi_custom_trips');
+      if (stored) {
+        const custom: Trip[] = JSON.parse(stored);
+        return [...custom, ...mockTrips];
+      }
+    } catch {
+      // Ignore
+    }
+    return mockTrips;
+  });
+
+  const filteredTrips = allTrips.filter((t) => t.status === activeTab);
 
   return (
     <div className="space-y-8 pb-12">

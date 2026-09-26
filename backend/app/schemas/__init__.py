@@ -30,6 +30,17 @@ from app.schemas.travel_search import (
     HotelOption,
     HotelSearchResponse,
 )
+from app.schemas.trip_wizard import (
+    GeoResult,
+    POIResult,
+    POIDetail,
+    WeatherOutlook,
+    DateInsightResponse,
+    BudgetPreview,
+    WizardActivity,
+    TripRecommendationRequest,
+    TripRecommendationResponse,
+)
 
 __all__ = [
     "UserSafeResponse",
@@ -56,5 +67,15 @@ __all__ = [
     "HotelSearchRequest",
     "HotelOption",
     "HotelSearchResponse",
+    "GeoResult",
+    "POIResult",
+    "POIDetail",
+    "WeatherOutlook",
+    "DateInsightResponse",
+    "BudgetPreview",
+    "WizardActivity",
+    "TripRecommendationRequest",
+    "TripRecommendationResponse",
 ]
+
 

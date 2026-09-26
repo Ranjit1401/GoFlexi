@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     RAPIDAPI_KEY: str = ""
     RAPIDAPI_HOST: str = "sky-scrapper.p.rapidapi.com"
+    OPENTRIPMAP_API_KEY: str = ""
 
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

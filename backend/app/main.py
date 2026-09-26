@@ -1,7 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.routes import auth, users, agents, destinations, recommendations, copilot, travel_search
+from app.api.routes import (
+    auth,
+    users,
+    agents,
+    destinations,
+    recommendations,
+    copilot,
+    travel_search,
+    trip_wizard,
+)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -41,4 +50,5 @@ app.include_router(recommendations.router, prefix=settings.API_V1_STR)
 app.include_router(recommendations.explore_router, prefix=settings.API_V1_STR)
 app.include_router(copilot.router, prefix=settings.API_V1_STR)
 app.include_router(travel_search.router, prefix=settings.API_V1_STR)
+app.include_router(trip_wizard.router, prefix=settings.API_V1_STR)
 

@@ -30,6 +30,8 @@ export interface FlightSearchPanelProps {
   initialAdults?: number;
   onSelectFlight?: (flight: FlightOption) => void;
   selectedFlightId?: string;
+  budgetMax?: number;
+  travelStyle?: string;
 }
 
 export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
@@ -40,6 +42,8 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
   initialAdults = 1,
   onSelectFlight,
   selectedFlightId,
+  budgetMax,
+  travelStyle = 'Balanced',
 }) => {
   const { showToast } = useToast();
 
@@ -145,11 +149,44 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
         cabin_class: cabinClass,
         currency: 'INR',
       });
-      setFlights(response.results);
+      const rawResults = response.results;
+      const weights = {
+        Budget: { price: 0.6, quality: 0.1, stopBonus: 0.1 },
+        Balanced: { price: 0.35, quality: 0.35, stopBonus: 0.1 },
+        Premium: { price: 0.2, quality: 0.5, stopBonus: 0.15 },
+        Luxury: { price: 0.1, quality: 0.6, stopBonus: 0.2 },
+      }[travelStyle] || { price: 0.35, quality: 0.35, stopBonus: 0.1 };
+
+      const inBudget = budgetMax ? rawResults.filter((f) => f.price <= budgetMax) : rawResults;
+      const pool = inBudget.length > 0 ? inBudget : rawResults;
+
+      const prices = pool.map((f) => f.price);
+      const minP = prices.length ? Math.min(...prices) : 0;
+      const maxP = prices.length ? Math.max(...prices) : 1;
+      const range = maxP - minP || 1;
+
+      const scored = pool.map((f) => {
+        const normPrice = (f.price - minP) / range;
+        const quality = 0.7;
+        const stopBonus = f.stops === 0 ? weights.stopBonus : 0;
+        const score = weights.quality * quality - weights.price * normPrice + stopBonus;
+        return { flight: f, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      const ranked = scored.map((s) => s.flight);
+
+      setFlights(ranked);
+      if (ranked.length > 0 && !selectedFlightId && onSelectFlight) {
+        onSelectFlight(ranked[0]);
+      }
       if (response.results.length === 0) {
         showToast('info', 'No direct or connecting flights found for these dates.', 'Search Results');
       } else {
-        showToast('success', `Found ${response.results.length} flight options!`, 'Flights Available');
+        showToast(
+          'success',
+          `Found and ranked ${response.results.length} flight options for ${travelStyle} style!`,
+          'Flights Available'
+        );
       }
     } catch (err) {
       const parsed = parseApiError(err);
@@ -372,13 +409,17 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
       {!isLoading && flights !== null && flights.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>Sorted by price (lowest first)</span>
+            <span>
+              Ranked by <strong className="font-semibold text-slate-700">{travelStyle}</strong> style &amp; stops
+              {budgetMax ? ` • Budget target ₹${budgetMax.toLocaleString('en-IN')}` : ''}
+            </span>
             <span className="font-bold text-navy-900">{flights.length} flights available</span>
           </div>
 
           <div className="space-y-3">
-            {flights.map((flight) => {
+            {flights.map((flight, idx) => {
               const isSelected = selectedFlightId === flight.id;
+              const isRecommended = idx === 0;
               return (
                 <Card
                   key={flight.id}
@@ -388,9 +429,19 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
                   className={`transition-all ${
                     isSelected
                       ? 'border-brand-500 ring-2 ring-brand-500/20 bg-brand-50/20'
+                      : isRecommended
+                      ? 'border-amber-300/80 bg-amber-50/10 hover:border-amber-400'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
+                  {isRecommended && (
+                    <div className="mb-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
+                        <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
+                        Recommended for you • Top {travelStyle} Pick
+                      </span>
+                    </div>
+                  )}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     {/* Airline & Route Info */}
                     <div className="flex items-start sm:items-center gap-4">

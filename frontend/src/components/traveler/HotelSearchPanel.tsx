@@ -9,6 +9,7 @@ import {
   Check,
   AlertCircle,
   DoorOpen,
+  Sparkles,
 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -29,6 +30,8 @@ export interface HotelSearchPanelProps {
   initialRooms?: number;
   onSelectHotel?: (hotel: HotelOption) => void;
   selectedHotelId?: string;
+  budgetMax?: number;
+  travelStyle?: string;
 }
 
 export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
@@ -39,6 +42,8 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
   initialRooms = 1,
   onSelectHotel,
   selectedHotelId,
+  budgetMax,
+  travelStyle = 'Balanced',
 }) => {
   const { showToast } = useToast();
 
@@ -117,11 +122,45 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
         rooms: Math.max(1, rooms),
         currency: 'INR',
       });
-      setHotels(response.results);
+      const rawResults = response.results;
+      const weights = {
+        Budget: { price: 0.6, quality: 0.1 },
+        Balanced: { price: 0.35, quality: 0.35 },
+        Premium: { price: 0.2, quality: 0.5 },
+        Luxury: { price: 0.1, quality: 0.6 },
+      }[travelStyle] || { price: 0.35, quality: 0.35 };
+
+      const inBudget = budgetMax
+        ? rawResults.filter((h) => h.price_per_night <= budgetMax)
+        : rawResults;
+      const pool = inBudget.length > 0 ? inBudget : rawResults;
+
+      const prices = pool.map((h) => h.price_per_night);
+      const minP = prices.length ? Math.min(...prices) : 0;
+      const maxP = prices.length ? Math.max(...prices) : 1;
+      const range = maxP - minP || 1;
+
+      const scored = pool.map((h) => {
+        const normPrice = (h.price_per_night - minP) / range;
+        const normRating = (h.star_rating || 3.0) / 5.0;
+        const score = weights.quality * normRating - weights.price * normPrice;
+        return { hotel: h, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      const ranked = scored.map((s) => s.hotel);
+
+      setHotels(ranked);
+      if (ranked.length > 0 && !selectedHotelId && onSelectHotel) {
+        onSelectHotel(ranked[0]);
+      }
       if (response.results.length === 0) {
         showToast('info', 'No hotels available for these dates and criteria.', 'Search Results');
       } else {
-        showToast('success', `Found ${response.results.length} hotel options!`, 'Accommodations');
+        showToast(
+          'success',
+          `Found and ranked ${response.results.length} stays for ${travelStyle} style!`,
+          'Accommodations'
+        );
       }
     } catch (err) {
       const parsed = parseApiError(err);
@@ -278,13 +317,17 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
       {!isLoading && hotels !== null && hotels.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>Sorted by nightly rate (lowest first)</span>
+            <span>
+              Ranked by <strong className="font-semibold text-slate-700">{travelStyle}</strong> style &amp; rating
+              {budgetMax ? ` • Budget target ₹${budgetMax.toLocaleString('en-IN')}` : ''}
+            </span>
             <span className="font-bold text-navy-900">{hotels.length} stays available</span>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
-            {hotels.map((hotel) => {
+            {hotels.map((hotel, idx) => {
               const isSelected = selectedHotelId === hotel.id;
+              const isRecommended = idx === 0;
               return (
                 <Card
                   key={hotel.id}
@@ -294,6 +337,8 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
                   className={`overflow-hidden transition-all ${
                     isSelected
                       ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20'
+                      : isRecommended
+                      ? 'border-amber-300/80 bg-amber-50/10 hover:border-amber-400'
                       : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
@@ -323,6 +368,14 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
                     {/* Details */}
                     <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                       <div className="space-y-1">
+                        {isRecommended && (
+                          <div className="mb-1.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
+                              <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
+                              Recommended for you • Top {travelStyle} Stay
+                            </span>
+                          </div>
+                        )}
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-base font-bold text-navy-950">
                             {hotel.name}
