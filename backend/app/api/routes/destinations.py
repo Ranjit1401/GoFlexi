@@ -1,6 +1,6 @@
 import math
 import uuid
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, func, or_
@@ -156,6 +156,19 @@ def list_destinations(
         size=size,
         pages=pages
     )
+
+
+@router.get(
+    "/states/list",
+    response_model=List[str],
+    summary="Get list of all Indian states in destination knowledge base"
+)
+def get_destination_states(db: Session = Depends(get_db)):
+    """Returns sorted distinct state names available in the destination catalog."""
+    states = db.execute(
+        select(Destination.state).distinct().order_by(Destination.state.asc())
+    ).scalars().all()
+    return [s for s in states if s]
 
 
 @router.get(
