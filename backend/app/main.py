@@ -6,7 +6,7 @@ from app.api.routes import auth, users, agents, destinations, recommendations, c
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Voyara — Personalized Dynamic Tour Planning & Tour Operations Platform API",
+    description="GoFlexi — Personalized Dynamic Tour Planning & Tour Operations Platform API",
     docs_url="/docs",
     openapi_url="/openapi.json"
 )
@@ -38,6 +38,7 @@ app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(agents.router, prefix=settings.API_V1_STR)
 app.include_router(destinations.router, prefix=settings.API_V1_STR)
 app.include_router(recommendations.router, prefix=settings.API_V1_STR)
+app.include_router(recommendations.explore_router, prefix=settings.API_V1_STR)
 app.include_router(copilot.router, prefix=settings.API_V1_STR)
 app.include_router(travel_search.router, prefix=settings.API_V1_STR)
 

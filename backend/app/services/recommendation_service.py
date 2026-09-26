@@ -1,5 +1,5 @@
 """
-Voyara Personalized Destination Recommendation Engine (Phase 5)
+GoFlexi Personalized Destination Recommendation Engine (Phase 5)
 Deterministic, content-based recommendation service matching traveler preferences
 against the Destination Knowledge Base stored in Neon PostgreSQL.
 
@@ -265,14 +265,65 @@ def calculate_pace_score(user_pace: str, dest_paces: Set[str]) -> Tuple[float, O
     return 0.2, None
 
 
-def calculate_season_score(dest: Destination) -> float:
+def calculate_season_score(dest: Destination, travel_month: Optional[int] = None) -> float:
     """
     Calculates season score (0.0 to 1.0).
-    In Phase 5, the traveler profile does not yet record travel dates/months.
-    Per PART 14 specification:
-    Season score is neutral (0.5) until specific travel dates are added in a future phase.
+    If travel_month (1-12) is provided:
+      1.0 if month is among dest.best_months
+      0.7 if month is adjacent to a best month
+      0.3 if month is out of season
+    If no travel_month is provided, returns neutral 0.5 (Phase 5 behavior).
     """
-    return 0.5
+    if travel_month is None or not (1 <= travel_month <= 12):
+        return 0.5
+    dest_months = {m.month for m in dest.best_months}
+    if not dest_months:
+        return 0.5
+    if travel_month in dest_months:
+        return 1.0
+    if any(abs(m - travel_month) in (1, 11) for m in dest_months):
+        return 0.7
+    return 0.3
+
+
+def calculate_search_boost(dest: Destination, search_term: Optional[str]) -> Tuple[bool, float]:
+    """
+    Returns (matches_filter, boost_score).
+    If search_term is None or empty, returns (True, 0.0).
+    If search_term does not match in dest name, city, state, country, description, or tags,
+    returns (False, 0.0).
+    """
+    if not search_term or not search_term.strip():
+        return True, 0.0
+
+    term = search_term.strip().lower()
+    name_l = dest.name.lower()
+    city_l = dest.city.lower()
+    state_l = dest.state.lower()
+    country_l = dest.country.lower()
+    desc_l = dest.description.lower()
+    short_desc_l = dest.short_description.lower()
+    tags_l = [t.tag_value.lower() for t in dest.tags]
+
+    # Exact or high match checks
+    if term == name_l:
+        return True, 0.20
+    if term == city_l or term == state_l:
+        return True, 0.15
+    if name_l.startswith(term):
+        return True, 0.14
+    if term in name_l:
+        return True, 0.12
+    if term in city_l or term in state_l:
+        return True, 0.10
+    if any(term == t for t in tags_l):
+        return True, 0.08
+    if any(term in t for t in tags_l):
+        return True, 0.06
+    if term in short_desc_l or term in desc_l or term in country_l:
+        return True, 0.04
+
+    return False, 0.0
 
 
 # ==============================================================================
@@ -332,56 +383,155 @@ def get_personalized_recommendations(
     profile: Optional[TravelerProfile],
     destinations: List[Destination],
     limit: int = 10,
+    explore_search: Optional[str] = None,
+    explore_places: Optional[List[str]] = None,
+    explore_experiences: Optional[List[str]] = None,
+    explore_travel_style: Optional[str] = None,
+    explore_companions: Optional[List[str]] = None,
+    explore_transport: Optional[List[str]] = None,
+    explore_pace: Optional[str] = None,
+    explore_budget_range: Optional[str] = None,
+    explore_state: Optional[str] = None,
+    explore_travel_date: Optional[str] = None,
+    sort_by: Optional[str] = "recommended",
 ) -> RecommendationResponse:
     """
     Main entrypoint: executes candidate filtering, feature matching,
     weighted scoring, diversity capping, and explanation generation.
+    Supports both saved traveler profile and dynamic Explore filter parameters.
     """
+    now_utc = datetime.now()
     if not destinations:
-        return RecommendationResponse(recommendations=[], total=0, generated_at=datetime.utcnow())
+        return RecommendationResponse(recommendations=[], total=0, generated_at=now_utc)
 
-    # Extract user preferences
-    user_places: Set[str] = set()
-    user_experiences: Set[str] = set()
-    user_style: str = ""
-    user_companion: str = ""
-    user_transports: Set[str] = set()
-    user_pace: str = ""
-    user_budget_tier: Optional[int] = None
+    # Determine if any Explore filter is active
+    has_explore_filters = bool(
+        (explore_search and explore_search.strip())
+        or (explore_places and len(explore_places) > 0)
+        or (explore_experiences and len(explore_experiences) > 0)
+        or (explore_travel_style and explore_travel_style.strip())
+        or (explore_companions and len(explore_companions) > 0)
+        or (explore_transport and len(explore_transport) > 0)
+        or (explore_pace and explore_pace.strip())
+        or (explore_budget_range and explore_budget_range.strip())
+        or (explore_state and explore_state.strip())
+        or (explore_travel_date and explore_travel_date.strip())
+    )
+
+    # Parse travel month if travel_date is given
+    travel_month: Optional[int] = None
+    if explore_travel_date and explore_travel_date.strip():
+        try:
+            date_clean = explore_travel_date.strip()
+            if "-" in date_clean:
+                parts = date_clean.split("-")
+                if len(parts) >= 2:
+                    travel_month = int(parts[1])
+            else:
+                travel_month = int(date_clean)
+        except (ValueError, TypeError):
+            travel_month = None
+
+    # Extract user saved preferences
+    saved_places: Set[str] = set()
+    saved_experiences: Set[str] = set()
+    saved_style: str = ""
+    saved_companion: str = ""
+    saved_transports: Set[str] = set()
+    saved_pace: str = ""
+    saved_budget_tier: Optional[int] = None
 
     if profile:
         for interest in profile.interests:
             if interest.interest_type == "place":
-                user_places.add(interest.interest_value)
+                saved_places.add(interest.interest_value)
             elif interest.interest_type == "experience":
-                user_experiences.add(interest.interest_value)
+                saved_experiences.add(interest.interest_value)
 
-        user_style = profile.travel_style.strip() if profile.travel_style else ""
-        user_companion = profile.companions.strip() if profile.companions else ""
+        saved_style = profile.travel_style.strip() if profile.travel_style else ""
+        saved_companion = profile.companions.strip() if profile.companions else ""
         if profile.transport:
-            user_transports = {t.strip() for t in profile.transport.split(",") if t.strip()}
-        user_pace = profile.itinerary_pace.strip() if profile.itinerary_pace else ""
-        user_budget_tier = get_budget_tier(profile.budget_range)
+            saved_transports = {t.strip() for t in profile.transport.split(",") if t.strip()}
+        saved_pace = profile.itinerary_pace.strip() if profile.itinerary_pace else ""
+        saved_budget_tier = get_budget_tier(profile.budget_range)
 
-    # 1. Hard Compatibility Filtering
-    compatible_destinations = [
-        d for d in destinations
-        if is_destination_compatible(
-            dest=d,
-            user_transports=user_transports,
-            user_companion=user_companion,
-            user_style=user_style,
-            user_budget_tier=user_budget_tier,
-        )
-    ]
+    # 1. Candidate Filtering
+    if has_explore_filters:
+        candidates: List[Tuple[Destination, float]] = []
+        for dest in destinations:
+            # Search filter
+            matches_search, boost = calculate_search_boost(dest, explore_search)
+            if not matches_search:
+                continue
 
-    # Non-aggressive fallback: if hard filtering eliminated everything, fall back to all destinations
-    candidates = compatible_destinations if compatible_destinations else destinations
+            # State filter
+            if explore_state and explore_state.strip():
+                if dest.state.strip().lower() != explore_state.strip().lower():
+                    continue
+
+            # Place filter (if destination has place tags, must match at least one selected place)
+            if explore_places and len(explore_places) > 0:
+                dest_p = {t.tag_value.lower() for t in dest.tags if t.tag_type == "place"}
+                exp_p = {p.strip().lower() for p in explore_places if p.strip()}
+                if dest_p and not (dest_p & exp_p):
+                    continue
+
+            # Transport filter (if destination has transport metadata, must match at least one selected transport)
+            if explore_transport and len(explore_transport) > 0 and "Flexible" not in explore_transport:
+                dest_t = {t.transport_type.lower() for t in dest.transport_options}
+                exp_t = {t.strip().lower() for t in explore_transport if t.strip()}
+                if dest_t and not (dest_t & exp_t):
+                    continue
+
+            # Companion filter (if destination has companion metadata, must match at least one selected companion)
+            if explore_companions and len(explore_companions) > 0:
+                dest_c = {c.companion_type.lower() for c in dest.companions}
+                exp_c = {c.strip().lower() for c in explore_companions if c.strip()}
+                if dest_c and not (dest_c & exp_c):
+                    continue
+
+            candidates.append((dest, boost))
+
+        if not candidates:
+            return RecommendationResponse(recommendations=[], total=0, generated_at=now_utc)
+    else:
+        # Phase 5 Hard Compatibility Filtering
+        compatible_destinations = [
+            d for d in destinations
+            if is_destination_compatible(
+                dest=d,
+                user_transports=saved_transports,
+                user_companion=saved_companion,
+                user_style=saved_style,
+                user_budget_tier=saved_budget_tier,
+            )
+        ]
+        chosen = compatible_destinations if compatible_destinations else destinations
+        candidates = [(d, 0.0) for d in chosen]
 
     # 2. Score Candidates
     scored_items: List[Tuple[float, RecommendationItem]] = []
 
-    for dest in candidates:
+    # Prepare active explore sets
+    active_places_set = {p.strip() for p in explore_places if p.strip()} if explore_places else set()
+    active_exp_set = {e.strip() for e in explore_experiences if e.strip()} if explore_experiences else set()
+    active_style = explore_travel_style.strip() if explore_travel_style else saved_style
+    active_budget_tier = get_budget_tier(explore_budget_range) if explore_budget_range else saved_budget_tier
+    active_pace = explore_pace.strip() if explore_pace else saved_pace
+
+    active_transports: Set[str] = set()
+    if explore_transport and len(explore_transport) > 0:
+        active_transports = {t.strip() for t in explore_transport if t.strip()}
+    else:
+        active_transports = saved_transports
+
+    active_companions: List[str] = []
+    if explore_companions and len(explore_companions) > 0:
+        active_companions = [c.strip() for c in explore_companions if c.strip()]
+    elif saved_companion:
+        active_companions = [saved_companion]
+
+    for dest, search_boost in candidates:
         dest_places = {t.tag_value for t in dest.tags if t.tag_type == "place"}
         dest_experiences = {t.tag_value for t in dest.tags if t.tag_type == "experience"}
         dest_styles = {s.travel_style for s in dest.travel_styles}
@@ -389,17 +539,52 @@ def get_personalized_recommendations(
         dest_transports = {t.transport_type for t in dest.transport_options}
         dest_paces = {p.pace for p in dest.paces}
 
-        # Calculate individual feature scores and matches
-        place_score, matched_places = calculate_place_score(user_places, dest_places)
-        exp_score, matched_exp = calculate_experience_score(user_experiences, dest_experiences)
-        budget_score = calculate_budget_score(user_budget_tier, dest)
-        style_score, matched_style = calculate_travel_style_score(user_style, dest_styles)
-        comp_score, matched_comp = calculate_companion_score(user_companion, dest_companions)
-        trans_score, matched_trans = calculate_transport_score(user_transports, dest_transports)
-        pace_score, matched_pace = calculate_pace_score(user_pace, dest_paces)
-        season_score = calculate_season_score(dest)
+        # Place score: combine active Explore places with saved places
+        if active_places_set:
+            p_score_exp, matched_p_exp = calculate_place_score(active_places_set, dest_places)
+            if saved_places:
+                p_score_sav, matched_p_sav = calculate_place_score(saved_places, dest_places)
+                place_score = 0.75 * p_score_exp + 0.25 * p_score_sav
+                matched_places = list(dict.fromkeys(matched_p_exp + matched_p_sav))
+            else:
+                place_score = p_score_exp
+                matched_places = matched_p_exp
+        elif saved_places:
+            place_score, matched_places = calculate_place_score(saved_places, dest_places)
+        else:
+            place_score, matched_places = 0.5, []
 
-        # Weighted final score
+        # Experience score: combine active Explore experiences with saved experiences
+        if active_exp_set:
+            e_score_exp, matched_e_exp = calculate_experience_score(active_exp_set, dest_experiences)
+            if saved_experiences:
+                e_score_sav, matched_e_sav = calculate_experience_score(saved_experiences, dest_experiences)
+                exp_score = 0.75 * e_score_exp + 0.25 * e_score_sav
+                matched_exp = list(dict.fromkeys(matched_e_exp + matched_e_sav))
+            else:
+                exp_score = e_score_exp
+                matched_exp = matched_e_exp
+        elif saved_experiences:
+            exp_score, matched_exp = calculate_experience_score(saved_experiences, dest_experiences)
+        else:
+            exp_score, matched_exp = 0.5, []
+
+        budget_score = calculate_budget_score(active_budget_tier, dest)
+        style_score, matched_style = calculate_travel_style_score(active_style, dest_styles)
+
+        # Companion score
+        if active_companions:
+            c_scores = [calculate_companion_score(c, dest_companions) for c in active_companions]
+            c_scores.sort(key=lambda x: x[0], reverse=True)
+            comp_score, matched_comp = c_scores[0]
+        else:
+            comp_score, matched_comp = 0.5, None
+
+        trans_score, matched_trans = calculate_transport_score(active_transports, dest_transports)
+        pace_score, matched_pace = calculate_pace_score(active_pace, dest_paces)
+        season_score = calculate_season_score(dest, travel_month)
+
+        # Weighted final score using exact Phase 5 weights
         raw_score = (
             place_score * FEATURE_WEIGHTS["place"]
             + exp_score * FEATURE_WEIGHTS["experience"]
@@ -411,7 +596,9 @@ def get_personalized_recommendations(
             + season_score * FEATURE_WEIGHTS["season"]
         )
 
-        final_score = round(min(1.0, max(0.0, raw_score)), 4)
+        # Apply controlled search intent boost if explicit search was matched
+        boosted_score = raw_score + search_boost
+        final_score = round(min(1.0, max(0.0, boosted_score)), 4)
         match_percentage = min(100, max(0, int(round(final_score * 100))))
 
         # Collect matched preference tags for UI
@@ -456,44 +643,79 @@ def get_personalized_recommendations(
             budget_min=dest.budget_min,
             budget_max=dest.budget_max,
             popularity_score=dest.popularity_score,
+            travel_styles=[s.travel_style for s in dest.travel_styles],
+            companions=[c.companion_type for c in dest.companions],
+            transport_options=[t.transport_type for t in dest.transport_options],
+            places=list(dest_places),
+            experiences=list(dest_experiences),
+            paces=[p.pace for p in dest.paces],
+            best_months=sorted([m.month for m in dest.best_months]),
         )
 
         scored_items.append((final_score, rec_item))
 
-    # 3. Deterministic Sorting:
-    # Primary: final_score descending
-    # Secondary: popularity_score descending
-    # Tertiary: name ascending
-    scored_items.sort(
-        key=lambda x: (x[0], x[1].popularity_score, -ord(x[1].name[0])),
-        reverse=True
-    )
+    # 3. Sorting & Ranking
+    normalized_sort = (sort_by or "recommended").lower().strip()
 
-    # 4. Diversity Handling:
-    # Cap destinations from any single state to max 2 in top-K, to ensure geographical diversity
-    final_recommendations: List[RecommendationItem] = []
-    state_counts: Dict[str, int] = {}
-    overflow: List[RecommendationItem] = []
+    if normalized_sort == "match_score":
+        scored_items.sort(
+            key=lambda x: (x[0], x[1].popularity_score, -ord(x[1].name[0])),
+            reverse=True
+        )
+        final_recommendations = [item for _, item in scored_items][:limit]
+    elif normalized_sort == "popularity":
+        scored_items.sort(
+            key=lambda x: (x[1].popularity_score, x[0], -ord(x[1].name[0])),
+            reverse=True
+        )
+        final_recommendations = [item for _, item in scored_items][:limit]
+    elif normalized_sort == "budget_asc":
+        scored_items.sort(
+            key=lambda x: (x[1].budget_min, x[1].budget_max, -x[0]),
+            reverse=False
+        )
+        final_recommendations = [item for _, item in scored_items][:limit]
+    elif normalized_sort == "budget_desc":
+        scored_items.sort(
+            key=lambda x: (x[1].budget_max, x[1].budget_min, x[0]),
+            reverse=True
+        )
+        final_recommendations = [item for _, item in scored_items][:limit]
+    else:
+        # Default: "recommended"
+        scored_items.sort(
+            key=lambda x: (x[0], x[1].popularity_score, -ord(x[1].name[0])),
+            reverse=True
+        )
 
-    for _, item in scored_items:
-        current_state_count = state_counts.get(item.state, 0)
-        if current_state_count < 2:
-            final_recommendations.append(item)
-            state_counts[item.state] = current_state_count + 1
-            if len(final_recommendations) >= limit:
-                break
+        # Apply state diversity capping (max 2 per state) only when user hasn't explicitly
+        # filtered for a specific state or searched for a specific query
+        if not (explore_state and explore_state.strip()) and not (explore_search and explore_search.strip()):
+            final_recommendations = []
+            state_counts: Dict[str, int] = {}
+            overflow: List[RecommendationItem] = []
+
+            for _, item in scored_items:
+                current_state_count = state_counts.get(item.state, 0)
+                if current_state_count < 2:
+                    final_recommendations.append(item)
+                    state_counts[item.state] = current_state_count + 1
+                    if len(final_recommendations) >= limit:
+                        break
+                else:
+                    overflow.append(item)
+
+            if len(final_recommendations) < limit:
+                for item in overflow:
+                    final_recommendations.append(item)
+                    if len(final_recommendations) >= limit:
+                        break
         else:
-            overflow.append(item)
-
-    # If we haven't reached limit due to diversity capping, fill from overflow
-    if len(final_recommendations) < limit:
-        for item in overflow:
-            final_recommendations.append(item)
-            if len(final_recommendations) >= limit:
-                break
+            final_recommendations = [item for _, item in scored_items][:limit]
 
     return RecommendationResponse(
         recommendations=final_recommendations,
         total=len(final_recommendations),
-        generated_at=datetime.utcnow()
+        generated_at=now_utc
     )
+

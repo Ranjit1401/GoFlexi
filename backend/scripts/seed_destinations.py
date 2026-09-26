@@ -1,5 +1,5 @@
 """
-Voyara Destination Knowledge Base - Idempotent Seeding Script
+GoFlexi Destination Knowledge Base - Idempotent Seeding Script
 Populates ~100 curated, realistic Indian destinations with comprehensive metadata:
 - Places & Experiences (destination_tags)
 - Travel Styles (destination_travel_styles)

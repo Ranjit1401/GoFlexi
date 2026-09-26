@@ -89,14 +89,14 @@ export const AgentAuthPage: React.FC = () => {
 
   return (
     <AuthLayout
-      title={tab === 'login' ? 'Agent Operations Console' : 'Partner with Voyara'}
+      title={tab === 'login' ? 'Agent Operations Console' : 'Partner with GoFlexi'}
       subtitle={
         tab === 'login'
           ? 'Access your tour roster, active departures, bookings ledger, and vendor relations.'
           : 'Register your travel agency to access real-time dispatch and traveler management tools.'
       }
       image="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=80"
-      imageQuote="Managing 24 concurrent tour departures used to mean endless spreadsheets. Voyara brought all schedules, conflicts, and traveler requests into one clean cockpit."
+      imageQuote="Managing 24 concurrent tour departures used to mean endless spreadsheets. GoFlexi brought all schedules, conflicts, and traveler requests into one clean cockpit."
       imageAuthor="Alex Vance (Voyage Luxe)"
       roleBadge="Tour Operator Command"
     >

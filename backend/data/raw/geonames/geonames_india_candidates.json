@@ -1,0 +1,524 @@
+[
+  {
+    "geoname_id": 1262453,
+    "name": "Munnar",
+    "ascii_name": "Munnar",
+    "alternate_names": [
+      "Mūnnār",
+      "Munnar Town"
+    ],
+    "latitude": 10.0889,
+    "longitude": 77.0595,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Kerala",
+    "admin2": "Idukki",
+    "population": 32000,
+    "elevation": 1532
+  },
+  {
+    "geoname_id": 1263884,
+    "name": "Manali",
+    "ascii_name": "Manali",
+    "alternate_names": [
+      "Manāli"
+    ],
+    "latitude": 32.2396,
+    "longitude": 77.1887,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Himachal Pradesh",
+    "admin2": "Kullu",
+    "population": 8096,
+    "elevation": 2050
+  },
+  {
+    "geoname_id": 1269515,
+    "name": "Jaipur",
+    "ascii_name": "Jaipur",
+    "alternate_names": [
+      "Pink City",
+      "Jeypore"
+    ],
+    "latitude": 26.9196,
+    "longitude": 75.7878,
+    "feature_class": "P",
+    "feature_code": "PPLA",
+    "country_code": "IN",
+    "admin1": "Rajasthan",
+    "admin2": "Jaipur",
+    "population": 2711758,
+    "elevation": 431
+  },
+  {
+    "geoname_id": 1269934,
+    "name": "Hampi",
+    "ascii_name": "Hampi",
+    "alternate_names": [
+      "Vijayanagara Ruins",
+      "Hampe"
+    ],
+    "latitude": 15.335,
+    "longitude": 76.46,
+    "feature_class": "S",
+    "feature_code": "HSTS",
+    "country_code": "IN",
+    "admin1": "Karnataka",
+    "admin2": "Bellary",
+    "population": 2500,
+    "elevation": 467
+  },
+  {
+    "geoname_id": 1254360,
+    "name": "Ooty",
+    "ascii_name": "Ooty",
+    "alternate_names": [
+      "Udhagamandalam",
+      "Ootacamund"
+    ],
+    "latitude": 11.4102,
+    "longitude": 76.695,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Tamil Nadu",
+    "admin2": "Nilgiris",
+    "population": 88430,
+    "elevation": 2240
+  },
+  {
+    "geoname_id": 1272782,
+    "name": "Darjeeling",
+    "ascii_name": "Darjeeling",
+    "alternate_names": [
+      "Dorje Ling"
+    ],
+    "latitude": 27.036,
+    "longitude": 88.2627,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "West Bengal",
+    "admin2": "Darjeeling",
+    "population": 107530,
+    "elevation": 2042
+  },
+  {
+    "geoname_id": 1258338,
+    "name": "Rishikesh",
+    "ascii_name": "Rishikesh",
+    "alternate_names": [
+      "Hrishikesh"
+    ],
+    "latitude": 30.1033,
+    "longitude": 78.2948,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Uttarakhand",
+    "admin2": "Dehradun",
+    "population": 78820,
+    "elevation": 372
+  },
+  {
+    "geoname_id": 1253405,
+    "name": "Varanasi",
+    "ascii_name": "Varanasi",
+    "alternate_names": [
+      "Benares",
+      "Kashi"
+    ],
+    "latitude": 25.3176,
+    "longitude": 82.9739,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Uttar Pradesh",
+    "admin2": "Varanasi",
+    "population": 1198491,
+    "elevation": 81
+  },
+  {
+    "geoname_id": 1266207,
+    "name": "Leh",
+    "ascii_name": "Leh",
+    "alternate_names": [
+      "Ladakh Capital"
+    ],
+    "latitude": 34.1526,
+    "longitude": 77.5771,
+    "feature_class": "P",
+    "feature_code": "PPLA",
+    "country_code": "IN",
+    "admin1": "Ladakh",
+    "admin2": "Leh",
+    "population": 30870,
+    "elevation": 3524
+  },
+  {
+    "geoname_id": 1253997,
+    "name": "Udaipur",
+    "ascii_name": "Udaipur",
+    "alternate_names": [
+      "City of Lakes"
+    ],
+    "latitude": 24.5854,
+    "longitude": 73.7125,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Rajasthan",
+    "admin2": "Udaipur",
+    "population": 451100,
+    "elevation": 598
+  },
+  {
+    "geoname_id": 1278916,
+    "name": "Alappuzha",
+    "ascii_name": "Alappuzha",
+    "alternate_names": [
+      "Alleppey"
+    ],
+    "latitude": 9.4981,
+    "longitude": 76.3388,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Kerala",
+    "admin2": "Alappuzha",
+    "population": 174164,
+    "elevation": 4
+  },
+  {
+    "geoname_id": 1270588,
+    "name": "Gokarna",
+    "ascii_name": "Gokarna",
+    "alternate_names": [
+      "Gokarn"
+    ],
+    "latitude": 14.5479,
+    "longitude": 74.3188,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Karnataka",
+    "admin2": "Uttara Kannada",
+    "population": 25851,
+    "elevation": 10
+  },
+  {
+    "geoname_id": 1264359,
+    "name": "Madikeri",
+    "ascii_name": "Madikeri",
+    "alternate_names": [
+      "Coorg",
+      "Mercara"
+    ],
+    "latitude": 12.4244,
+    "longitude": 75.7382,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Karnataka",
+    "admin2": "Kodagu",
+    "population": 32286,
+    "elevation": 1150
+  },
+  {
+    "geoname_id": 1278710,
+    "name": "Amritsar",
+    "ascii_name": "Amritsar",
+    "alternate_names": [
+      "Ambarsar"
+    ],
+    "latitude": 31.634,
+    "longitude": 74.8723,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Punjab",
+    "admin2": "Amritsar",
+    "population": 1092145,
+    "elevation": 234
+  },
+  {
+    "geoname_id": 1259424,
+    "name": "Puducherry",
+    "ascii_name": "Puducherry",
+    "alternate_names": [
+      "Pondicherry",
+      "Pondy"
+    ],
+    "latitude": 11.9416,
+    "longitude": 79.8083,
+    "feature_class": "P",
+    "feature_code": "PPLA",
+    "country_code": "IN",
+    "admin1": "Puducherry",
+    "admin2": "Puducherry",
+    "population": 227411,
+    "elevation": 3
+  },
+  {
+    "geoname_id": 1256338,
+    "name": "Shimla",
+    "ascii_name": "Shimla",
+    "alternate_names": [
+      "Simla"
+    ],
+    "latitude": 31.1048,
+    "longitude": 77.1734,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "country_code": "IN",
+    "admin1": "Himachal Pradesh",
+    "admin2": "Shimla",
+    "population": 169578,
+    "elevation": 2206
+  },
+  {
+    "geoname_id": 1279259,
+    "name": "Agra",
+    "ascii_name": "Agra",
+    "alternate_names": [
+      "Akbarabad"
+    ],
+    "latitude": 27.1767,
+    "longitude": 78.0081,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Uttar Pradesh",
+    "admin2": "Agra",
+    "population": 1430055,
+    "elevation": 169
+  },
+  {
+    "geoname_id": 1269507,
+    "name": "Jaisalmer",
+    "ascii_name": "Jaisalmer",
+    "alternate_names": [
+      "Golden City"
+    ],
+    "latitude": 26.9157,
+    "longitude": 70.9083,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Rajasthan",
+    "admin2": "Jaisalmer",
+    "population": 65471,
+    "elevation": 225
+  },
+  {
+    "geoname_id": 1273874,
+    "name": "Kochi",
+    "ascii_name": "Kochi",
+    "alternate_names": [
+      "Cochin",
+      "Queen of the Arabian Sea"
+    ],
+    "latitude": 9.9312,
+    "longitude": 76.2673,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Kerala",
+    "admin2": "Ernakulam",
+    "population": 604696,
+    "elevation": 4
+  },
+  {
+    "geoname_id": 1256523,
+    "name": "Shillong",
+    "ascii_name": "Shillong",
+    "alternate_names": [
+      "Scotland of the East"
+    ],
+    "latitude": 25.5788,
+    "longitude": 91.8933,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "country_code": "IN",
+    "admin1": "Meghalaya",
+    "admin2": "East Khasi Hills",
+    "population": 143229,
+    "elevation": 1525
+  },
+  {
+    "geoname_id": 1270830,
+    "name": "Gangtok",
+    "ascii_name": "Gangtok",
+    "alternate_names": [
+      "Gangtok Capital"
+    ],
+    "latitude": 27.3389,
+    "longitude": 88.6065,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "country_code": "IN",
+    "admin1": "Sikkim",
+    "admin2": "East Sikkim",
+    "population": 100286,
+    "elevation": 1650
+  },
+  {
+    "geoname_id": 1263997,
+    "name": "Mahabalipuram",
+    "ascii_name": "Mahabalipuram",
+    "alternate_names": [
+      "Mamallapuram",
+      "Seven Pagodas"
+    ],
+    "latitude": 12.6269,
+    "longitude": 80.1927,
+    "feature_class": "S",
+    "feature_code": "HSTS",
+    "country_code": "IN",
+    "admin1": "Tamil Nadu",
+    "admin2": "Chengalpattu",
+    "population": 15172,
+    "elevation": 12
+  },
+  {
+    "geoname_id": 1266938,
+    "name": "Khajuraho",
+    "ascii_name": "Khajuraho",
+    "alternate_names": [
+      "Kharjuravahaka"
+    ],
+    "latitude": 24.8515,
+    "longitude": 79.9259,
+    "feature_class": "S",
+    "feature_code": "HSTS",
+    "country_code": "IN",
+    "admin1": "Madhya Pradesh",
+    "admin2": "Chhatarpur",
+    "population": 24481,
+    "elevation": 283
+  },
+  {
+    "geoname_id": 1267537,
+    "name": "Kaziranga",
+    "ascii_name": "Kaziranga",
+    "alternate_names": [
+      "Kaziranga National Park"
+    ],
+    "latitude": 26.6636,
+    "longitude": 93.3541,
+    "feature_class": "L",
+    "feature_code": "PRK",
+    "country_code": "IN",
+    "admin1": "Assam",
+    "admin2": "Golaghat",
+    "population": 5000,
+    "elevation": 80
+  },
+  {
+    "geoname_id": 1253272,
+    "name": "Varkala",
+    "ascii_name": "Varkala",
+    "alternate_names": [
+      "Papanasam Beach"
+    ],
+    "latitude": 8.7379,
+    "longitude": 76.7163,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Kerala",
+    "admin2": "Thiruvananthapuram",
+    "population": 42273,
+    "elevation": 24
+  },
+  {
+    "geoname_id": 1266858,
+    "name": "Kodaikanal",
+    "ascii_name": "Kodaikanal",
+    "alternate_names": [
+      "Princess of Hill Stations",
+      "Kodai"
+    ],
+    "latitude": 10.2381,
+    "longitude": 77.4892,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Tamil Nadu",
+    "admin2": "Dindigul",
+    "population": 36501,
+    "elevation": 2133
+  },
+  {
+    "geoname_id": 1267868,
+    "name": "Wayanad",
+    "ascii_name": "Wayanad",
+    "alternate_names": [
+      "Kalpetta",
+      "Land of Paddy Fields"
+    ],
+    "latitude": 11.605,
+    "longitude": 76.0828,
+    "feature_class": "P",
+    "feature_code": "PPLA2",
+    "country_code": "IN",
+    "admin1": "Kerala",
+    "admin2": "Wayanad",
+    "population": 31526,
+    "elevation": 780
+  },
+  {
+    "geoname_id": 1257121,
+    "name": "Ranthambore",
+    "ascii_name": "Ranthambore",
+    "alternate_names": [
+      "Sawai Madhopur Tiger Reserve"
+    ],
+    "latitude": 25.9964,
+    "longitude": 76.3686,
+    "feature_class": "L",
+    "feature_code": "PRK",
+    "country_code": "IN",
+    "admin1": "Rajasthan",
+    "admin2": "Sawai Madhopur",
+    "population": 121106,
+    "elevation": 480
+  },
+  {
+    "geoname_id": 1260206,
+    "name": "Panaji",
+    "ascii_name": "Panaji",
+    "alternate_names": [
+      "Panjim",
+      "Goa Capital"
+    ],
+    "latitude": 15.4909,
+    "longitude": 73.8278,
+    "feature_class": "P",
+    "feature_code": "PPLC",
+    "country_code": "IN",
+    "admin1": "Goa",
+    "admin2": "North Goa",
+    "population": 114405,
+    "elevation": 7
+  },
+  {
+    "geoname_id": 1266518,
+    "name": "Kumarakom",
+    "ascii_name": "Kumarakom",
+    "alternate_names": [
+      "Kumarakom Backwaters"
+    ],
+    "latitude": 9.6175,
+    "longitude": 76.4301,
+    "feature_class": "P",
+    "feature_code": "PPL",
+    "country_code": "IN",
+    "admin1": "Kerala",
+    "admin2": "Kottayam",
+    "population": 22400,
+    "elevation": 2
+  }
+]

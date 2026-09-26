@@ -13,7 +13,7 @@ export const PublicFooter: React.FC = () => {
               <div className="w-9 h-9 rounded-xl bg-brand-500 text-white flex items-center justify-center shadow-lg shadow-brand-500/30">
                 <Compass className="w-5 h-5 text-white" />
               </div>
-              <span className="text-2xl font-bold text-white tracking-tight">Voyara</span>
+              <span className="text-2xl font-bold text-white tracking-tight">GoFlexi</span>
             </Link>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               Personalized dynamic tour planning and tour operations platform. Tailored journeys that adapt seamlessly to real-world travel changes.
@@ -53,14 +53,14 @@ export const PublicFooter: React.FC = () => {
               <li><a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
               <li><a href="#terms" className="hover:text-white transition-colors">Terms of Service</a></li>
               <li><a href="#security" className="hover:text-white transition-colors">Security & Trust</a></li>
-              <li><a href="mailto:support@voyara.travel" className="hover:text-white transition-colors">Contact Support</a></li>
+              <li><a href="mailto:support@GoFlexi.travel" className="hover:text-white transition-colors">Contact Support</a></li>
             </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} Voyara Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GoFlexi Inc. All rights reserved.</p>
           <div className="flex items-center gap-1">
             <span>Crafted with</span>
             <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" />

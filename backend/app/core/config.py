@@ -11,12 +11,12 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
-    PROJECT_NAME: str = "Voyara API"
+    PROJECT_NAME: str = "GoFlexi API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
 
     DATABASE_URL: str = "postgresql+psycopg://YOUR_NEON_CONNECTION_STRING"
-    SECRET_KEY: str = "voyara-super-secret-key-phase1-production-jwt-token-security-32bytes"
+    SECRET_KEY: str = "GoFlexi-super-secret-key-phase1-production-jwt-token-security-32bytes"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 

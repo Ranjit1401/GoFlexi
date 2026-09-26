@@ -31,7 +31,7 @@ export const AiTripCopilotPage: React.FC = () => {
     {
       id: 'msg_welcome',
       sender: 'assistant',
-      text: "Welcome to Voyara AI Trip Co-Pilot! 🌍\n\nI'm your multi-agent travel planner. Tell me where you'd like to travel, your preferred duration, companions, or pacing, and I'll synthesize your Neon preferences into a complete interactive itinerary with 3D flight arcs and mapped waypoints.",
+      text: "Welcome to GoFlexi AI Trip Co-Pilot! 🌍\n\nI'm your multi-agent travel planner. Tell me where you'd like to travel, your preferred duration, companions, or pacing, and I'll synthesize your Neon preferences into a complete interactive itinerary with 3D flight arcs and mapped waypoints.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);

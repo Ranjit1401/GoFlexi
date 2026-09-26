@@ -1,6 +1,6 @@
-# Voyara — Personalized Dynamic Tour Planning & Tour Operations Platform
+# GoFlexi — Personalized Dynamic Tour Planning & Tour Operations Platform
 
-Voyara is a modern, full-stack travel platform designed to bridge the gap between personalized travel experiences and high-efficiency tour operations. It provides a specialized dual-portal experience for **Travelers** and **Tour Agents**, powered by a React frontend, FastAPI backend, and Neon Serverless PostgreSQL database.
+GoFlexi is a modern, full-stack travel platform designed to bridge the gap between personalized travel experiences and high-efficiency tour operations. It provides a specialized dual-portal experience for **Travelers** and **Tour Agents**, powered by a React frontend, FastAPI backend, and Neon Serverless PostgreSQL database.
 
 ---
 

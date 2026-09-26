@@ -1,1 +1,1 @@
-# Voyara Core Configuration and Security
+# GoFlexi Core Configuration and Security

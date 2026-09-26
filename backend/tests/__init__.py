@@ -1,1 +1,1 @@
-# Voyara Backend Test Suite
+# GoFlexi Backend Test Suite

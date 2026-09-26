@@ -24,7 +24,7 @@ export interface RecommendationResponse {
   generated_at: string;
 }
 
-const CACHE_KEY = 'voyara_recommendations_cache';
+const CACHE_KEY = 'GoFlexi_recommendations_cache';
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 let memoryCache: { data: RecommendationResponse; timestamp: number } | null = null;

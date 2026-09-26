@@ -32,7 +32,7 @@ export const PublicNavbar: React.FC = () => {
             <Compass className="w-5 h-5 text-brand-400 animate-spin-slow" />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-extrabold tracking-tight text-navy-950">Voyara</span>
+            <span className="text-2xl font-extrabold tracking-tight text-navy-950">GoFlexi</span>
           </div>
         </Link>
 

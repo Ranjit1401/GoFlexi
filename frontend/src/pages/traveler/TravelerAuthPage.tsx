@@ -43,7 +43,7 @@ export const TravelerAuthPage: React.FC = () => {
         showToast('error', regRes.error || 'Registration failed. Please try again.');
         return;
       }
-      showToast('success', 'Traveler account created successfully!', 'Welcome to Voyara');
+      showToast('success', 'Traveler account created successfully!', 'Welcome to GoFlexi');
       const loginRes = await loginTraveler(email.trim(), password);
       if (loginRes.success) {
         // A freshly registered traveler has no saved profile yet, so the
@@ -95,14 +95,14 @@ export const TravelerAuthPage: React.FC = () => {
 
   return (
     <AuthLayout
-      title={tab === 'login' ? 'Welcome Back, Traveler' : 'Join Voyara as a Traveler'}
+      title={tab === 'login' ? 'Welcome Back, Traveler' : 'Join GoFlexi as a Traveler'}
       subtitle={
         tab === 'login'
           ? 'Log in to view your tailored itineraries, upcoming bookings, and saved routes.'
           : 'Set up your traveler profile to start curating personalized, adaptive journeys.'
       }
       image="https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=1200&q=80"
-      imageQuote="Voyara understood my relaxed pacing preference and generated the dreamiest Goa getaway. When rain struck, it adapted our afternoon effortlessly!"
+      imageQuote="GoFlexi understood my relaxed pacing preference and generated the dreamiest Goa getaway. When rain struck, it adapted our afternoon effortlessly!"
       imageAuthor="Rahul Sharma"
       roleBadge="Traveler Portal"
     >

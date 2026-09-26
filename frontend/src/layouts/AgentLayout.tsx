@@ -53,7 +53,7 @@ export const AgentLayout: React.FC = () => {
               <Compass className="w-5 h-5 text-navy-950" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-extrabold text-white tracking-tight">Voyara</span>
+              <span className="text-xl font-extrabold text-white tracking-tight">GoFlexi</span>
               <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">Ops Command</span>
             </div>
           </NavLink>
@@ -147,7 +147,7 @@ export const AgentLayout: React.FC = () => {
                   <Compass className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xl font-bold text-white">Voyara</span>
+                  <span className="text-xl font-bold text-white">GoFlexi</span>
                   <span className="block text-[10px] text-amber-400">Agent Command</span>
                 </div>
               </div>

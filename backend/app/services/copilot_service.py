@@ -107,7 +107,7 @@ def generate_trip_plan(
 ) -> TripPlanResponse:
     """
     Generates a personalized, structured multi-agent trip plan using the
-    Voyara Destination Knowledge Base and saved Neon traveler preferences.
+    GoFlexi Destination Knowledge Base and saved Neon traveler preferences.
     """
     msg = request.message.strip()
     if not msg:

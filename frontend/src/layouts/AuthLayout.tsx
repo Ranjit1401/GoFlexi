@@ -36,7 +36,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
               <div className="w-9 h-9 rounded-xl bg-navy-900 text-white flex items-center justify-center shadow-md">
                 <Compass className="w-5 h-5 text-brand-400" />
               </div>
-              <span className="text-xl font-bold text-navy-950">Voyara</span>
+              <span className="text-xl font-bold text-navy-950">GoFlexi</span>
             </Link>
 
             <Link
@@ -72,7 +72,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               Protected prototype environment
             </span>
-            <span>Voyara v2.4</span>
+            <span>GoFlexi v2.4</span>
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
               </div>
               <div>
                 <div className="text-sm font-bold text-white">{imageAuthor}</div>
-                <div className="text-xs text-slate-300">Verified Voyara Explorer</div>
+                <div className="text-xs text-slate-300">Verified GoFlexi Explorer</div>
               </div>
             </div>
           </div>
