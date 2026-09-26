@@ -16,34 +16,12 @@ export interface RecommendationItem {
   budget_min: number;
   budget_max: number;
   popularity_score: number;
-  places?: string[];
-  experiences?: string[];
-  travel_styles?: string[];
-  companions?: string[];
-  transport_options?: string[];
-  paces?: string[];
-  best_months?: number[];
 }
 
 export interface RecommendationResponse {
   recommendations: RecommendationItem[];
   total: number;
   generated_at: string;
-}
-
-export interface ExploreFilterParams {
-  limit?: number;
-  search?: string;
-  travel_date?: string;
-  places?: string[];
-  experiences?: string[];
-  travel_style?: string;
-  companions?: string[];
-  transport?: string[];
-  pace?: string;
-  budget_range?: string;
-  state?: string;
-  sort_by?: 'recommended' | 'match_score' | 'popularity' | 'budget_asc' | 'budget_desc';
 }
 
 const CACHE_KEY = 'GoFlexi_recommendations_cache';
@@ -123,46 +101,4 @@ export const getRecommendations = async (
   const data = res.data as RecommendationResponse;
   setCachedRecommendations(data);
   return data;
-};
-
-export const getExploreRecommendations = async (
-  filters: ExploreFilterParams = {}
-): Promise<RecommendationResponse> => {
-  const queryParams: Record<string, string | number> = {};
-
-  if (filters.limit) queryParams.limit = filters.limit;
-  if (filters.search?.trim()) queryParams.search = filters.search.trim();
-  if (filters.travel_date) queryParams.travel_date = filters.travel_date;
-  if (filters.places && filters.places.length > 0) {
-    queryParams.places = filters.places.join(',');
-  }
-  if (filters.experiences && filters.experiences.length > 0) {
-    queryParams.experiences = filters.experiences.join(',');
-  }
-  if (filters.travel_style?.trim()) {
-    queryParams.travel_style = filters.travel_style.trim();
-  }
-  if (filters.companions && filters.companions.length > 0) {
-    queryParams.companions = filters.companions.join(',');
-  }
-  if (filters.transport && filters.transport.length > 0) {
-    queryParams.transport = filters.transport.join(',');
-  }
-  if (filters.pace?.trim()) {
-    queryParams.pace = filters.pace.trim();
-  }
-  if (filters.budget_range?.trim()) {
-    queryParams.budget_range = filters.budget_range.trim();
-  }
-  if (filters.state?.trim()) {
-    queryParams.state = filters.state.trim();
-  }
-  if (filters.sort_by?.trim()) {
-    queryParams.sort_by = filters.sort_by.trim();
-  }
-
-  const res = await api.get('/recommendations', {
-    params: queryParams,
-  });
-  return res.data as RecommendationResponse;
 };

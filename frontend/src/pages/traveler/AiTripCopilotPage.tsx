@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
   Sparkles,
   Bookmark,
@@ -20,9 +19,6 @@ import { AiTripAssistant } from '../../components/traveler/AiTripAssistant';
 
 export const AiTripCopilotPage: React.FC = () => {
   const { user } = useAuth();
-  const [searchParams] = useSearchParams();
-  const destParam = searchParams.get('destination');
-  const autoPlanTriggeredRef = useRef(false);
 
   const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<TripLocation | null>(null);
@@ -92,13 +88,6 @@ export const AiTripCopilotPage: React.FC = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (destParam && !autoPlanTriggeredRef.current) {
-      autoPlanTriggeredRef.current = true;
-      handleSendMessage(`Plan a complete trip itinerary for ${destParam}`);
-    }
-  }, [destParam]);
 
   const handleSelectLocation = (loc: TripLocation) => {
     setSelectedLocation(loc);

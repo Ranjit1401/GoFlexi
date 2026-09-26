@@ -40,7 +40,6 @@ FEATURE_WEIGHTS: Dict[str, float] = {
 BUDGET_TIERS: Dict[str, int] = {
     "under ₹10,000": 1,
     "under ₹10k": 1,
-    "under 10k": 1,
     "₹10,000 – ₹25,000": 2,
     "₹10,000 - ₹25,000": 2,
     "₹10k–₹25k": 2,
@@ -53,13 +52,8 @@ BUDGET_TIERS: Dict[str, int] = {
     "₹50,000 - ₹1,00,000": 4,
     "₹50k–₹1l": 4,
     "₹50k-₹1l": 4,
-    "₹50k–₹1l+": 4,
     "₹1,00,000+": 5,
-    "₹1,00,000": 5,
     "₹1l+": 5,
-    "₹1l": 5,
-    "1l+": 5,
-    "1l": 5,
 }
 
 STYLE_TIERS: Dict[str, int] = {
@@ -80,23 +74,7 @@ def get_budget_tier(budget_str: Optional[str]) -> Optional[int]:
     if not budget_str:
         return None
     cleaned = budget_str.strip().lower()
-    cleaned_plus = cleaned.replace(" ", "+")
-    if cleaned in BUDGET_TIERS:
-        return BUDGET_TIERS[cleaned]
-    if cleaned_plus in BUDGET_TIERS:
-        return BUDGET_TIERS[cleaned_plus]
-    # Substring heuristics
-    if "under" in cleaned and "10" in cleaned:
-        return 1
-    if "10" in cleaned and "25" in cleaned:
-        return 2
-    if "25" in cleaned and "50" in cleaned:
-        return 3
-    if ("50" in cleaned and "1" in cleaned) or ("50k" in cleaned and "1l" in cleaned):
-        return 4
-    if "1l" in cleaned or "1,00,000" in cleaned or "100000" in cleaned:
-        return 5
-    return None
+    return BUDGET_TIERS.get(cleaned)
 
 
 def get_destination_budget_tier(dest: Destination) -> int:

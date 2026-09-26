@@ -64,8 +64,3 @@ export const getDestination = async (
   const res = await api.get(`/destinations/${destinationId}`);
   return res.data as DestinationDetail;
 };
-
-export const getDestinationStates = async (): Promise<string[]> => {
-  const res = await api.get('/destinations/states/list');
-  return res.data as string[];
-};

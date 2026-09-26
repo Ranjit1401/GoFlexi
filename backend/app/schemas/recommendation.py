@@ -20,13 +20,6 @@ class RecommendationItem(BaseModel):
     budget_min: int = Field(default=0)
     budget_max: int = Field(default=0)
     popularity_score: float = Field(default=0.0)
-    travel_styles: List[str] = Field(default_factory=list, description="Travel style categories")
-    companions: List[str] = Field(default_factory=list, description="Supported companion types")
-    transport_options: List[str] = Field(default_factory=list, description="Supported transport types")
-    places: List[str] = Field(default_factory=list, description="Landscape/place tags")
-    experiences: List[str] = Field(default_factory=list, description="Experience activity tags")
-    paces: List[str] = Field(default_factory=list, description="Itinerary paces")
-    best_months: List[int] = Field(default_factory=list, description="Best months (1-12)")
 
     model_config = ConfigDict(from_attributes=True)
 
