@@ -26,7 +26,6 @@ class Settings(BaseSettings):
 
     RAPIDAPI_KEY: str = ""
     RAPIDAPI_HOST: str = "sky-scrapper.p.rapidapi.com"
-    OPENTRIPMAP_API_KEY: str = ""
 
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
@@ -40,7 +39,7 @@ class Settings(BaseSettings):
 
     # Phase 5B: Data Ingestion API Credentials
     GEONAMES_USERNAME: Optional[str] = None
-    OPENTRIPMAP_API_KEY: Optional[str] = None
+    OPENTRIPMAP_API_KEY: str = ""
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

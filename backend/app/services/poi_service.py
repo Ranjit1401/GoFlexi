@@ -109,7 +109,7 @@ async def search_activities(
     Classifies each item's popularity (Iconic / Popular / Hidden Gem).
     Falls back gracefully to curated points if API key is not configured or upstream fails.
     """
-    api_key = settings.OPENTRIPMAP_API_KEY.strip()
+    api_key = (settings.OPENTRIPMAP_API_KEY or "").strip()
 
     if api_key:
         try:
@@ -171,7 +171,7 @@ async def get_activity_detail(xid: str) -> POIDetail:
     Fetches detailed information for a single POI (extracts, description, image, address).
     Called on-demand when a user expands a card to conserve free quota.
     """
-    api_key = settings.OPENTRIPMAP_API_KEY.strip()
+    api_key = (settings.OPENTRIPMAP_API_KEY or "").strip()
 
     if api_key and not xid.startswith("otm-"):
         try:
