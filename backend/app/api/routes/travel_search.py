@@ -110,6 +110,9 @@ def _parse_flight_options(raw: Any, default_currency: str = "INR") -> List[Fligh
             flights_arr = group.get("flights") or []
             total_duration = int(group.get("total_duration") or 0)
             price_val = extract_price(group.get("price"))
+            # Skip unpriced / unavailable fare itineraries if others exist
+            if price_val <= 0:
+                continue
             booking_token = group.get("booking_token") or ""
 
             # Build leg details from first flight segment
@@ -502,31 +505,30 @@ def _pick_best_airport(suggestions: List[AirportSuggestion], query: str) -> Airp
     """Finds best matching airport suggestion for a query string."""
     q = query.strip().lower()
 
-    # 1. Exact skyId match (e.g. BOM, DEL, GOI)
+    # 1. Exact skyId match (e.g. BOM, DEL, GOI, IXC)
     for s in suggestions:
         if s.skyId.lower() == q:
             return s
 
-    # 2. Check if query contains skyId in parentheses e.g. "Goa Dabolim (GOI)"
+    # 2. Check if query contains skyId in parentheses e.g. "Chandigarh (IXC)"
     for s in suggestions:
         if f"({s.skyId.lower()})" in q or f" {s.skyId.lower()} " in f" {q} ":
             return s
 
-    # 3. Match by city equality (e.g. "Goa" -> Goa Dabolim GOI, India)
-    city_matches = [s for s in suggestions if s.city.lower() == q]
-    if city_matches:
-        airports = [s for s in city_matches if not s.skyId.startswith("I")]
-        return airports[0] if airports else city_matches[0]
-
-    # 4. Partial city match
+    # 3. Match by name or city equality or prefix (e.g. "Manali" -> "Manali, Himachal Pradesh")
     for s in suggestions:
-        if q in s.city.lower():
-            if not s.skyId.startswith("I"):
-                return s
+        s_name = s.name.lower()
+        s_city = s.city.lower()
+        if s_city == q or s_name.startswith(q) or q == s_name:
+            return s
 
-    # 5. Non-city aggregator fallback
-    airports = [s for s in suggestions if not s.skyId.startswith("I")]
-    return airports[0] if airports else suggestions[0]
+    # 4. Partial name or city match
+    for s in suggestions:
+        if q in s.name.lower() or q in s.city.lower():
+            return s
+
+    # 5. Default fallback to first suggestion
+    return suggestions[0]
 
 
 

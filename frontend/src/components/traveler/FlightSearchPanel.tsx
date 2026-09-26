@@ -67,6 +67,18 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
   const destDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync initial props when they change
+  const isInitialOriginMount = useRef(true);
+  useEffect(() => {
+    if (initialOrigin) {
+      setOrigin(initialOrigin);
+      if (!isInitialOriginMount.current) {
+        executeSearch(initialOrigin);
+      } else {
+        isInitialOriginMount.current = false;
+      }
+    }
+  }, [initialOrigin]);
+
   useEffect(() => {
     if (initialDestination) setDestination(initialDestination);
   }, [initialDestination]);
@@ -120,8 +132,9 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
     }
   };
 
-  const handleSearch = async () => {
-    if (!origin.trim()) {
+  const executeSearch = async (overrideOrigin?: string) => {
+    const searchOrigin = (typeof overrideOrigin === 'string' ? overrideOrigin : origin).trim();
+    if (!searchOrigin) {
       showToast('warning', 'Please enter a departure city or airport');
       return;
     }
@@ -141,7 +154,7 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
 
     try {
       const response = await searchFlights({
-        origin: origin.trim(),
+        origin: searchOrigin,
         destination: destination.trim(),
         depart_date: departDate,
         return_date: returnDate || null,
@@ -157,7 +170,7 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
         Luxury: { price: 0.1, quality: 0.6, stopBonus: 0.2 },
       }[travelStyle] || { price: 0.35, quality: 0.35, stopBonus: 0.1 };
 
-      const inBudget = budgetMax ? rawResults.filter((f) => f.price <= budgetMax) : rawResults;
+      const inBudget = budgetMax ? rawResults.filter((f) => f.price > 0 && f.price <= budgetMax) : rawResults;
       const pool = inBudget.length > 0 ? inBudget : rawResults;
 
       const prices = pool.map((f) => f.price);
@@ -204,11 +217,15 @@ export const FlightSearchPanel: React.FC<FlightSearchPanelProps> = ({
     }
   };
 
+  const handleSearch = () => {
+    executeSearch();
+  };
+
   const hasSearchedInitialRef = useRef(false);
   useEffect(() => {
     if (!hasSearchedInitialRef.current && origin.trim() && destination.trim() && departDate) {
       hasSearchedInitialRef.current = true;
-      handleSearch();
+      executeSearch();
     }
   }, [origin, destination, departDate]);
 

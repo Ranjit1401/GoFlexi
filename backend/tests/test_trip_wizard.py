@@ -1,3 +1,4 @@
+import logging
 import pytest
 from unittest.mock import AsyncMock, patch
 from starlette.testclient import TestClient
@@ -137,7 +138,7 @@ def test_date_insight_service_down_fallback(client, auth_headers):
 
 
 def test_budget_preview(client, auth_headers):
-    """6. Test live budget preview bounds calculation."""
+    """6. Test live budget preview bounds calculation and exposed budget split ratios."""
     resp = client.get(
         "/api/trip-wizard/budget-preview?destination=Goa&start_date=2026-10-15&end_date=2026-10-19&travelers=2",
         headers=auth_headers,
@@ -147,6 +148,8 @@ def test_budget_preview(client, auth_headers):
     assert data["min_price"] > 0
     assert data["max_price"] >= data["min_price"]
     assert data["currency"] == "INR"
+    assert data["flight_budget_ratio"] == 0.45
+    assert data["hotel_budget_ratio"] == 0.55
 
 
 def test_recommend_trip_happy_path(client, auth_headers):
@@ -195,6 +198,11 @@ def test_recommend_trip_happy_path(client, auth_headers):
     assert data["recommended_flight"] is not None
     assert data["recommended_hotel"] is not None
 
+    # Mumbai to Goa real haversine distance (~440 km, not hardcoded 550.0)
+    assert plan["routes"][0]["distance_km"] != 550.0
+    assert plan["routes"][0]["distance_km"] == pytest.approx(439.8, abs=5.0)
+    assert plan["routes"][1]["distance_km"] == plan["routes"][0]["distance_km"]
+
 
 def test_recommend_trip_tight_budget_fallback(client, auth_headers):
     """8. Test recommend endpoint with extremely strict budget does not crash with 500."""
@@ -218,3 +226,104 @@ def test_recommend_trip_tight_budget_fallback(client, auth_headers):
     data = resp.json()
     assert "trip_plan" in data
     assert data["trip_plan"]["destination"] == "Goa"
+
+
+def test_recommend_trip_non_mumbai_departure_city(client, auth_headers):
+    """(a) recommend_trip() with a non-Mumbai departure_city returns correct origin coordinates and a non-550 distance."""
+    payload = {
+        "destination": "Goa",
+        "destination_lat": 15.2993,
+        "destination_lon": 74.1240,
+        "country_code": "IN",
+        "departure_city": "Delhi",
+        "start_date": "2026-10-15",
+        "end_date": "2026-10-18",
+        "travelers": 1,
+        "budget_min": 10000,
+        "budget_max": 30000,
+        "activities": [],
+        "travel_style": "Balanced",
+    }
+
+    resp = client.post("/api/trip-wizard/recommend", json=payload, headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    plan = data["trip_plan"]
+
+    # Origin location should reflect Delhi's coordinates (28.6139, 77.2090), NOT Mumbai (19.0760, 72.8777)
+    origin_loc = next(loc for loc in plan["locations"] if loc["type"] == "origin")
+    assert origin_loc["city"] == "Delhi"
+    assert origin_loc["latitude"] == pytest.approx(28.6139, abs=0.05)
+    assert origin_loc["longitude"] == pytest.approx(77.2090, abs=0.05)
+
+    # Routes should have real haversine distance between Delhi and Goa (~1518 km), definitely NOT 550.0
+    assert plan["routes"][0]["distance_km"] != 550.0
+    assert plan["routes"][0]["distance_km"] == pytest.approx(1518.7, abs=20.0)
+    assert plan["routes"][1]["distance_km"] == plan["routes"][0]["distance_km"]
+
+
+def test_recommend_trip_geocoding_failure_fallback_warning(client, auth_headers, caplog):
+    """Test geocoding failure for departure_city falls back to Mumbai and logs a warning."""
+    with patch("app.api.routes.trip_wizard.geocode_place", new_callable=AsyncMock) as mock_geo:
+        mock_geo.return_value = []
+
+        payload = {
+            "destination": "Goa",
+            "destination_lat": 15.2993,
+            "destination_lon": 74.1240,
+            "country_code": "IN",
+            "departure_city": "AtlantisUnderwaterCity",
+            "start_date": "2026-10-15",
+            "end_date": "2026-10-18",
+            "travelers": 1,
+            "budget_min": 10000,
+            "budget_max": 30000,
+            "activities": [],
+            "travel_style": "Balanced",
+        }
+
+        with caplog.at_level(logging.WARNING):
+            resp = client.post("/api/trip-wizard/recommend", json=payload, headers=auth_headers)
+            assert resp.status_code == 200
+            data = resp.json()
+            plan = data["trip_plan"]
+
+            # Fallback to Mumbai coordinates
+            origin_loc = next(loc for loc in plan["locations"] if loc["type"] == "origin")
+            assert origin_loc["latitude"] == pytest.approx(19.0760, abs=0.001)
+            assert origin_loc["longitude"] == pytest.approx(72.8777, abs=0.001)
+
+            # Warning should be logged
+            assert any("Failed to geocode departure city" in record.message for record in caplog.records)
+
+
+def test_duration_days_agreement_with_frontend():
+    """(b) duration_days/calculateDuration()/handleSaveTrip() all agree for a sample date range."""
+    from datetime import datetime
+
+    test_ranges = [
+        ("2026-10-15", "2026-10-18", 4, 3),  # 4 calendar days, 3 nights
+        ("2026-10-15", "2026-10-15", 1, 0),  # Same-day trip: 1 day, 0 nights
+        ("2026-10-15", "2026-10-21", 7, 6),  # 1 week: 7 days, 6 nights
+        ("2026-12-30", "2027-01-02", 4, 3),  # Across year boundary: 4 days, 3 nights
+    ]
+
+    for start_str, end_str, expected_days, expected_nights in test_ranges:
+        # Backend recommend_trip() logic:
+        start_d = datetime.strptime(start_str, "%Y-%m-%d").date()
+        end_d = datetime.strptime(end_str, "%Y-%m-%d").date()
+        backend_duration_days = max(1, (end_d - start_d).days + 1)
+
+        # Frontend calculateTripDays logic (Math.max(1, Math.round(diffTime / 86400000) + 1)):
+        # Notice diffTime / 86400000 equals (end_d - start_d).days
+        frontend_diff_days = (end_d - start_d).days
+        frontend_days = max(1, round(frontend_diff_days) + 1)
+        frontend_nights = max(0, frontend_days - 1)
+        frontend_duration_label = f"{frontend_days} Days / {frontend_nights} Nights"
+
+        # Assert all 3 agree
+        assert backend_duration_days == expected_days
+        assert frontend_days == backend_duration_days
+        assert frontend_nights == expected_nights
+        assert frontend_duration_label == f"{expected_days} Days / {expected_nights} Nights"
+

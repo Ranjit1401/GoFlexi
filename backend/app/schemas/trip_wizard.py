@@ -62,6 +62,9 @@ class BudgetPreview(BaseModel):
     hotel_min: float
     hotel_max: float
     currency: str = "INR"
+    flight_budget_ratio: float = 0.45
+    hotel_budget_ratio: float = 0.55
+
 
 
 class WizardActivity(BaseModel):

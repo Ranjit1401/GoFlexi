@@ -59,6 +59,19 @@ import {
   WikivoyageSummary,
 } from '../../types/trip-planner';
 import { getDestinationImage, getActivityImage } from '../../utils/placeImages';
+import {
+  DEFAULT_FLIGHT_BUDGET_RATIO,
+  DEFAULT_HOTEL_BUDGET_RATIO,
+  calculateTripDays,
+  calculateTripDuration,
+} from '../../utils/tripDuration';
+
+export {
+  DEFAULT_FLIGHT_BUDGET_RATIO,
+  DEFAULT_HOTEL_BUDGET_RATIO,
+  calculateTripDays,
+  calculateTripDuration,
+};
 
 // -------------------------------------------------------------
 // Inner Wizard Component (Consumes TripWizardContext)
@@ -105,6 +118,9 @@ const TravelerNewTripWizardContent: React.FC = () => {
     setDateInsight,
     resetWizard,
   } = useTripWizard();
+
+  const flightBudgetRatio = budgetPreview?.flight_budget_ratio ?? DEFAULT_FLIGHT_BUDGET_RATIO;
+  const hotelBudgetRatio = budgetPreview?.hotel_budget_ratio ?? DEFAULT_HOTEL_BUDGET_RATIO;
 
   // Set default departure city from user profile if not customized
   useEffect(() => {
@@ -262,16 +278,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
   }, [step, destinationGeo?.latitude, destinationGeo?.longitude, startDate, endDate]);
 
   const calculateDuration = () => {
-    try {
-      const s = new Date(startDate);
-      const e = new Date(endDate);
-      const diffTime = e.getTime() - s.getTime();
-      const days = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
-      const nights = Math.max(0, days - 1);
-      return `${days} Days / ${nights} Nights`;
-    } catch {
-      return '4 Days / 3 Nights';
-    }
+    return calculateTripDuration(startDate, endDate).formatted;
   };
 
   const getWeatherIcon = (cond: string) => {
@@ -418,7 +425,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
       destination: destination,
       startDate: startDate,
       endDate: endDate,
-      days: Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1),
+      days: calculateTripDays(startDate, endDate),
       travelersCount: travelersCount,
       budget: `₹${budgetMax.toLocaleString('en-IN')}`,
       status: 'Upcoming' as const,
@@ -1135,7 +1142,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
               initialDepartDate={startDate}
               initialReturnDate={endDate}
               initialAdults={travelersCount}
-              budgetMax={Math.round(budgetMax * 0.6)}
+              budgetMax={Math.round(budgetMax * flightBudgetRatio)}
               travelStyle={travelStyle}
               selectedFlightId={selectedFlight?.id}
               onSelectFlight={(flight) => {
@@ -1163,7 +1170,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
                   initialCheckOut={endDate}
                   initialAdults={travelersCount}
                   initialRooms={Math.max(1, Math.ceil(travelersCount / 2))}
-                  budgetMax={Math.round(budgetMax * 0.4)}
+                  budgetMax={Math.round(budgetMax * hotelBudgetRatio)}
                   travelStyle={travelStyle}
                   selectedHotelId={selectedHotel?.id}
                   onSelectHotel={(hotel) => {

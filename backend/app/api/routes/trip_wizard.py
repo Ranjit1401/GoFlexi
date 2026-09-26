@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional, Literal
@@ -22,10 +23,15 @@ from app.schemas.trip_wizard import (
     TripRecommendationRequest,
     TripRecommendationResponse,
 )
-from app.services.geocoding_service import geocode_place
+from app.services.geocoding_service import geocode_place, haversine_km
 from app.services.poi_service import search_activities, get_activity_detail
 from app.services.date_insight_service import get_date_insights, parse_date
-from app.services.ranking_service import rank_flights, rank_hotels
+from app.services.ranking_service import (
+    rank_flights,
+    rank_hotels,
+    FLIGHT_BUDGET_RATIO,
+    HOTEL_BUDGET_RATIO,
+)
 from app.services.travel_search_service import travel_search_client
 from app.api.routes.travel_search import (
     _parse_airport_suggestions,
@@ -34,6 +40,8 @@ from app.api.routes.travel_search import (
     _parse_hotel_destinations,
     _parse_hotel_options,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/trip-wizard", tags=["Trip Wizard"])
 
@@ -210,6 +218,8 @@ async def get_budget_preview(
         hotel_min=hotel_min,
         hotel_max=hotel_max,
         currency="INR",
+        flight_budget_ratio=FLIGHT_BUDGET_RATIO,
+        hotel_budget_ratio=HOTEL_BUDGET_RATIO,
     )
 
 
@@ -298,13 +308,33 @@ async def recommend_trip(
     locations: List[TripLocationSchema] = []
     tree_nodes: List[TripPlanNodeSchema] = []
 
+    # Geocode departure city for origin coordinates
+    origin_lat = 19.0760
+    origin_lon = 72.8777
+    try:
+        geo_candidates = await geocode_place(request.departure_city)
+        if geo_candidates:
+            origin_lat = geo_candidates[0].latitude
+            origin_lon = geo_candidates[0].longitude
+        else:
+            logger.warning(
+                "Failed to geocode departure city '%s'. Falling back to Mumbai coordinates (19.0760, 72.8777).",
+                request.departure_city,
+            )
+    except Exception as e:
+        logger.warning(
+            "Exception while geocoding departure city '%s': %s. Falling back to Mumbai coordinates (19.0760, 72.8777).",
+            request.departure_city,
+            e,
+        )
+
     # Origin & Destination Locations
     origin_loc = TripLocationSchema(
         id=f"loc_orig_{uuid.uuid4().hex[:6]}",
         name=f"{request.departure_city} Hub",
         type="origin",
-        latitude=19.0760,
-        longitude=72.8777,
+        latitude=origin_lat,
+        longitude=origin_lon,
         city=request.departure_city,
         description=f"Departure hub in {request.departure_city}",
     )
@@ -462,6 +492,12 @@ async def recommend_trip(
     tree_nodes.append(ret_flight_node)
 
     # Flight Routes
+    flight_dist = haversine_km(
+        origin_loc.latitude,
+        origin_loc.longitude,
+        dest_loc.latitude,
+        dest_loc.longitude,
+    )
     routes: List[TripRouteSchema] = [
         TripRouteSchema(
             id=f"route_out_{uuid.uuid4().hex[:6]}",
@@ -471,7 +507,7 @@ async def recommend_trip(
             from_coords=(origin_loc.latitude, origin_loc.longitude),
             to_coords=(dest_loc.latitude, dest_loc.longitude),
             label=f"{request.departure_city} → {request.destination}",
-            distance_km=550.0,
+            distance_km=flight_dist,
         ),
         TripRouteSchema(
             id=f"route_ret_{uuid.uuid4().hex[:6]}",
@@ -481,7 +517,7 @@ async def recommend_trip(
             from_coords=(dest_loc.latitude, dest_loc.longitude),
             to_coords=(origin_loc.latitude, origin_loc.longitude),
             label=f"{request.destination} → {request.departure_city}",
-            distance_km=550.0,
+            distance_km=flight_dist,
         ),
     ]
 

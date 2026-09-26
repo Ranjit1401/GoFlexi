@@ -139,6 +139,8 @@ export interface BudgetPreview {
   hotel_min: number;
   hotel_max: number;
   currency: string;
+  flight_budget_ratio?: number;
+  hotel_budget_ratio?: number;
 }
 
 export interface WizardActivity {

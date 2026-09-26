@@ -1,7 +1,10 @@
+import logging
 import re
 from typing import Any, Dict, List, Optional
 import httpx
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 SERPAPI_SEARCH_URL = "https://serpapi.com/search.json"
 
@@ -261,12 +264,16 @@ DEMO_AIRPORTS = [
 
 def resolve_iata_code(query: str) -> str:
     """
-    Resolves any city name, airport name, or code into a standard 3-letter IATA code.
+    Resolves any city name, airport name, or code into a standard 3-letter IATA code or SerpApi entity ID.
     Prioritizes curated mapping over substring guesses.
     """
     q = (query or "").strip().lower()
     if not q:
         return "DEL"
+
+    # If it is a Google entity ID (e.g. /m/04vmp, /g/11bc...), return as-is because SerpApi accepts it
+    if q.startswith(("/m/", "/g/")):
+        return query.strip()
 
     # Check exact city/region match in lookup
     if q in IATA_LOOKUP:
@@ -983,21 +990,57 @@ class TravelSearchClient:
             try:
                 res = await self._request(
                     engine="google_flights_autocomplete",
-                    params={"q": query, "hl": "en"},
+                    params={"q": query, "hl": "en", "gl": "in"},
                 )
                 if isinstance(res, dict) and "suggestions" in res:
                     suggestions = res["suggestions"]
                     if suggestions and isinstance(suggestions, list):
                         formatted = []
                         for s in suggestions:
-                            code = s.get("id") or s.get("iata_code") or resolve_iata_code(s.get("name", query))
+                            # 1. Try to find a 3-letter IATA code from nested airports list
+                            airport_code = None
+                            airports_list = s.get("airports")
+                            if isinstance(airports_list, list) and airports_list:
+                                for apt in airports_list:
+                                    if (
+                                        isinstance(apt, dict)
+                                        and apt.get("id")
+                                        and len(apt["id"]) == 3
+                                        and apt["id"].isalpha()
+                                    ):
+                                        airport_code = apt["id"].upper()
+                                        break
+
+                            # 2. Extract city name
+                            city_name = s.get("city")
+                            if not city_name and isinstance(airports_list, list) and airports_list:
+                                first_apt = airports_list[0]
+                                if isinstance(first_apt, dict) and first_apt.get("city"):
+                                    city_name = first_apt["city"]
+                            if not city_name:
+                                raw_name = s.get("name") or query
+                                city_name = raw_name.split(",")[0].strip()
+
+                            # 3. Determine best airport code
+                            resolved = resolve_iata_code(s.get("name") or query)
+                            code = airport_code or s.get("iata_code")
+                            if not code:
+                                if resolved != "DEL":
+                                    code = resolved
+                                else:
+                                    code = s.get("id") or resolved
+
+                            subtitle = s.get("description") or s.get("country") or "India"
+                            title = city_name or s.get("name") or query.title()
+                            suggestion_title = s.get("name") or f"{query.title()} Airport"
+
                             formatted.append({
                                 "skyId": code,
                                 "entityId": code,
                                 "presentation": {
-                                    "title": s.get("city") or s.get("name") or query.title(),
-                                    "suggestionTitle": s.get("name") or f"{query.title()} Airport",
-                                    "subtitle": s.get("country") or "India",
+                                    "title": title,
+                                    "suggestionTitle": suggestion_title,
+                                    "subtitle": subtitle,
                                 },
                                 "navigation": {
                                     "entityId": code,
@@ -1005,14 +1048,14 @@ class TravelSearchClient:
                                     "relevantFlightParams": {
                                         "skyId": code,
                                         "entityId": code,
-                                        "localizedName": s.get("city") or query.title(),
+                                        "localizedName": city_name,
                                     },
                                 },
                             })
                         if formatted:
                             return {"status": True, "data": formatted}
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("SerpApi airport autocomplete failed: %s", exc)
 
         return self._get_demo_airports(query)
 
@@ -1071,8 +1114,13 @@ class TravelSearchClient:
                     and ("best_flights" in serp_res or "other_flights" in serp_res)
                 ):
                     return serp_res
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning(
+                    "SerpApi Google Flights failed: %s (origin=%s, dest=%s). Falling back to demo data.",
+                    exc,
+                    origin_iata,
+                    dest_iata,
+                )
 
         return self._get_demo_flights(origin_iata, dest_iata, date, adults)
 

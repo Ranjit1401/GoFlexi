@@ -1,3 +1,4 @@
+import math
 import httpx
 from typing import List, Optional
 from app.schemas.trip_wizard import GeoResult
@@ -71,3 +72,20 @@ async def geocode_place(name: str, count: int = 5) -> List[GeoResult]:
             country_code="IN"
         )
     ]
+
+
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance in kilometers between two points
+    on the earth (specified in decimal degrees) using the Haversine formula.
+    """
+    R = 6371.0  # Earth's radius in kilometers
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dlat / 2.0) ** 2
+        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0) ** 2
+    )
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    return round(R * c, 1)
+
