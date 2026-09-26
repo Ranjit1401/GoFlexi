@@ -73,6 +73,11 @@ PACE_TIERS: Dict[str, int] = {
 def get_budget_tier(budget_str: Optional[str]) -> Optional[int]:
     if not budget_str:
         return None
+    if budget_str.endswith(" "):
+        candidate = budget_str.rstrip() + "+"
+        res = BUDGET_TIERS.get(candidate.lower())
+        if res:
+            return res
     cleaned = budget_str.strip().lower()
     return BUDGET_TIERS.get(cleaned)
 

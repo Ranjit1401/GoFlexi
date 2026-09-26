@@ -1,12 +1,16 @@
-from typing import List, Union
+from typing import List, Union, Optional
+from pathlib import Path
 import json
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+_ENV_FILE = _BACKEND_DIR / ".env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(str(_ENV_FILE), ".env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -21,6 +25,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+    # Phase 5B: Data Ingestion API Credentials
+    GEONAMES_USERNAME: Optional[str] = None
+    OPENTRIPMAP_API_KEY: Optional[str] = None
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

@@ -47,6 +47,18 @@ class DestinationBestMonthSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class DestinationSourceSchema(BaseModel):
+    id: Optional[uuid.UUID] = None
+    source_name: str
+    source_url: Optional[str] = None
+    source_type: str
+    external_id: Optional[str] = None
+    verified_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+
 class DestinationListItemResponse(BaseModel):
     id: uuid.UUID
     name: str
@@ -64,6 +76,7 @@ class DestinationListItemResponse(BaseModel):
     transport_options: List[str] = Field(default_factory=list)
     paces: List[str] = Field(default_factory=list)
     best_months: List[int] = Field(default_factory=list)
+    sources: List[DestinationSourceSchema] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -92,6 +105,7 @@ class DestinationDetailResponse(BaseModel):
     transport_options: List[str] = Field(default_factory=list)
     paces: List[str] = Field(default_factory=list)
     best_months: List[int] = Field(default_factory=list)
+    sources: List[DestinationSourceSchema] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

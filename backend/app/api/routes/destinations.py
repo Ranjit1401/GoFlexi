@@ -20,6 +20,7 @@ from app.schemas.destination import (
     DestinationListItemResponse,
     DestinationDetailResponse,
     DestinationListResponse,
+    DestinationSourceSchema,
 )
 
 router = APIRouter(prefix="/destinations", tags=["Destinations"])
@@ -63,6 +64,7 @@ def serialize_destination_detail(dest: Destination) -> DestinationDetailResponse
     transports = [t.transport_type for t in dest.transport_options]
     paces = [p.pace for p in dest.paces]
     months = sorted([m.month for m in dest.best_months])
+    sources = [DestinationSourceSchema.model_validate(s) for s in getattr(dest, "sources", [])]
 
     return DestinationDetailResponse(
         id=dest.id,
@@ -87,6 +89,7 @@ def serialize_destination_detail(dest: Destination) -> DestinationDetailResponse
         transport_options=transports,
         paces=paces,
         best_months=months,
+        sources=sources,
     )
 
 
@@ -198,6 +201,7 @@ def get_destination(
             selectinload(Destination.transport_options),
             selectinload(Destination.paces),
             selectinload(Destination.best_months),
+            selectinload(Destination.sources),
         )
     )
     destination = db.execute(stmt).scalar_one_or_none()
