@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { useToast } from '../../context/ToastContext';
 import { PlusCircle, MapPin, Calendar, Users, ArrowRight, Clock, Star } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export const AgentToursPage: React.FC = () => {
   const { showToast } = useToast();
@@ -118,8 +119,13 @@ export const AgentToursPage: React.FC = () => {
               <div>
                 <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
                   <img
-                    src={pkg.imageUrl}
+                    src={getDestinationImage(pkg.destination) || pkg.imageUrl}
                     alt={pkg.title}
+                    onError={(e) => {
+                      if (pkg.imageUrl) {
+                        (e.currentTarget as HTMLImageElement).src = pkg.imageUrl;
+                      }
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 left-3">

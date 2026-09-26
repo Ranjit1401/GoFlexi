@@ -494,10 +494,15 @@ export const TravelerDashboardPage: React.FC = () => {
           maxWidth="lg"
         >
           <div className="space-y-5">
-            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative">
+            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative bg-slate-100">
               <img
-                src={selectedTrip.imageUrl}
+                src={getDestinationImage(selectedTrip.destination) || selectedTrip.imageUrl}
                 alt={selectedTrip.destination}
+                onError={(e) => {
+                  if (selectedTrip.imageUrl) {
+                    (e.currentTarget as HTMLImageElement).src = selectedTrip.imageUrl;
+                  }
+                }}
                 className="w-full h-full object-cover"
               />
               <Badge variant="success" className="absolute top-3 left-3 shadow">

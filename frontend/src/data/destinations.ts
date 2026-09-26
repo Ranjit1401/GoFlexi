@@ -81,7 +81,7 @@ export const mockDestinations: Destination[] = [
     name: 'Andaman',
     tagline: 'Turquoise lagoons, pristine coral reefs & tropical seclusion',
     description: 'Home to Asia’s top-rated Radhanagar Beach in Havelock, scuba diving through vibrant marine gardens, and exploring historic Ross Island colonial ruins.',
-    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/The_Coral_Reef_at_the_Andaman_Islands.jpg/500px-The_Coral_Reef_at_the_Andaman_Islands.jpg',
     tags: ['Islands', 'Beaches', 'Adventure', 'Relaxation'],
     estimatedBudget: '₹45,000 – ₹85,000',
     travelStyle: ['Premium', 'Luxury'],

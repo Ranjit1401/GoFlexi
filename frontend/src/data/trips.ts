@@ -86,7 +86,7 @@ export const mockTrips: Trip[] = [
     travelersCount: 2,
     budget: '₹58,000',
     status: 'Draft',
-    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/The_Coral_Reef_at_the_Andaman_Islands.jpg/500px-The_Coral_Reef_at_the_Andaman_Islands.jpg',
     itinerarySummary: 'PADI open water diving sessions, sunset sailing catamaran booking, and Neil Island quiet beach hopping.',
     tags: ['Islands', 'Beaches', 'Adventure'],
     stops: ['Port Blair', 'Havelock Island', 'Elephant Beach', 'Neil Island']

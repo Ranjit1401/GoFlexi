@@ -120,6 +120,6 @@ export const mockTourPackages: TourPackage[] = [
     bookedSlots: 9,
     startDate: '18 Jul 2026',
     endDate: '24 Jul 2026',
-    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80'
+    imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/The_Coral_Reef_at_the_Andaman_Islands.jpg/500px-The_Coral_Reef_at_the_Andaman_Islands.jpg'
   }
 ];

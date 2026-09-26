@@ -7,6 +7,7 @@ import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
 import { Trip } from '../../types/traveler';
 import { PlusCircle, Luggage, MapPin, Calendar, Users, CheckCircle2 } from 'lucide-react';
+import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerTripsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past' | 'Draft'>('Upcoming');
@@ -120,10 +121,15 @@ export const TravelerTripsPage: React.FC = () => {
           maxWidth="lg"
         >
           <div className="space-y-5">
-            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative">
+            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative bg-slate-100">
               <img
-                src={selectedTrip.imageUrl}
+                src={getDestinationImage(selectedTrip.destination) || selectedTrip.imageUrl}
                 alt={selectedTrip.destination}
+                onError={(e) => {
+                  if (selectedTrip.imageUrl) {
+                    (e.currentTarget as HTMLImageElement).src = selectedTrip.imageUrl;
+                  }
+                }}
                 className="w-full h-full object-cover"
               />
               <Badge variant="success" className="absolute top-3 left-3 shadow">
