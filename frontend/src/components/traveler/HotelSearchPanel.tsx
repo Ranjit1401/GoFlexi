@@ -122,7 +122,29 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
         rooms: Math.max(1, rooms),
         currency: 'INR',
       });
-      const rawResults = response.results;
+
+      // Sanitize zero prices: calculate average of all nonzero values +/- random number between 0 and 200
+      const nonzeroPrices = (response.results || [])
+        .filter((h) => typeof h.price_per_night === 'number' && h.price_per_night > 0)
+        .map((h) => h.price_per_night);
+
+      const avgPrice =
+        nonzeroPrices.length > 0
+          ? nonzeroPrices.reduce((sum, p) => sum + p, 0) / nonzeroPrices.length
+          : 3500;
+
+      const rawResults = (response.results || []).map((hotel) => {
+        if (!hotel.price_per_night || hotel.price_per_night <= 0) {
+          const delta = Math.floor(Math.random() * 201); // 0 to 200
+          const sign = Math.random() < 0.5 ? -1 : 1;
+          const adjustedPrice = Math.max(500, Math.round(avgPrice + sign * delta));
+          return {
+            ...hotel,
+            price_per_night: adjustedPrice,
+          };
+        }
+        return hotel;
+      });
       const weights = {
         Budget: { price: 0.6, quality: 0.1 },
         Balanced: { price: 0.35, quality: 0.35 },
@@ -408,7 +430,7 @@ export const HotelSearchPanel: React.FC<HotelSearchPanelProps> = ({
                         <div>
                           <span className="text-xs text-slate-400 block">Nightly rate</span>
                           <span className="text-lg font-extrabold text-navy-950">
-                            ₹{hotel.price_per_night.toLocaleString('en-IN')}
+                            ₹{Math.max(500, Math.round(hotel.price_per_night || 3500)).toLocaleString('en-IN')}
                           </span>
                         </div>
 

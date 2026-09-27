@@ -1,3 +1,4 @@
+import random
 import uuid
 import re
 from datetime import date
@@ -307,6 +308,35 @@ def _parse_hotel_destinations(raw: Any) -> List[Dict[str, str]]:
     return results
 
 
+def _sanitize_hotel_prices(
+    options: List[HotelOption], default_base_price: float = 3500.0
+) -> List[HotelOption]:
+    """
+    If any hotel has price_per_night <= 0, calculates the average of all other non-zero values,
+    and adds or subtracts a random number between 0 and 200 for each zero-price hotel.
+    """
+    if not options:
+        return options
+
+    nonzero_prices = [
+        h.price_per_night
+        for h in options
+        if h.price_per_night and h.price_per_night > 0
+    ]
+    avg_price = (
+        (sum(nonzero_prices) / len(nonzero_prices))
+        if nonzero_prices
+        else default_base_price
+    )
+
+    for h in options:
+        if not h.price_per_night or h.price_per_night <= 0:
+            offset = random.randint(-200, 200)
+            h.price_per_night = max(500.0, float(round(avg_price + offset, 2)))
+
+    return options
+
+
 def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelOption]:
     """
     Parses hotel search response into list of HotelOption schemas.
@@ -393,7 +423,7 @@ def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelO
                     booking_link=booking_link,
                 )
             )
-        return options
+        return _sanitize_hotel_prices(options)
 
     # ---------- Pre-shaped or mocked response ----------
     if "results" in raw and isinstance(raw["results"], list):
@@ -425,7 +455,7 @@ def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelO
                         booking_link=item.get("booking_link"),
                     )
                 )
-        return options
+        return _sanitize_hotel_prices(options)
 
     # ---------- Legacy demo/fallback: data -> hotels ----------
     data = raw.get("data") or raw
@@ -507,7 +537,7 @@ def _parse_hotel_options(raw: Any, default_currency: str = "INR") -> List[HotelO
                 )
             )
 
-    return options
+    return _sanitize_hotel_prices(options)
 
 
 def _pick_best_airport(suggestions: List[AirportSuggestion], query: str) -> AirportSuggestion:
