@@ -68,7 +68,7 @@ export const EnterPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-                  <span>Dynamic trip generator mockup</span>
+                  <span>Dynamic trip generator & planner</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
