@@ -6,21 +6,60 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+uvicorn*.log
 
-node_modules
-dist
-dist-ssr
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+*.egg-info/
+build/
+
+# Databases (local)
+*.db
+*.sqlite
+*.sqlite3
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
 *.local
+.vite/
+coverage/
+frontend/.env.local
+
+# Local scratch artifacts (screenshots, ad-hoc debug scripts)
+scratch/
+
+# Agent Manager worktrees
+.kilo/worktrees/
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 .agents/
-
