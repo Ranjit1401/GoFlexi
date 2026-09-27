@@ -746,6 +746,7 @@ async def post_search_trains(
             depart_date=request.depart_date,
             travelers=request.travelers,
             train_class=request.train_class,
+            only_running_today=request.only_running_today,
         )
         return response
     except Exception as exc:
@@ -766,6 +767,7 @@ async def get_search_trains(
     depart_date: date = Query(..., description="Date of journey (YYYY-MM-DD)"),
     travelers: int = Query(1, ge=1, le=10),
     train_class: Optional[str] = Query(None, description="Preferred class e.g. CC, 3A, 2A, SL"),
+    only_running_today: bool = Query(True, description="Filter only to trains operating on the selected date"),
     traveler: User = Depends(get_current_traveler),
 ):
     """
@@ -778,6 +780,7 @@ async def get_search_trains(
             depart_date=depart_date,
             travelers=travelers,
             train_class=train_class,
+            only_running_today=only_running_today,
         )
         return response
     except Exception as exc:

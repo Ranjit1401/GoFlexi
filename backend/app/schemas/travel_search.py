@@ -106,6 +106,14 @@ class TrainOption(BaseModel):
     train_type: str = "Express"
     booking_link: Optional[str] = None
     schedule: Optional[List[TrainScheduleStop]] = None
+    # Live day-specific timetable fields
+    journey_date: Optional[str] = None
+    journey_day: Optional[str] = None
+    arrival_date: Optional[str] = None
+    arrival_day: Optional[str] = None
+    days_offset: int = 0
+    runs_on_selected_day: bool = True
+    live_status_note: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -116,11 +124,18 @@ class TrainSearchRequest(BaseModel):
     depart_date: date = Field(..., description="Date of journey (YYYY-MM-DD)")
     travelers: int = Field(1, ge=1, le=10)
     train_class: Optional[str] = Field(None, description="Preferred class: 1A, 2A, 3A, SL, CC, EC, 2S")
+    only_running_today: bool = Field(True, description="Filter only to trains operating on the selected date")
 
 
 class TrainSearchResponse(BaseModel):
     query: TrainSearchRequest
     is_domestic_india: bool = True
+    source: str = "irctc_official_schedule"  # "rapidapi_live" or "irctc_official_schedule"
+    date_formatted: Optional[str] = None
+    day_name: Optional[str] = None
+    total_trains_on_route: int = 0
+    operating_today_count: int = 0
+    notice: Optional[str] = None
     results: List[TrainOption]
     count: int
 

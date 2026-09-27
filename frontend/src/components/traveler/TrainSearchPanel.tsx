@@ -1,19 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Train,
   Calendar,
   Users,
   Search,
-  ArrowRight,
   Clock,
   Sparkles,
   Check,
   AlertCircle,
-  ExternalLink,
-  ChevronDown,
-  Info,
   MapPin,
-  X,
+  CalendarCheck,
+  CalendarX,
+  SlidersHorizontal,
+  Info,
 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -24,7 +23,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { Modal } from '../ui/Modal';
 import { useToast } from '../../context/ToastContext';
 import { searchTrains, getTrainSchedule } from '../../services/travel-search';
-import { TrainOption, TrainScheduleStop } from '../../types/travel-search';
+import { TrainOption, TrainScheduleStop, TrainSearchResponse } from '../../types/travel-search';
 
 export interface TrainSearchPanelProps {
   initialOrigin?: string;
@@ -54,8 +53,10 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
   const [departDate, setDepartDate] = useState(initialDepartDate);
   const [adults, setAdults] = useState(initialAdults);
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
+  const [onlyRunningToday, setOnlyRunningToday] = useState<boolean>(true);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [searchResponse, setSearchResponse] = useState<TrainSearchResponse | null>(null);
   const [trains, setTrains] = useState<TrainOption[] | null>(null);
   const [isDomesticIndia, setIsDomesticIndia] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -82,11 +83,44 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
     if (initialAdults) setAdults(initialAdults);
   }, [initialAdults]);
 
+  // Formatter for readable Date & Day
+  const getFormattedDateDisplay = (dateString: string) => {
+    try {
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        return d.toLocaleDateString('en-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+      return dateString;
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getDayNameOnly = (dateString: string) => {
+    try {
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        return d.toLocaleDateString('en-IN', { weekday: 'long' });
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  };
+
   const executeTrainSearch = async (
     origQuery = origin,
     destQuery = destination,
     dateQuery = departDate,
-    paxQuery = adults
+    paxQuery = adults,
+    onlyToday = onlyRunningToday
   ) => {
     if (!origQuery.trim() || !destQuery.trim()) {
       showToast('error', 'Please provide both origin and destination', 'Validation');
@@ -102,12 +136,16 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
         depart_date: dateQuery,
         travelers: paxQuery,
         train_class: selectedClass !== 'ALL' ? selectedClass : undefined,
+        only_running_today: onlyToday,
       });
 
+      setSearchResponse(response);
       setIsDomesticIndia(response.is_domestic_india);
       if (!response.is_domestic_india) {
         setTrains([]);
-        setErrorMessage('Train journeys are only available within India. Please switch to Flight search for international destinations.');
+        setErrorMessage(
+          'Train journeys are only available within India. Please switch to Flight search for international destinations.'
+        );
       } else {
         setTrains(response.results);
       }
@@ -122,10 +160,10 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
     }
   };
 
-  // Initial search on mount
+  // Trigger search on mount and when origin, destination, departDate change
   useEffect(() => {
-    executeTrainSearch();
-  }, [origin, destination, departDate]);
+    executeTrainSearch(origin, destination, departDate, adults, onlyRunningToday);
+  }, [origin, destination, departDate, onlyRunningToday]);
 
   // Open schedule modal
   const handleOpenSchedule = async (train: TrainOption) => {
@@ -152,6 +190,8 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
     return train.available_classes.includes(selectedClass);
   });
 
+  const selectedDayName = getDayNameOnly(departDate);
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -162,21 +202,26 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold">Indian Railways (IRCTC) Timetable</h2>
+              <h2 className="text-base sm:text-lg font-bold">Indian Railways Live Timetable</h2>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                India Rail
+                Official Timetable
               </span>
             </div>
             <p className="text-xs text-amber-200/80 mt-0.5">
-              Live timetables, Vande Bharat expresses, and IRCTC station schedules.
+              Live date-specific schedules, Vande Bharat expresses, and day-of-week operation.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-amber-300 font-semibold">
-            {origin} → {destination}
-          </span>
+        <div className="flex flex-col sm:items-end gap-1 shrink-0">
+          <div className="text-xs text-amber-300 font-semibold flex items-center gap-1.5">
+            <span>{origin}</span>
+            <span>↔</span>
+            <span>{destination}</span>
+          </div>
+          <div className="text-[11px] text-amber-200/70 font-mono">
+            {getFormattedDateDisplay(departDate)}
+          </div>
         </div>
       </div>
 
@@ -226,6 +271,11 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                 className="pl-9 text-xs"
               />
             </div>
+            {selectedDayName && (
+              <span className="text-[10px] text-amber-700 font-bold block mt-1">
+                Day: {selectedDayName}
+              </span>
+            )}
           </div>
 
           <div className="flex items-end">
@@ -241,40 +291,69 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
           </div>
         </div>
 
-        {/* Travel Class Quick Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-            Class:
-          </span>
-          {[
-            { id: 'ALL', label: 'All Classes' },
-            { id: 'CC', label: 'AC Chair Car (CC)' },
-            { id: 'EC', label: 'Exec. Chair Car (EC)' },
-            { id: '3A', label: '3-Tier AC (3A)' },
-            { id: '2A', label: '2-Tier AC (2A)' },
-            { id: '1A', label: '1st AC (1A)' },
-            { id: 'SL', label: 'Sleeper (SL)' },
-            { id: '2S', label: 'Second Sitting (2S)' },
-          ].map((cls) => (
-            <button
-              key={cls.id}
-              type="button"
-              onClick={() => setSelectedClass(cls.id)}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all text-xs ${
-                selectedClass === cls.id
-                  ? 'bg-amber-600 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {cls.label}
-            </button>
-          ))}
+        {/* Travel Class Quick Filter Pills & Operating Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+              Class:
+            </span>
+            {[
+              { id: 'ALL', label: 'All Classes' },
+              { id: 'CC', label: 'AC Chair (CC)' },
+              { id: 'EC', label: 'Exec. Chair (EC)' },
+              { id: '3A', label: '3-Tier AC (3A)' },
+              { id: '2A', label: '2-Tier AC (2A)' },
+              { id: '1A', label: '1st AC (1A)' },
+              { id: 'SL', label: 'Sleeper (SL)' },
+              { id: '2S', label: 'Second Sitting (2S)' },
+            ].map((cls) => (
+              <button
+                key={cls.id}
+                type="button"
+                onClick={() => setSelectedClass(cls.id)}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all text-xs ${
+                  selectedClass === cls.id
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {cls.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Toggle: Only show trains running on this date */}
+          <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-700 font-medium">
+            <input
+              type="checkbox"
+              checked={onlyRunningToday}
+              onChange={(e) => setOnlyRunningToday(e.target.checked)}
+              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4 cursor-pointer"
+            />
+            <span>
+              Only show trains running on <strong>{selectedDayName || 'selected day'}</strong>
+            </span>
+          </label>
         </div>
       </Card>
 
+      {/* Notice Banner */}
+      {searchResponse?.notice && (
+        <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/90 text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
+          <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold">{searchResponse.notice}</p>
+            <p className="text-[11px] text-amber-800/80 mt-0.5">
+              Timetable and train schedules are actively synchronized with Indian Railway running days for{' '}
+              <strong>{getFormattedDateDisplay(departDate)}</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Results Section */}
       {isLoading ? (
-        <LoadingState message="Fetching Indian Railway schedules & timings..." />
+        <LoadingState message={`Fetching Indian Railway schedules for ${getFormattedDateDisplay(departDate)}...`} />
       ) : !isDomesticIndia ? (
         <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200 text-center space-y-2">
           <AlertCircle className="w-8 h-8 text-amber-600 mx-auto" />
@@ -288,28 +367,46 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
         </div>
       ) : filteredTrains.length === 0 ? (
         <EmptyState
-          title="No Trains Found for This Date"
-          description={`No direct trains scheduled between ${origin} and ${destination} on ${departDate}. Try an alternate date or adjust station names.`}
+          title={`No Trains Operating on ${selectedDayName || 'This Date'}`}
+          description={`No direct trains scheduled between ${origin} and ${destination} on ${getFormattedDateDisplay(
+            departDate
+          )}. Try turning off the "Only show trains running today" filter or pick an alternate journey date.`}
           action={
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => executeTrainSearch()}
-              className="rounded-xl"
-            >
-              Retry Search
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setOnlyRunningToday(false)}
+                className="rounded-xl text-xs"
+              >
+                Show All Days Trains
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => executeTrainSearch()}
+                className="rounded-xl text-xs bg-amber-600 hover:bg-amber-500 text-white"
+              >
+                Retry Search
+              </Button>
+            </div>
           }
         />
       ) : (
         <div className="space-y-3.5">
-          <div className="flex items-center justify-between text-xs text-slate-500 px-1">
-            <span>
-              Showing <strong>{filteredTrains.length}</strong> trains on {origin} ↔ {destination}
-            </span>
+          <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 px-1 gap-2">
+            <div>
+              Showing <strong>{filteredTrains.length}</strong> trains on {origin} ↔ {destination} for{' '}
+              <strong className="text-slate-800">{getFormattedDateDisplay(departDate)}</strong>
+              {searchResponse && searchResponse.operating_today_count !== undefined && (
+                <span className="text-amber-800 font-semibold ml-1.5">
+                  ({searchResponse.operating_today_count} operating on {selectedDayName})
+                </span>
+              )}
+            </div>
             <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              Live time schedule available
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              Live day schedule active
             </span>
           </div>
 
@@ -318,6 +415,8 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
               const isSelected = selectedTrainId === train.id;
               const isVandeBharat = train.train_type?.includes('Vande');
               const isRajdhani = train.train_type?.includes('Rajdhani');
+              const isTejas = train.train_type?.includes('Tejas');
+              const runsToday = train.runs_on_selected_day ?? true;
 
               return (
                 <div
@@ -325,7 +424,9 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                   className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 bg-white ${
                     isSelected
                       ? 'border-amber-500 ring-2 ring-amber-500/20 shadow-md bg-amber-50/20'
-                      : 'border-slate-200/90 hover:border-slate-300 shadow-xs hover:shadow-sm'
+                      : runsToday
+                      ? 'border-slate-200/90 hover:border-slate-300 shadow-xs hover:shadow-sm'
+                      : 'border-slate-200/60 bg-slate-50/50 opacity-80'
                   }`}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -338,37 +439,56 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                         <h3 className="text-sm font-bold text-slate-900">
                           {train.train_name}
                         </h3>
+
                         <Badge
-                          variant={isVandeBharat ? 'accent' : isRajdhani ? 'primary' : 'neutral'}
+                          variant={isVandeBharat ? 'accent' : isRajdhani || isTejas ? 'primary' : 'neutral'}
                           size="sm"
                           className={
                             isVandeBharat
                               ? 'bg-amber-100 text-amber-900 border-amber-300'
                               : isRajdhani
                               ? 'bg-red-100 text-red-900 border-red-300'
+                              : isTejas
+                              ? 'bg-orange-100 text-orange-900 border-orange-300'
                               : ''
                           }
                         >
                           {train.train_type}
                         </Badge>
+
+                        {/* Day-of-week Running Status Badge */}
+                        {runsToday ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                            <CalendarCheck className="w-3 h-3 text-emerald-600" />
+                            Runs on {selectedDayName || 'Today'}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">
+                            <CalendarX className="w-3 h-3 text-rose-600" />
+                            Does Not Run on {selectedDayName || 'Today'}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Timetable Flow */}
+                      {/* Timetable Flow with Dates and Days */}
                       <div className="flex items-center gap-3 sm:gap-6 pt-1">
                         <div>
                           <div className="text-base sm:text-lg font-extrabold text-slate-900">
                             {train.depart_time}
                           </div>
-                          <div className="text-[11px] font-semibold text-slate-500">
+                          <div className="text-[11px] font-semibold text-slate-600">
                             {train.origin_station_name} ({train.origin_station_code})
+                          </div>
+                          <div className="text-[10px] text-amber-800/80 font-medium">
+                            {train.journey_day ? `${train.journey_day.slice(0, 3)}, ${train.journey_date}` : 'Departs'}
                           </div>
                         </div>
 
-                        <div className="flex-1 max-w-[140px] text-center">
-                          <span className="text-[10px] text-slate-400 font-semibold block">
+                        <div className="flex-1 max-w-[160px] text-center">
+                          <span className="text-[10px] text-slate-500 font-bold block">
                             {train.duration_formatted}
                           </span>
-                          <div className="h-0.5 bg-amber-400 relative my-1">
+                          <div className="h-0.5 bg-amber-400 relative my-1.5">
                             <Train className="w-3.5 h-3.5 text-amber-600 absolute -top-1.5 left-1/2 -translate-x-1/2 bg-white rounded-full" />
                           </div>
                           <span className="text-[10px] text-slate-400 block truncate">
@@ -377,11 +497,21 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                         </div>
 
                         <div>
-                          <div className="text-base sm:text-lg font-extrabold text-slate-900">
-                            {train.arrive_time}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base sm:text-lg font-extrabold text-slate-900">
+                              {train.arrive_time}
+                            </span>
+                            {train.days_offset !== undefined && train.days_offset > 0 && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                                +{train.days_offset} Day
+                              </span>
+                            )}
                           </div>
-                          <div className="text-[11px] font-semibold text-slate-500">
+                          <div className="text-[11px] font-semibold text-slate-600">
                             {train.destination_station_name} ({train.destination_station_code})
+                          </div>
+                          <div className="text-[10px] text-amber-800/80 font-medium">
+                            {train.arrival_day ? `${train.arrival_day.slice(0, 3)}, ${train.arrival_date}` : 'Arrives'}
                           </div>
                         </div>
                       </div>
@@ -406,7 +536,7 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                         <div className="text-[10px] uppercase font-semibold text-slate-400">
                           Estimated Fare
                         </div>
-                        <div className="text-base sm:text-xl font-extrabold text-navy-950">
+                        <div className="text-base sm:text-xl font-extrabold text-slate-900">
                           ₹{train.price.toLocaleString('en-IN')}
                           <span className="text-xs text-slate-400 font-normal"> / person</span>
                         </div>
@@ -432,9 +562,12 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                           size="sm"
                           variant={isSelected ? 'secondary' : 'primary'}
                           onClick={() => onSelectTrain?.(train)}
+                          disabled={!runsToday}
                           className={`rounded-xl text-xs font-bold px-4 ${
                             isSelected
                               ? 'bg-amber-100 text-amber-950 border-amber-300'
+                              : !runsToday
+                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                               : 'bg-amber-600 hover:bg-amber-500 text-white shadow-sm'
                           }`}
                         >
@@ -443,6 +576,8 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                               <Check className="w-3.5 h-3.5 mr-1" />
                               Selected
                             </>
+                          ) : !runsToday ? (
+                            'Not Running Today'
                           ) : (
                             'Select Train'
                           )}
@@ -467,12 +602,15 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
           maxWidth="lg"
         >
           <div className="space-y-4">
-            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
+            <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <span className="font-bold">Total Duration:</span> {scheduleModalTrain.duration_formatted}
               </div>
               <div>
                 <span className="font-bold">Runs On:</span> {scheduleModalTrain.run_days.join(', ')}
+              </div>
+              <div>
+                <span className="font-bold">Journey Date:</span> {getFormattedDateDisplay(departDate)}
               </div>
             </div>
 
@@ -534,6 +672,7 @@ export const TrainSearchPanel: React.FC<TrainSearchPanelProps> = ({
                   onSelectTrain?.(scheduleModalTrain);
                   setScheduleModalTrain(null);
                 }}
+                disabled={scheduleModalTrain.runs_on_selected_day === false}
                 className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-bold"
               >
                 Choose This Train
