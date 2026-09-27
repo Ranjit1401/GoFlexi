@@ -190,3 +190,43 @@ def test_agent_notifications_and_mutations(client: TestClient, agent_headers: di
     assert del_resp.status_code == 200
     assert del_resp.json()["status"] == "dismissed"
 
+
+def test_agent_travelers_list_and_create(client: TestClient, agent_headers: dict):
+    # List travelers (derived from bookings)
+    resp = client.get("/api/agent/travelers", headers=agent_headers)
+    assert resp.status_code == 200
+    travelers = resp.json()
+    assert len(travelers) >= 3
+    assert "email" in travelers[0]
+    assert "trips_count" in travelers[0]
+
+    # Create / add traveler lead
+    new_traveler = {
+        "name": "Tanvi Deshmukh",
+        "email": "tanvi.deshmukh@example.com",
+        "phone": "+91 98230 45678",
+        "preferred_destination": "Meghalaya"
+    }
+    create_resp = client.post("/api/agent/travelers", json=new_traveler, headers=agent_headers)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    assert created["name"] == "Tanvi Deshmukh"
+    assert created["status"] == "Lead"
+
+    # Search traveler
+    search_resp = client.get("/api/agent/travelers?search=tanvi", headers=agent_headers)
+    assert search_resp.status_code == 200
+    search_results = search_resp.json()
+    assert any(t["email"] == "tanvi.deshmukh@example.com" for t in search_results)
+
+
+def test_agent_stats(client: TestClient, agent_headers: dict):
+    resp = client.get("/api/agent/stats", headers=agent_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "active_travelers" in data
+    assert "active_tours" in data
+    assert "upcoming_tours" in data
+    assert "pending_actions" in data
+
+

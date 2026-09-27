@@ -194,6 +194,13 @@ class NotificationResponse(NotificationBase):
 # ==========================================
 # 6. Agent Travelers Schemas
 # ==========================================
+class AgentTravelerCreate(BaseModel):
+    name: str = Field(..., description="Full name of traveler")
+    email: str = Field(..., description="Email address")
+    phone: Optional[str] = Field("+91 98000 00000", description="Contact phone")
+    preferred_destination: Optional[str] = Field("Goa", description="Preferred destination or interest")
+
+
 class AgentTravelerResponse(BaseModel):
     id: str
     name: str

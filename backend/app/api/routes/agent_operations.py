@@ -30,6 +30,7 @@ from app.schemas.agent_operations import (
     UpcomingTourSummaryResponse,
     NotificationCreate,
     NotificationResponse,
+    AgentTravelerCreate,
     AgentTravelerResponse,
     AgentStatsResponse,
 )
@@ -854,6 +855,15 @@ def get_agent_travelers(
         else:
             traveler_dict[key]["trips_count"] += 1
 
+    # Enrich with users accounts if present
+    if traveler_dict:
+        user_stmt = select(User).where(User.email.in_(traveler_dict.keys()))
+        users = db.execute(user_stmt).scalars().all()
+        for u in users:
+            k = u.email.lower().strip()
+            if k in traveler_dict:
+                traveler_dict[k]["name"] = u.name
+
     traveler_list = list(traveler_dict.values())
     if status and status.strip() and status.lower() != 'all':
         traveler_list = [t for t in traveler_list if t["status"].lower() == status.strip().lower()]
@@ -862,6 +872,44 @@ def get_agent_travelers(
         traveler_list = [t for t in traveler_list if q in t["name"].lower() or q in t["email"].lower()]
 
     return [AgentTravelerResponse(**t) for t in traveler_list]
+
+
+@router.post("/travelers", response_model=AgentTravelerResponse, status_code=status.HTTP_201_CREATED, summary="Add traveler / lead to agency roster")
+def create_agent_traveler(
+    payload: AgentTravelerCreate,
+    agent_tuple=Depends(get_current_agent),
+    db: Session = Depends(get_db)
+):
+    agent: Agent = agent_tuple[1]
+    email_key = payload.email.lower().strip()
+
+    # Create an inquiry/lead booking record so it persists into the database
+    booking_code = f"LD-{abs(hash(email_key + str(uuid.uuid4()))) % 100000:05d}"
+    lead_booking = Booking(
+        agent_id=agent.id,
+        booking_code=booking_code,
+        traveler_name=payload.name.strip(),
+        traveler_email=email_key,
+        tour_name=f"{payload.preferred_destination or 'Custom'} Discovery Journey",
+        service="Holiday Package",
+        departure_date="Flexible",
+        status="Pending",
+        amount="₹25,000"
+    )
+    db.add(lead_booking)
+    db.commit()
+
+    return AgentTravelerResponse(
+        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, email_key)),
+        name=payload.name.strip(),
+        email=email_key,
+        phone=payload.phone or "+91 98000 00000",
+        avatar_url=None,
+        trips_count=1,
+        status="Lead",
+        last_activity=f"Inquired about {payload.preferred_destination or 'Custom'} Journey",
+        preferred_destination=payload.preferred_destination or "Goa"
+    )
 
 
 # ==========================================
