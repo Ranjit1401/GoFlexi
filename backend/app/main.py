@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.core.config import settings
+
 from app.api.routes import (
     auth,
     users,
@@ -12,17 +14,26 @@ from app.api.routes import (
     trip_wizard,
     trips,
     agent_operations,
+    payments,
 )
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="GoFlexi — Personalized Dynamic Tour Planning & Tour Operations Platform API",
+    description=(
+        "GoFlexi — Personalized Dynamic Tour Planning "
+        "& Tour Operations Platform API"
+    ),
     docs_url="/docs",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
 )
 
-# Configure CORS Middleware
+
+# =========================================================
+# CORS
+# =========================================================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -32,18 +43,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Health endpoint
+
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
 @app.get(
     "/api/health",
     tags=["System"],
-    summary="Health check endpoint"
+    summary="Health check endpoint",
 )
 def health_check():
-    """Returns service health status."""
-    return {"status": "ok"}
+    return {
+        "status": "ok"
+    }
 
 
-# Mount API routers under /api
+# =========================================================
+# API ROUTERS
+# =========================================================
+
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(agents.router, prefix=settings.API_V1_STR)
@@ -55,4 +74,4 @@ app.include_router(travel_search.router, prefix=settings.API_V1_STR)
 app.include_router(trip_wizard.router, prefix=settings.API_V1_STR)
 app.include_router(trips.router, prefix=settings.API_V1_STR)
 app.include_router(agent_operations.router, prefix=settings.API_V1_STR)
-
+app.include_router(payments.router, prefix=settings.API_V1_STR)

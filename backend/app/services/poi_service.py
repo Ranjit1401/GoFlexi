@@ -159,6 +159,7 @@ CURATED_FALLBACK_POIS: Dict[str, List[Dict[str, Any]]] = {
         {"xid": "otm-jaipur-5", "name": "Panna Meena Ka Kund Stepwell", "kinds": "historic,architecture", "rate": "1h", "desc": "16th-century geometric stepwell with interlocking criss-cross staircases", "image": "https://images.unsplash.com/photo-1599661046827-dacff0c0f09a?auto=format&fit=crop&w=800&q=80"},
         {"xid": "otm-jaipur-6", "name": "Galta Ji Monkey Temple in Mountain Gorge", "kinds": "cultural,temples", "rate": "1", "desc": "Ancient pilgrimage site set between rocky granite cliffs with sacred natural springs", "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Vishram_Ghat.jpg/500px-Vishram_Ghat.jpg"},
         {"xid": "otm-jaipur-7", "name": "Anokhi Hand-Block Printing Museum", "kinds": "cultural,museums", "rate": "0", "desc": "Quiet heritage haveli celebrating centuries-old block carving and indigo dye traditions", "image": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80"},
+        {"xid": "otm-jaipur-8", "name": "City Palace", "kinds": "cultural,historic,palaces", "rate": "3h", "desc": "18th-century royal palace complex blending Rajput, Mughal, and European architecture", "image": "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80"},
     ],
 }
 
@@ -226,10 +227,22 @@ async def search_activities(
                     data = resp.json()
                     if isinstance(data, list) and data:
                         poi_results: List[POIResult] = []
+                        seen_names = set()
                         for item in data:
-                            name = item.get("name")
-                            if not name or not name.strip():
+                            name = (item.get("name") or "").strip()
+                            if not name or len(name) < 3:
                                 continue
+                            kinds_str = item.get("kinds", "") or ""
+                            lower_name = name.lower()
+                            # Filter out non-attractions (railway bridges, single-screen cinemas, burial sites)
+                            if any(k in kinds_str for k in ("other_theatres", "cinemas", "bridges", "burial_places", "cemeteries")):
+                                continue
+                            if any(w in lower_name for w in ("main line", "theatre", "theater", "smasana", "\ufffd", "railway")):
+                                continue
+                            if lower_name in seen_names:
+                                continue
+                            seen_names.add(lower_name)
+
                             point = item.get("point") or {}
                             poi_lat = float(point.get("lat") or lat)
                             poi_lon = float(point.get("lon") or lon)
@@ -254,17 +267,11 @@ async def search_activities(
                                 )
                             )
                         if poi_results:
-                            if len(poi_results) < 5:
-                                fallbacks = _get_fallback_pois(lat, lon)
-                                existing_names = {p.name.lower() for p in poi_results}
-                                for f in fallbacks:
-                                    if f.name.lower() not in existing_names:
-                                        poi_results.append(f)
                             return poi_results
         except Exception:
             pass
 
-    return _get_fallback_pois(lat, lon)
+    return []
 
 
 async def get_activity_detail(xid: str) -> POIDetail:

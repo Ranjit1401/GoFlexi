@@ -12,241 +12,424 @@ import {
   CheckCircle2,
   Sparkles,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Sun,
+  SunMedium,
+  Moon,
+  Trash2,
+  ListPlus
 } from 'lucide-react';
-import { TripPlan, TripPlanNode, TripLocation } from '../../types/trip-planner';
+import { TripPlan, TripPlanNode, TripLocation, DiscoveredPlace } from '../../types/trip-planner';
 
 interface TripPlanTreeProps {
+  destination?: string;
+  selectedPlaces?: DiscoveredPlace[];
   plan: TripPlan | null;
   selectedLocation: TripLocation | null;
   onSelectLocation: (location: TripLocation) => void;
+  onRemovePlace?: (place: DiscoveredPlace) => void;
+  onCreateItineraryRequest?: () => void;
   isLoading?: boolean;
 }
 
 export const TripPlanTree: React.FC<TripPlanTreeProps> = ({
+  destination = 'Choose destination',
+  selectedPlaces = [],
   plan,
   selectedLocation,
   onSelectLocation,
+  onRemovePlace,
+  onCreateItineraryRequest,
   isLoading = false,
 }) => {
-  // Collapsed state map for node IDs
-  const [collapsedNodes, setCollapsedNodes] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState<'places' | 'itinerary' | 'hotels' | 'transport'>(
+    plan ? 'itinerary' : 'places'
+  );
+  const [selectedDayFilter, setSelectedDayFilter] = useState<number | 'all'>('all');
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
 
-  const toggleNode = (nodeId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCollapsedNodes((prev) => ({
+  const toggleDayCollapse = (dayKey: string) => {
+    setCollapsedDays((prev) => ({
       ...prev,
-      [nodeId]: !prev[nodeId],
+      [dayKey]: !prev[dayKey],
     }));
   };
 
-  const getNodeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'flight':
-      case 'transport':
-        return <Plane className="w-4 h-4 text-sky-400" />;
-      case 'hotel':
-      case 'accommodation':
-        return <Building2 className="w-4 h-4 text-emerald-400" />;
-      case 'day':
-        return <Calendar className="w-4 h-4 text-amber-400" />;
-      case 'restaurant':
-        return <Utensils className="w-4 h-4 text-rose-400" />;
-      case 'destination':
-        return <MapPin className="w-4 h-4 text-indigo-400" />;
-      case 'activity':
+  const getTimeBlockIcon = (block?: string) => {
+    switch (block?.toLowerCase()) {
+      case 'morning':
+        return <Sun className="w-3.5 h-3.5 text-amber-400" />;
+      case 'afternoon':
+        return <SunMedium className="w-3.5 h-3.5 text-sky-400" />;
+      case 'evening':
+        return <Moon className="w-3.5 h-3.5 text-indigo-400" />;
       default:
-        return <Compass className="w-4 h-4 text-indigo-400" />;
+        return <Clock className="w-3.5 h-3.5 text-slate-400" />;
     }
   };
 
-  const renderNode = (node: TripPlanNode, depth: number = 0) => {
-    const hasChildren = Boolean(node.children && node.children.length > 0);
-    const isCollapsed = Boolean(collapsedNodes[node.id]);
-    const isLocationSelected =
-      node.location && selectedLocation && node.location.id === selectedLocation.id;
-
-    return (
-      <div key={node.id} className="relative group/node select-none">
-        {/* Connector vertical line for hierarchy */}
-        {depth > 0 && (
-          <div
-            className="absolute left-[-16px] top-0 bottom-0 w-[1.5px] bg-slate-800 group-hover/node:bg-slate-700 transition-colors"
-          />
-        )}
-
-        <div
-          onClick={() => {
-            if (node.location) {
-              onSelectLocation(node.location);
-            }
-          }}
-          className={`flex items-start gap-2.5 p-2 rounded-lg text-sm transition-all duration-150 cursor-pointer ${
-            isLocationSelected
-              ? 'bg-indigo-950/60 border border-indigo-500/50 shadow-sm shadow-indigo-500/10'
-              : 'hover:bg-slate-800/60 border border-transparent'
-          }`}
-          style={{ marginLeft: `${depth * 14}px` }}
-        >
-          {/* Collapse/Expand chevron or placeholder */}
-          <div className="pt-0.5 flex-shrink-0">
-            {hasChildren ? (
-              <button
-                type="button"
-                onClick={(e) => toggleNode(node.id, e)}
-                className="p-0.5 rounded hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                )}
-              </button>
-            ) : (
-              <div className="w-4 h-4 flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover/node:bg-indigo-400 transition-colors" />
-              </div>
-            )}
-          </div>
-
-          {/* Node Icon */}
-          <div className="pt-0.5 flex-shrink-0">
-            <div className="p-1 rounded bg-slate-800 border border-slate-700/80">
-              {getNodeIcon(node.type)}
-            </div>
-          </div>
-
-          {/* Node Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className={`font-medium truncate ${isLocationSelected ? 'text-indigo-200' : 'text-slate-200'}`}>
-                {node.title}
-              </span>
-
-              {/* Status Badge */}
-              {node.status && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-semibold border ${
-                    node.status === 'confirmed'
-                      ? 'bg-emerald-950/50 text-emerald-300 border-emerald-800/40'
-                      : 'bg-indigo-950/40 text-indigo-300 border-indigo-800/40'
-                  }`}
-                >
-                  {node.status}
-                </span>
-              )}
-            </div>
-
-            {node.subtitle && (
-              <p className="text-xs text-slate-400 truncate mt-0.5">
-                {node.subtitle}
-              </p>
-            )}
-
-            {(node.date || node.time) && (
-              <div className="flex items-center gap-3 text-[11px] text-slate-500 mt-1">
-                {node.date && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {node.date}
-                  </span>
-                )}
-                {node.time && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {node.time}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Child Nodes */}
-        {hasChildren && !isCollapsed && (
-          <div className="relative pl-3 mt-1 space-y-1">
-            {node.children!.map((child) => renderNode(child, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
+  const getTimeBlockBadge = (block?: string) => {
+    switch (block?.toLowerCase()) {
+      case 'morning':
+        return 'bg-amber-950/40 text-amber-300 border-amber-800/40';
+      case 'afternoon':
+        return 'bg-sky-950/40 text-sky-300 border-sky-800/40';
+      case 'evening':
+        return 'bg-indigo-950/40 text-indigo-300 border-indigo-800/40';
+      default:
+        return 'bg-slate-800 text-slate-400 border-slate-700';
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400 space-y-4">
+      <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400 space-y-4 bg-slate-900 border-r border-slate-800">
         <div className="relative">
           <div className="w-12 h-12 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin" />
           <Sparkles className="w-5 h-5 text-indigo-400 absolute inset-0 m-auto animate-pulse" />
         </div>
         <div>
-          <h4 className="text-sm font-semibold text-slate-200">Building Trip Plan Hierarchy</h4>
-          <p className="text-xs text-slate-500 mt-1 max-w-[200px]">
-            Synthesizing destination knowledge base & multi-agent route nodes...
+          <h4 className="text-sm font-semibold text-slate-200">Assembling GoFlexi Itinerary</h4>
+          <p className="text-xs text-slate-500 mt-1 max-w-[220px]">
+            Organizing your selected places and verifying 3D flight routes...
           </p>
         </div>
       </div>
     );
   }
 
-  if (!plan) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-6 text-center text-slate-400">
-        <div className="w-12 h-12 rounded-xl bg-slate-800/60 border border-slate-700/60 flex items-center justify-center mb-3 text-slate-500">
-          <Layers className="w-6 h-6" />
-        </div>
-        <h4 className="text-sm font-medium text-slate-300">No Trip Plan Generated</h4>
-        <p className="text-xs text-slate-500 mt-1 max-w-[220px]">
-          Describe your dream trip in the Co-Pilot panel to assemble an interactive itinerary tree.
-        </p>
-      </div>
-    );
-  }
+  // Extract day nodes, hotel nodes, and transport nodes if plan exists
+  const dayNodes = plan ? plan.nodes.filter((n) => n.type === 'day') : [];
+  const hotelNodes = plan ? plan.nodes.filter((n) => n.type === 'hotel' || n.type === 'accommodation') : [];
+  const transportNodes = plan ? plan.nodes.filter((n) => n.type === 'flight' || n.type === 'transport') : [];
+
+  const visibleDays = selectedDayFilter === 'all'
+    ? dayNodes
+    : dayNodes.filter((_, idx) => idx + 1 === selectedDayFilter);
+
+  const displayDestination = plan?.destination || destination || 'Choose destination';
 
   return (
-    <div className="h-full flex flex-col bg-slate-900 border-r border-slate-800">
-      {/* Header Summary */}
-      <div className="p-4 border-b border-slate-800 bg-slate-900/90 backdrop-blur">
-        <div className="flex items-center gap-2 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>Structured Trip Hierarchy</span>
-        </div>
-        <h3 className="font-semibold text-slate-100 text-base leading-tight truncate">
-          {plan.title}
-        </h3>
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1.5">
-          <span className="font-medium text-slate-300">{plan.origin}</span>
-          <ArrowRight className="w-3 h-3 text-slate-500" />
-          <span className="font-medium text-indigo-300">{plan.destination}</span>
-          <span className="mx-1 text-slate-600">•</span>
-          <span>{plan.duration_days} Days</span>
+    <div className="h-full flex flex-col bg-slate-900 border-r border-slate-800 select-none">
+      {/* Panel Top Header */}
+      <div className="p-3.5 border-b border-slate-800 bg-slate-900/95 backdrop-blur flex-shrink-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-white tracking-wide uppercase">
+            <Layers className="w-3.5 h-3.5 text-indigo-400" />
+            <span>GoFlexi Trip Plan</span>
+          </div>
+
+          <div className="text-[11px] font-semibold text-indigo-400 px-2 py-0.5 rounded bg-indigo-950/60 border border-indigo-800/40">
+            {displayDestination}
+          </div>
         </div>
 
-        {/* Quick Meta Pills */}
-        <div className="flex flex-wrap gap-1.5 mt-2.5">
-          {plan.travel_style && (
-            <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-              {plan.travel_style}
-            </span>
+        {/* View Mode Tabs */}
+        <div className="flex items-center gap-1 mt-2.5 bg-slate-950/60 p-1 rounded-xl border border-slate-800/80">
+          <button
+            type="button"
+            onClick={() => setActiveTab('places')}
+            className={`flex-1 py-1 rounded-lg text-[11px] font-medium transition-colors text-center ${
+              activeTab === 'places'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Selected ({selectedPlaces.length})
+          </button>
+
+          {plan && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('itinerary')}
+              className={`flex-1 py-1 rounded-lg text-[11px] font-medium transition-colors text-center ${
+                activeTab === 'itinerary'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Itinerary
+            </button>
           )}
-          {plan.estimated_budget && (
-            <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-800/40">
-              {plan.estimated_budget}
-            </span>
+
+          {plan && hotelNodes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('hotels')}
+              className={`flex-1 py-1 rounded-lg text-[11px] font-medium transition-colors text-center ${
+                activeTab === 'hotels'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Stays
+            </button>
+          )}
+
+          {plan && transportNodes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('transport')}
+              className={`flex-1 py-1 rounded-lg text-[11px] font-medium transition-colors text-center ${
+                activeTab === 'transport'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Transit
+            </button>
           )}
         </div>
       </div>
 
-      {/* Scrollable Tree View */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
-        {plan.nodes.map((node) => renderNode(node, 0))}
-      </div>
+      {/* Tab 1: Selected Places List (Section 11) */}
+      {activeTab === 'places' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="p-3 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+            <span className="font-semibold text-slate-300 uppercase tracking-wider text-[10px]">
+              Selected Places
+            </span>
+            <span className="text-[11px] text-slate-500">
+              {selectedPlaces.length} added
+            </span>
+          </div>
 
-      {/* Tree Footer / Quick stats */}
-      <div className="p-3 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between text-xs text-slate-500">
-        <span>{plan.locations.length} Waypoints mapped</span>
-        <span>{plan.routes.length} Flight corridors</span>
-      </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+            {selectedPlaces.length === 0 ? (
+              <div className="h-48 flex flex-col items-center justify-center text-center p-4 text-slate-500">
+                <Compass className="w-8 h-8 text-slate-600 mb-2" />
+                <p className="text-xs font-medium text-slate-400">No places selected yet.</p>
+                <p className="text-[11px] text-slate-500 mt-1 max-w-[200px]">
+                  Places you add to your trip from the assistant will appear here.
+                </p>
+              </div>
+            ) : (
+              selectedPlaces.map((place, idx) => {
+                const isSelected = selectedLocation?.name.toLowerCase() === place.name.toLowerCase();
+                return (
+                  <div
+                    key={idx}
+                    onClick={() =>
+                      onSelectLocation({
+                        id: place.poi_id || `loc_${idx}`,
+                        name: place.name,
+                        type: 'activity',
+                        latitude: place.latitude,
+                        longitude: place.longitude,
+                        description: place.description,
+                        preview_image: place.image_url
+                      })
+                    }
+                    className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                      isSelected
+                        ? 'bg-indigo-950/70 border-indigo-500 text-white shadow-md'
+                        : 'bg-slate-800/70 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                        <MapPin className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-xs text-white truncate">
+                          {place.name}
+                        </div>
+                        {place.description && (
+                          <div className="text-[10px] text-slate-400 line-clamp-1">
+                            {place.description}
+                          </div>
+                        )}
+                        <div className="text-[9px] text-slate-500 font-mono mt-0.5">
+                          {place.latitude && place.longitude ? (
+                            <span>{place.latitude.toFixed(2)}°N, {place.longitude.toFixed(2)}°E</span>
+                          ) : (
+                            <span className="text-amber-400/90 italic">Map location unavailable</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {onRemovePlace && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemovePlace(place);
+                        }}
+                        title="Remove from trip"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors flex-shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Quick Action: Create Itinerary from Selected Places */}
+          {selectedPlaces.length > 0 && onCreateItineraryRequest && (
+            <div className="p-3 border-t border-slate-800 bg-slate-900/90">
+              <button
+                type="button"
+                onClick={onCreateItineraryRequest}
+                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30 transition-all hover:scale-[1.01]"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
+                <span>Create Itinerary from Selected Places</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 2: Day-by-Day Itinerary (Only active when an itinerary is generated) */}
+      {activeTab === 'itinerary' && plan && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Day Filter Pills */}
+          <div className="p-2.5 border-b border-slate-800/60 bg-slate-900 flex items-center gap-1.5 overflow-x-auto flex-shrink-0 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => setSelectedDayFilter('all')}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                selectedDayFilter === 'all'
+                  ? 'bg-slate-700 text-white'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              }`}
+            >
+              All Days ({plan.duration_days})
+            </button>
+            {dayNodes.map((_, idx) => {
+              const dayNum = idx + 1;
+              return (
+                <button
+                  key={dayNum}
+                  type="button"
+                  onClick={() => setSelectedDayFilter(dayNum)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                    selectedDayFilter === dayNum
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                >
+                  Day {dayNum}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Day Nodes Tree */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3.5 custom-scrollbar">
+            {visibleDays.map((dayNode, dayIdx) => {
+              const dayKey = `day_${dayIdx}`;
+              const isCollapsed = collapsedDays[dayKey];
+
+              return (
+                <div key={dayNode.id} className="rounded-xl border border-slate-800 bg-slate-800/40 overflow-hidden">
+                  <div
+                    onClick={() => toggleDayCollapse(dayKey)}
+                    className="p-2.5 bg-slate-800/80 hover:bg-slate-800 cursor-pointer flex items-center justify-between text-xs text-white font-semibold transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{dayNode.title}</span>
+                    </div>
+                    {isCollapsed ? (
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                    )}
+                  </div>
+
+                  {!isCollapsed && dayNode.children && (
+                    <div className="p-2.5 space-y-2">
+                      {dayNode.children.map((act) => {
+                        const isSelected = selectedLocation?.name.toLowerCase() === act.title.toLowerCase();
+                        return (
+                          <div
+                            key={act.id}
+                            onClick={() =>
+                              act.location && onSelectLocation(act.location)
+                            }
+                            className={`p-2 rounded-lg border text-xs transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-indigo-950/70 border-indigo-500 text-white shadow-sm'
+                                : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1.5 mb-1">
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex items-center gap-1 ${getTimeBlockBadge(
+                                  act.time_block
+                                )}`}
+                              >
+                                {getTimeBlockIcon(act.time_block)}
+                                <span className="capitalize">{act.time_block || 'Activity'}</span>
+                              </span>
+                              {act.time && (
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  {act.time}
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-semibold text-white truncate">{act.title}</div>
+                            {act.subtitle && (
+                              <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                                {act.subtitle}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tab 3: Accommodations / Hotels */}
+      {activeTab === 'hotels' && plan && (
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+          {hotelNodes.map((hotel) => (
+            <div
+              key={hotel.id}
+              onClick={() => hotel.location && onSelectLocation(hotel.location)}
+              className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/70 text-xs text-white cursor-pointer hover:border-indigo-500 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-1 text-amber-400">
+                <Building2 className="w-4 h-4" />
+                <span className="font-semibold">{hotel.title}</span>
+              </div>
+              <p className="text-[11px] text-slate-400">{hotel.subtitle}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tab 4: Transport / Flights */}
+      {activeTab === 'transport' && plan && (
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+          {transportNodes.map((trans) => (
+            <div
+              key={trans.id}
+              onClick={() => trans.location && onSelectLocation(trans.location)}
+              className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/70 text-xs text-white cursor-pointer hover:border-indigo-500 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-1 text-sky-400">
+                <Plane className="w-4 h-4" />
+                <span className="font-semibold">{trans.title}</span>
+              </div>
+              <p className="text-[11px] text-slate-400">{trans.subtitle}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
+
+export default TripPlanTree;

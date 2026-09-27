@@ -1169,5 +1169,239 @@ class TravelSearchClient:
 
         return self._get_demo_hotels(rooms=rooms, destination=target_destination)
 
+    async def search_travel_destination(self, query: str) -> Optional[Dict[str, Any]]:
+        """
+        Discovers and resolves a destination query (including common aliases like Cochin, Vizag, Bombay)
+        using SerpApi's Google Maps engine.
+        Returns normalized destination metadata with exact GPS coordinates.
+        """
+        clean_q = query.strip()
+        if not clean_q or not self.api_key:
+            return None
+
+        try:
+            search_query = clean_q if "india" in clean_q.lower() else f"{clean_q}, India"
+            data = await self._request(
+                engine="google_maps",
+                params={
+                    "q": search_query,
+                    "type": "search",
+                    "gl": "in",
+                    "hl": "en",
+                }
+            )
+            if not isinstance(data, dict):
+                return None
+
+            resolved_title = None
+            gps = None
+            address = None
+
+            if "place_results" in data:
+                pr = data["place_results"]
+                resolved_title = pr.get("title")
+                gps = pr.get("gps_coordinates")
+                address = pr.get("address")
+            elif "local_results" in data and data["local_results"]:
+                lr0 = data["local_results"][0]
+                resolved_title = lr0.get("title")
+                gps = lr0.get("gps_coordinates")
+                address = lr0.get("address")
+
+            if not resolved_title or not gps:
+                return None
+
+            lat = float(gps.get("latitude", 0.0))
+            lon = float(gps.get("longitude", 0.0))
+            if lat == 0.0 and lon == 0.0:
+                return None
+
+            state = None
+            if address:
+                state_parts = [p.strip() for p in address.split(",")]
+                if len(state_parts) >= 2:
+                    for part in reversed(state_parts):
+                        cleaned_part = re.sub(r"\d+", "", part).strip()
+                        if cleaned_part and cleaned_part.lower() not in ("india", ""):
+                            if "keral" in cleaned_part.lower():
+                                state = "Kerala"
+                            else:
+                                state = cleaned_part
+                            break
+
+            return {
+                "name": resolved_title,
+                "alias": clean_q if clean_q.lower() != resolved_title.lower() else None,
+                "latitude": lat,
+                "longitude": lon,
+                "address": address,
+                "state": state or "India",
+                "country": "India",
+                "source": "serpapi"
+            }
+        except Exception as exc:
+            logger.warning("SerpApi destination search failed for %s: %s", query, exc)
+            return None
+
+    async def search_travel_places(self, destination: str, limit: int = 12) -> List[Dict[str, Any]]:
+        """
+        Discovers real points of interest for a destination using SerpApi's Google Maps engine.
+        Returns verified attractions with real coordinates, ratings, reviews, photos, and types.
+        """
+        clean_dest = destination.strip()
+        if not clean_dest or not self.api_key:
+            return []
+
+        try:
+            data = await self._request(
+                engine="google_maps",
+                params={
+                    "q": f"places to visit in {clean_dest}",
+                    "type": "search",
+                    "gl": "in",
+                    "hl": "en",
+                }
+            )
+            if not isinstance(data, dict):
+                return []
+
+            results = data.get("local_results", [])
+            places: List[Dict[str, Any]] = []
+            seen = set()
+
+            for item in results:
+                title = item.get("title", "").strip()
+                if not title or title.lower() in seen:
+                    continue
+
+                gps = item.get("gps_coordinates") or {}
+                lat = gps.get("latitude")
+                lon = gps.get("longitude")
+                # Strict check: only include places with verified GPS coordinates!
+                if lat is None or lon is None:
+                    continue
+
+                seen.add(title.lower())
+                desc = item.get("description")
+                if isinstance(desc, dict):
+                    desc = desc.get("snippet") or desc.get("text") or str(desc)
+                if not desc:
+                    place_type = item.get("type", "Attraction")
+                    addr = item.get("address", "")
+                    desc = f"Verified {place_type} in {clean_dest}. {addr}".strip()
+                elif not isinstance(desc, str):
+                    desc = str(desc)
+
+                photo = item.get("thumbnail") or item.get("serpapi_thumbnail")
+                source_url = item.get("place_id_search") or item.get("reviews_link")
+
+                raw_type = item.get("type") or item.get("types")
+                if isinstance(raw_type, list):
+                    place_type = ", ".join(str(t) for t in raw_type)
+                elif isinstance(raw_type, str):
+                    place_type = raw_type
+                else:
+                    place_type = "tourist_attraction"
+
+                places.append({
+                    "poi_id": str(item.get("place_id") or f"poi_serp_{item.get('position', len(places)+1)}"),
+                    "name": title,
+                    "description": desc,
+                    "latitude": float(lat),
+                    "longitude": float(lon),
+                    "rating": float(item.get("rating", 4.5)),
+                    "reviews": int(item.get("reviews", 0)),
+                    "image_url": photo,
+                    "source": "serpapi",
+                    "source_url": source_url,
+                    "kinds": place_type
+                })
+                if len(places) >= limit:
+                    break
+
+            return places
+        except Exception as exc:
+            logger.warning("SerpApi place search failed for %s: %s", destination, exc)
+            return []
+
+    async def search_travel_place_by_name(
+        self,
+        name: str,
+        destination: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Looks up a specific landmark/attraction by name (e.g. 'Fort Kochi' or 'Mattancherry Palace')
+        via SerpApi to retrieve its genuine GPS coordinates and details.
+        """
+        clean_name = name.strip()
+        if not clean_name or not self.api_key:
+            return None
+
+        query = f"{clean_name}, {destination}" if destination else f"{clean_name}, India"
+        try:
+            data = await self._request(
+                engine="google_maps",
+                params={
+                    "q": query,
+                    "type": "search",
+                    "gl": "in",
+                    "hl": "en",
+                }
+            )
+            if not isinstance(data, dict):
+                return None
+
+            item = None
+            if "place_results" in data:
+                item = data["place_results"]
+            elif "local_results" in data and data["local_results"]:
+                item = data["local_results"][0]
+
+            if not item:
+                return None
+
+            gps = item.get("gps_coordinates") or {}
+            lat = gps.get("latitude")
+            lon = gps.get("longitude")
+            if lat is None or lon is None:
+                return None
+
+            title = item.get("title", clean_name)
+            desc = item.get("description")
+            if isinstance(desc, dict):
+                desc = desc.get("snippet") or desc.get("text") or str(desc)
+            if not desc:
+                desc = f"Verified {item.get('type', 'Attraction')} in {destination or 'India'}."
+            elif not isinstance(desc, str):
+                desc = str(desc)
+
+            photo = item.get("thumbnail") or item.get("serpapi_thumbnail")
+            source_url = item.get("place_id_search") or item.get("reviews_link")
+
+            raw_type = item.get("type") or item.get("types")
+            if isinstance(raw_type, list):
+                place_type = ", ".join(str(t) for t in raw_type)
+            elif isinstance(raw_type, str):
+                place_type = raw_type
+            else:
+                place_type = "tourist_attraction"
+
+            return {
+                "poi_id": str(item.get("place_id") or f"poi_{uuid.uuid4().hex[:8]}"),
+                "name": title,
+                "description": desc,
+                "latitude": float(lat),
+                "longitude": float(lon),
+                "rating": float(item.get("rating", 4.5)),
+                "reviews": int(item.get("reviews", 0)),
+                "image_url": photo,
+                "source": "serpapi",
+                "source_url": source_url,
+                "kinds": place_type
+            }
+        except Exception as exc:
+            logger.warning("SerpApi specific place search failed for %s: %s", name, exc)
+            return None
+
 
 travel_search_client = TravelSearchClient()
