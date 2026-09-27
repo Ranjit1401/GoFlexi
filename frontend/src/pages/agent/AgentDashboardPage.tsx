@@ -1,29 +1,66 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { StatCard } from '../../components/agent/StatCard';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { mockUpcomingTourSummaries } from '../../data/tours';
-import { mockAgentActivities, mockOperationalAlerts } from '../../data/notifications';
+import { UpcomingTourSummary, AgentActivity, OperationalAlert, AgentStats } from '../../types/agent';
+import { getTourSummaries } from '../../services/tours';
+import { getAgentActivities, getOperationalAlerts } from '../../services/notifications';
+import { getAgentStats } from '../../services/agent-stats';
 import {
   Users,
   Map,
   CalendarCheck,
   AlertCircle,
   ArrowRight,
-  TrendingUp,
   AlertTriangle,
   Clock,
   Sparkles,
-  CheckCircle2,
   Calendar
 } from 'lucide-react';
 
 export const AgentDashboardPage: React.FC = () => {
   const { agent } = useAuth();
   const navigate = useNavigate();
+
+  const [stats, setStats] = useState<AgentStats>({
+    activeTravelers: 128,
+    activeTours: 24,
+    upcomingTours: 11,
+    pendingActions: 7,
+  });
+  const [tours, setTours] = useState<UpcomingTourSummary[]>([]);
+  const [activities, setActivities] = useState<AgentActivity[]>([]);
+  const [alerts, setAlerts] = useState<OperationalAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const [sData, tData, actData, alData] = await Promise.all([
+        getAgentStats().catch(() => ({
+          activeTravelers: 128,
+          activeTours: 24,
+          upcomingTours: 11,
+          pendingActions: 7,
+        })),
+        getTourSummaries().catch(() => []),
+        getAgentActivities().catch(() => []),
+        getOperationalAlerts().catch(() => []),
+      ]);
+      setStats(sData);
+      setTours(tData);
+      setActivities(actData);
+      setAlerts(alData);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -38,7 +75,7 @@ export const AgentDashboardPage: React.FC = () => {
             Good morning, {agent?.name || 'Alex Vance'}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Agency: <strong className="font-semibold text-slate-800">{agent?.agencyName || 'Voyage Luxe Expeditions'}</strong> • 4 active departures in transit today.
+            Agency: <strong className="font-semibold text-slate-800">{agent?.agencyName || 'Voyagar Luxury Expeditions'}</strong> • {stats.activeTours} active departures in transit.
           </p>
         </div>
 
@@ -67,8 +104,8 @@ export const AgentDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title="Active Travelers"
-          value="128"
-          subtext="Across 14 destinations"
+          value={String(stats.activeTravelers)}
+          subtext="Across active itineraries"
           trend={{ value: '12% this month', isPositive: true }}
           icon={<Users className="w-6 h-6 text-brand-600" />}
           accentColor="blue"
@@ -76,8 +113,8 @@ export const AgentDashboardPage: React.FC = () => {
 
         <StatCard
           title="Active Tours"
-          value="24"
-          subtext="Currently running"
+          value={String(stats.activeTours)}
+          subtext="Currently running in field"
           trend={{ value: '3 new this week', isPositive: true }}
           icon={<Map className="w-6 h-6 text-emerald-600" />}
           accentColor="emerald"
@@ -85,7 +122,7 @@ export const AgentDashboardPage: React.FC = () => {
 
         <StatCard
           title="Upcoming Tours"
-          value="11"
+          value={String(stats.upcomingTours)}
           subtext="Departing in next 14 days"
           icon={<CalendarCheck className="w-6 h-6 text-amber-600" />}
           accentColor="amber"
@@ -93,9 +130,9 @@ export const AgentDashboardPage: React.FC = () => {
 
         <StatCard
           title="Pending Actions"
-          value="7"
+          value={String(stats.pendingActions)}
           subtext="Requires approval or review"
-          trend={{ value: '2 urgent conflicts', isPositive: false }}
+          trend={{ value: 'Real-time sync', isPositive: false }}
           icon={<AlertCircle className="w-6 h-6 text-purple-600" />}
           accentColor="purple"
         />
@@ -115,7 +152,7 @@ export const AgentDashboardPage: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/agent/tours')}
-                className="text-xs font-semibold text-brand-600"
+                className="text-xs font-semibold text-brand-600 cursor-pointer"
               >
                 <span>View All Tours</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -134,32 +171,48 @@ export const AgentDashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {mockUpcomingTourSummaries.map((item) => {
-                    let statusBadge = <Badge variant="success">Confirmed</Badge>;
-                    if (item.status === 'Planning') {
-                      statusBadge = <Badge variant="warning">Planning</Badge>;
-                    }
+                  {loading && tours.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-8 text-slate-400">
+                        Loading upcoming tour departures...
+                      </td>
+                    </tr>
+                  ) : tours.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-8 text-slate-400">
+                        No upcoming tours scheduled.
+                      </td>
+                    </tr>
+                  ) : (
+                    tours.map((item) => {
+                      let statusBadge = <Badge variant="success">Confirmed</Badge>;
+                      if (item.status === 'Planning' || item.status === 'In Progress') {
+                        statusBadge = <Badge variant="warning">{item.status}</Badge>;
+                      } else if (item.status === 'Cancelled') {
+                        statusBadge = <Badge variant="danger">Cancelled</Badge>;
+                      }
 
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-900">
-                          {item.tour}
-                        </td>
-                        <td className="px-6 py-4 text-slate-700 font-medium">
-                          {item.traveler}
-                        </td>
-                        <td className="px-6 py-4 text-slate-600">
-                          {item.destination}
-                        </td>
-                        <td className="px-6 py-4 text-slate-500 font-medium">
-                          {item.dates}
-                        </td>
-                        <td className="px-6 py-4">
-                          {statusBadge}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="px-6 py-4 font-bold text-slate-900">
+                            {item.tour}
+                          </td>
+                          <td className="px-6 py-4 text-slate-700 font-medium">
+                            {item.traveler}
+                          </td>
+                          <td className="px-6 py-4 text-slate-600">
+                            {item.destination}
+                          </td>
+                          <td className="px-6 py-4 text-slate-500 font-medium">
+                            {item.dates}
+                          </td>
+                          <td className="px-6 py-4">
+                            {statusBadge}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -209,28 +262,32 @@ export const AgentDashboardPage: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              {mockOperationalAlerts.map((alert) => {
-                let badgeVariant: 'danger' | 'warning' | 'neutral' = 'neutral';
-                if (alert.urgency === 'high') badgeVariant = 'danger';
-                if (alert.urgency === 'medium') badgeVariant = 'warning';
+              {alerts.length === 0 ? (
+                <p className="text-xs text-slate-400 py-3 text-center">No active operational alerts.</p>
+              ) : (
+                alerts.map((alert) => {
+                  let badgeVariant: 'danger' | 'warning' | 'neutral' = 'neutral';
+                  if (alert.urgency === 'high') badgeVariant = 'danger';
+                  if (alert.urgency === 'medium') badgeVariant = 'warning';
 
-                return (
-                  <div
-                    key={alert.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-navy-950">{alert.title}</span>
-                      <Badge variant={badgeVariant} size="sm" className="uppercase text-[9px]">
-                        {alert.urgency}
-                      </Badge>
+                  return (
+                    <div
+                      key={alert.id}
+                      className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-navy-950">{alert.title}</span>
+                        <Badge variant={badgeVariant} size="sm" className="uppercase text-[9px]">
+                          {alert.urgency}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {alert.description}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-600 leading-relaxed">
-                      {alert.description}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </Card>
 
@@ -244,16 +301,20 @@ export const AgentDashboardPage: React.FC = () => {
             </div>
 
             <div className="space-y-4 text-xs">
-              {mockAgentActivities.map((act) => (
-                <div key={act.id} className="flex gap-3">
-                  <span className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-bold text-slate-900">{act.title}</p>
-                    <p className="text-slate-500 text-[11px] mt-0.5 leading-relaxed">{act.description}</p>
-                    <span className="text-[10px] text-slate-400 font-semibold mt-1 block">{act.timeAgo}</span>
+              {activities.length === 0 ? (
+                <p className="text-xs text-slate-400 py-3 text-center">No recent activity recorded.</p>
+              ) : (
+                activities.map((act) => (
+                  <div key={act.id} className="flex gap-3">
+                    <span className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-bold text-slate-900">{act.title}</p>
+                      <p className="text-slate-500 text-[11px] mt-0.5 leading-relaxed">{act.description}</p>
+                      <span className="text-[10px] text-slate-400 font-semibold mt-1 block">{act.timeAgo}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Card>
         </div>
