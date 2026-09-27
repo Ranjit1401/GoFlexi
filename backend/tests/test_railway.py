@@ -47,15 +47,61 @@ def test_resolve_station():
 
 @pytest.mark.anyio
 async def test_search_trains_domestic_india():
+    # 2026-10-15 is Thursday
     res = await railway_client.search_trains_between_stations(
         origin_query="Mumbai",
         destination_query="Goa",
         depart_date=date(2026, 10, 15),
         travelers=2,
+        only_running_today=False,
     )
     assert res.is_domestic_india is True
     assert res.count > 0
+    assert res.day_name == "Thursday"
+    assert res.total_trains_on_route > 0
     assert any("VANDE BHARAT" in t.train_name.upper() or "SHATABDI" in t.train_name.upper() for t in res.results)
+
+    # Vande Bharat 22229 does not run on Thursdays
+    vande = next((t for t in res.results if t.train_number == "22229"), None)
+    assert vande is not None
+    assert vande.runs_on_selected_day is False
+    assert "Does Not Run on Thursday" in (vande.live_status_note or "")
+
+    # Jan Shatabdi 12051 runs Daily -> runs on Thursday
+    shatabdi = next((t for t in res.results if t.train_number == "12051"), None)
+    assert shatabdi is not None
+    assert shatabdi.runs_on_selected_day is True
+
+    # Konkan Kanya 10111 is overnight (+1 Day offset)
+    konkan = next((t for t in res.results if t.train_number == "10111"), None)
+    assert konkan is not None
+    assert konkan.days_offset == 1
+    assert konkan.arrival_day == "Friday"
+    assert konkan.arrival_date == "2026-10-16"
+
+
+@pytest.mark.anyio
+async def test_search_trains_only_running_today_filter():
+    # Thursday: 22229 should be filtered out when only_running_today=True
+    res_thu = await railway_client.search_trains_between_stations(
+        origin_query="Mumbai",
+        destination_query="Goa",
+        depart_date=date(2026, 10, 15),
+        travelers=1,
+        only_running_today=True,
+    )
+    assert all(t.runs_on_selected_day is True for t in res_thu.results)
+    assert not any(t.train_number == "22229" for t in res_thu.results)
+
+    # Friday (2026-10-16): 22229 DOES run on Friday
+    res_fri = await railway_client.search_trains_between_stations(
+        origin_query="Mumbai",
+        destination_query="Goa",
+        depart_date=date(2026, 10, 16),
+        travelers=1,
+        only_running_today=True,
+    )
+    assert any(t.train_number == "22229" for t in res_fri.results)
 
 
 @pytest.mark.anyio

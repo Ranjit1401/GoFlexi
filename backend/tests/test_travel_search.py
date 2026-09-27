@@ -376,3 +376,80 @@ def test_search_hotels_upstream_error_returns_502(client, auth_headers):
         )
         assert res.status_code == 502
         assert res.json()["detail"] == "Hotel search is temporarily unavailable"
+
+
+def test_sanitize_hotel_prices_zero_values_fixed():
+    """Verify that zero-priced hotels get average of non-zero prices +/- random delta between 0 and 200."""
+    from app.api.routes.travel_search import _sanitize_hotel_prices
+    from app.schemas.travel_search import HotelOption
+
+    hotels = [
+        HotelOption(id="h1", name="Resort Alpha", price_per_night=4000.0),
+        HotelOption(id="h2", name="Resort Beta", price_per_night=6000.0),
+        HotelOption(id="h3", name="Resort Gamma", price_per_night=0.0),
+        HotelOption(id="h4", name="Resort Delta", price_per_night=0.0),
+    ]
+
+    sanitized = _sanitize_hotel_prices(hotels)
+    assert len(sanitized) == 4
+
+    # Non-zero hotels stay the same
+    assert sanitized[0].price_per_night == 4000.0
+    assert sanitized[1].price_per_night == 6000.0
+
+    # Zero hotels are replaced with average (5000.0) +/- 200 (between 4800 and 5200)
+    for h in [sanitized[2], sanitized[3]]:
+        assert h.price_per_night > 0
+        assert 4800.0 <= h.price_per_night <= 5200.0
+
+
+@pytest.mark.asyncio
+def test_search_hotels_with_zero_price_fixed(client, auth_headers):
+    """Zero-priced hotels in API response are replaced with average of nonzero hotels +/- 200."""
+    raw_with_zero = {
+        "properties": [
+            {
+                "property_token": "prop-1",
+                "name": "Luxury Palm Resort",
+                "rate_per_night": {"extracted_lowest": 8000.0},
+            },
+            {
+                "property_token": "prop-2",
+                "name": "Sunset Beach Resort",
+                "rate_per_night": {"extracted_lowest": 12000.0},
+            },
+            {
+                "property_token": "prop-zero",
+                "name": "Zero Price Resort",
+                "rate_per_night": {"extracted_lowest": 0.0},
+            },
+        ]
+    }
+
+    with patch(
+        "app.api.routes.travel_search.travel_search_client.search_hotel_destination",
+        new=AsyncMock(return_value=SAMPLE_HOTEL_DEST_RAW),
+    ), patch(
+        "app.api.routes.travel_search.travel_search_client.search_hotels",
+        new=AsyncMock(return_value=raw_with_zero),
+    ):
+        res = client.post(
+            "/api/travel-search/hotels",
+            json={
+                "destination": "Goa",
+                "check_in": "2026-10-15",
+                "check_out": "2026-10-19",
+            },
+            headers=auth_headers,
+        )
+        assert res.status_code == 200
+        results = res.json()["results"]
+        assert len(results) == 3
+
+        # Every hotel has price > 0
+        for h in results:
+            assert h["price_per_night"] > 0
+
+        # The previously zero-priced hotel should be around avg (10000.0) +/- 200
+        zero_hotel = next(h for h in results if h["id"] == "prop-zero")
+        assert 9800.0 <= zero_hotel["price_per_night"] <= 10200.0

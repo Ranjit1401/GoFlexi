@@ -101,6 +101,14 @@ export interface TrainOption {
   train_type: string;
   booking_link?: string | null;
   schedule?: TrainScheduleStop[] | null;
+  // Day-of-week & live timetable fields
+  journey_date?: string | null;
+  journey_day?: string | null;
+  arrival_date?: string | null;
+  arrival_day?: string | null;
+  days_offset?: number;
+  runs_on_selected_day?: boolean;
+  live_status_note?: string | null;
 }
 
 export interface TrainSearchRequest {
@@ -109,11 +117,18 @@ export interface TrainSearchRequest {
   depart_date: string;
   travelers?: number;
   train_class?: string;
+  only_running_today?: boolean;
 }
 
 export interface TrainSearchResponse {
   query: TrainSearchRequest;
   is_domestic_india: boolean;
+  source?: string;
+  date_formatted?: string | null;
+  day_name?: string | null;
+  total_trains_on_route?: number;
+  operating_today_count?: number;
+  notice?: string | null;
   results: TrainOption[];
   count: number;
 }

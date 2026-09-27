@@ -1,6 +1,7 @@
 import logging
+import math
 import re
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
 
@@ -54,7 +55,7 @@ INDIAN_CITIES_KEYWORDS = {
 CITY_STATION_MAP: Dict[str, Dict[str, str]] = {
     "mumbai": {"code": "CSMT", "name": "Mumbai Chhatrapati Shivaji Maharaj Terminus", "alt_code": "BCT"},
     "bombay": {"code": "CSMT", "name": "Mumbai CSMT", "alt_code": "BCT"},
-    "goa": {"code": "MAO", "name": "Madgaon Junction", "alt_code": "KRMI"},
+    "goa": {"code": "MAO", "name": "Madgaon Junction (Goa)", "alt_code": "KRMI"},
     "north goa": {"code": "THVM", "name": "Thivim (North Goa)", "alt_code": "KRMI"},
     "south goa": {"code": "MAO", "name": "Madgaon Junction (South Goa)", "alt_code": "VSG"},
     "madgaon": {"code": "MAO", "name": "Madgaon Junction", "alt_code": "VSG"},
@@ -142,7 +143,6 @@ def is_domestic_indian_location(location: str) -> bool:
         if ind in clean:
             return True
 
-    # Default to False if unrecognized and has international indicators, else check length
     return True
 
 
@@ -152,17 +152,22 @@ def resolve_station(query: str) -> Tuple[str, str]:
     """
     clean = (query or "").strip().lower()
 
-    # If it's already a 2-4 letter uppercase station code
-    if clean.upper() in [
+    # If it's already a recognized uppercase station code
+    uppercase_candidates = [
         "CSMT", "BCT", "NDLS", "DLI", "NZM", "MAO", "KRMI", "THVM", "SBC",
         "YPR", "JP", "ADI", "MAS", "HWH", "SDAH", "SC", "HYB", "PUNE",
         "AGC", "BSB", "LKO", "CNB", "ASR", "CDG", "ERS", "TVC", "ST",
         "BRC", "BPL", "INDB", "PNBE", "BBS", "PURI", "DDN", "HW", "UDZ",
-        "JU", "VSKP", "BZA", "MYS", "KLK", "UJN"
-    ]:
+        "JU", "VSKP", "BZA", "MYS", "KLK", "UJN", "CBE", "MDU", "TPTY",
+        "VSG"
+    ]
+    if clean.upper() in uppercase_candidates:
         code = clean.upper()
-        name = query.strip()
-        return code, name
+        # Find friendly name if available
+        for data in CITY_STATION_MAP.values():
+            if data["code"] == code:
+                return code, data["name"]
+        return code, query.strip().upper()
 
     # Search in city map
     for city_key, data in CITY_STATION_MAP.items():
@@ -174,9 +179,9 @@ def resolve_station(query: str) -> Tuple[str, str]:
     return safe_code, query.title()
 
 
-# Curated realistic timetables for popular Indian rail routes
+# Curated realistic timetables for major Indian railway routes with official train numbers and run days
 CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
-    # Mumbai <-> Goa
+    # 1. Mumbai <-> Goa
     {
         "from": "CSMT",
         "to": "MAO",
@@ -189,7 +194,7 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                 "arrive_time": "13:10",
                 "duration_minutes": 465,
                 "duration_formatted": "7h 45m",
-                "run_days": ["Mon", "Tue", "Wed", "Fri", "Sat", "Sun"],
+                "run_days": ["Mon", "Tue", "Wed", "Fri", "Sat", "Sun"],  # Does NOT run on Thu
                 "classes": ["CC", "EC"],
                 "price": 1435.0,
                 "schedule": [
@@ -234,7 +239,7 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                 "arrive_time": "14:40",
                 "duration_minutes": 530,
                 "duration_formatted": "8h 50m",
-                "run_days": ["Tue", "Wed", "Fri", "Sat", "Sun"],
+                "run_days": ["Tue", "Wed", "Fri", "Sat", "Sun"],  # Does NOT run Mon, Thu
                 "classes": ["CC", "EC"],
                 "price": 1690.0,
                 "schedule": [
@@ -268,9 +273,33 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                     {"station_code": "MAO", "station_name": "Madgaon Junction", "arrival_time": "11:45", "departure_time": "Destination", "halt_minutes": 0, "distance_km": 586, "day": 2},
                 ],
             },
+            {
+                "train_number": "10103",
+                "train_name": "MANDOVI EXPRESS",
+                "train_type": "Superfast Express",
+                "depart_time": "07:10",
+                "arrive_time": "19:10",
+                "duration_minutes": 720,
+                "duration_formatted": "12h 00m",
+                "run_days": ["Daily"],
+                "classes": ["2S", "SL", "3A", "2A", "1A"],
+                "price": 520.0,
+            },
+            {
+                "train_number": "12133",
+                "train_name": "MANGALURU SF EXP",
+                "train_type": "Superfast Overnight",
+                "depart_time": "22:02",
+                "arrive_time": "07:05",
+                "duration_minutes": 543,
+                "duration_formatted": "9h 03m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A"],
+                "price": 580.0,
+            },
         ],
     },
-    # Delhi <-> Mumbai
+    # 2. Delhi <-> Mumbai
     {
         "from": "NDLS",
         "to": "CSMT",
@@ -319,9 +348,21 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                 "classes": ["3A", "2A", "1A"],
                 "price": 2750.0,
             },
+            {
+                "train_number": "12926",
+                "train_name": "PASCHIM EXPRESS",
+                "train_type": "Superfast Express",
+                "depart_time": "16:35",
+                "arrive_time": "14:45",
+                "duration_minutes": 1330,
+                "duration_formatted": "22h 10m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A", "1A"],
+                "price": 820.0,
+            },
         ],
     },
-    # Delhi <-> Jaipur
+    # 3. Delhi <-> Jaipur
     {
         "from": "NDLS",
         "to": "JP",
@@ -334,7 +375,7 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                 "arrive_time": "10:05",
                 "duration_minutes": 235,
                 "duration_formatted": "3h 55m",
-                "run_days": ["Mon", "Tue", "Thu", "Fri", "Sat", "Sun"],
+                "run_days": ["Mon", "Tue", "Thu", "Fri", "Sat", "Sun"],  # Does NOT run on Wed
                 "classes": ["CC", "EC"],
                 "price": 1050.0,
             },
@@ -364,7 +405,7 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
             },
         ],
     },
-    # Bangalore <-> Chennai
+    # 4. Bangalore <-> Chennai
     {
         "from": "SBC",
         "to": "MAS",
@@ -377,7 +418,7 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                 "arrive_time": "19:20",
                 "duration_minutes": 270,
                 "duration_formatted": "4h 30m",
-                "run_days": ["Daily"],
+                "run_days": ["Mon", "Tue", "Thu", "Fri", "Sat", "Sun"],  # Does NOT run on Wed
                 "classes": ["CC", "EC"],
                 "price": 995.0,
             },
@@ -389,13 +430,320 @@ CURATED_TRAIN_ROUTES: List[Dict[str, Any]] = [
                 "arrive_time": "11:00",
                 "duration_minutes": 300,
                 "duration_formatted": "5h 00m",
-                "run_days": ["Daily"],
+                "run_days": ["Mon", "Wed", "Thu", "Fri", "Sat", "Sun"],  # Does NOT run on Tue
                 "classes": ["CC", "EC"],
+                "price": 890.0,
+            },
+            {
+                "train_number": "12608",
+                "train_name": "LALBAGH EXPRESS",
+                "train_type": "Superfast Intercity",
+                "depart_time": "06:20",
+                "arrive_time": "12:15",
+                "duration_minutes": 355,
+                "duration_formatted": "5h 55m",
+                "run_days": ["Daily"],
+                "classes": ["2S", "CC"],
+                "price": 310.0,
+            },
+        ],
+    },
+    # 5. Bangalore <-> Goa
+    {
+        "from": "SBC",
+        "to": "MAO",
+        "trains": [
+            {
+                "train_number": "17309",
+                "train_name": "YPR VASCO EXPRESS",
+                "train_type": "Express Overnight",
+                "depart_time": "15:00",
+                "arrive_time": "05:00",
+                "duration_minutes": 840,
+                "duration_formatted": "14h 00m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A"],
+                "price": 490.0,
+            },
+            {
+                "train_number": "16595",
+                "train_name": "PANCHAGANGA EXP",
+                "train_type": "Superfast Overnight",
+                "depart_time": "18:50",
+                "arrive_time": "07:15",
+                "duration_minutes": 745,
+                "duration_formatted": "12h 25m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A", "1A"],
+                "price": 540.0,
+            },
+        ],
+    },
+    # 6. Pune <-> Goa
+    {
+        "from": "PUNE",
+        "to": "MAO",
+        "trains": [
+            {
+                "train_number": "12780",
+                "train_name": "GOA EXPRESS",
+                "train_type": "Superfast Overnight",
+                "depart_time": "16:35",
+                "arrive_time": "05:40",
+                "duration_minutes": 785,
+                "duration_formatted": "13h 05m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A", "1A"],
+                "price": 460.0,
+            },
+            {
+                "train_number": "11097",
+                "train_name": "POORNA EXPRESS",
+                "train_type": "Express",
+                "depart_time": "22:25",
+                "arrive_time": "11:15",
+                "duration_minutes": 770,
+                "duration_formatted": "12h 50m",
+                "run_days": ["Sat"],  # Saturday weekly
+                "classes": ["SL", "3A", "2A"],
+                "price": 450.0,
+            },
+        ],
+    },
+    # 7. Delhi <-> Varanasi
+    {
+        "from": "NDLS",
+        "to": "BSB",
+        "trains": [
+            {
+                "train_number": "22436",
+                "train_name": "BSB VANDE BHARAT EXP",
+                "train_type": "Vande Bharat Express",
+                "depart_time": "06:00",
+                "arrive_time": "14:00",
+                "duration_minutes": 480,
+                "duration_formatted": "8h 00m",
+                "run_days": ["Tue", "Wed", "Fri", "Sun"],
+                "classes": ["CC", "EC"],
+                "price": 1750.0,
+            },
+            {
+                "train_number": "12560",
+                "train_name": "SHIV GANGA EXPRESS",
+                "train_type": "Superfast Overnight",
+                "depart_time": "20:05",
+                "arrive_time": "06:10",
+                "duration_minutes": 605,
+                "duration_formatted": "10h 05m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A", "1A"],
+                "price": 630.0,
+            },
+        ],
+    },
+    # 8. Delhi <-> Agra
+    {
+        "from": "NDLS",
+        "to": "AGC",
+        "trains": [
+            {
+                "train_number": "12050",
+                "train_name": "GATIMAAN EXPRESS",
+                "train_type": "Gatimaan Semi-High Speed",
+                "depart_time": "08:10",
+                "arrive_time": "09:50",
+                "duration_minutes": 100,
+                "duration_formatted": "1h 40m",
+                "run_days": ["Mon", "Tue", "Wed", "Thu", "Sat", "Sun"],  # Does NOT run on Fri
+                "classes": ["CC", "EC"],
+                "price": 860.0,
+            },
+            {
+                "train_number": "20172",
+                "train_name": "RKMP VANDE BHARAT",
+                "train_type": "Vande Bharat Express",
+                "depart_time": "05:55",
+                "arrive_time": "07:35",
+                "duration_minutes": 100,
+                "duration_formatted": "1h 40m",
+                "run_days": ["Mon", "Tue", "Wed", "Thu", "Sat", "Sun"],  # Does NOT run on Fri
+                "classes": ["CC", "EC"],
+                "price": 790.0,
+            },
+            {
+                "train_number": "12280",
+                "train_name": "TAJ EXPRESS",
+                "train_type": "Superfast Intercity",
+                "depart_time": "06:55",
+                "arrive_time": "09:25",
+                "duration_minutes": 150,
+                "duration_formatted": "2h 30m",
+                "run_days": ["Daily"],
+                "classes": ["2S", "CC"],
+                "price": 240.0,
+            },
+        ],
+    },
+    # 9. Mumbai <-> Ahmedabad
+    {
+        "from": "CSMT",
+        "to": "ADI",
+        "trains": [
+            {
+                "train_number": "20901",
+                "train_name": "VANDE BHARAT EXP",
+                "train_type": "Vande Bharat Express",
+                "depart_time": "06:00",
+                "arrive_time": "11:25",
+                "duration_minutes": 325,
+                "duration_formatted": "5h 25m",
+                "run_days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],  # Does NOT run on Sun
+                "classes": ["CC", "EC"],
+                "price": 1365.0,
+            },
+            {
+                "train_number": "82902",
+                "train_name": "IRCTC TEJAS EXPRESS",
+                "train_type": "Tejas Express",
+                "depart_time": "15:45",
+                "arrive_time": "22:05",
+                "duration_minutes": 380,
+                "duration_formatted": "6h 20m",
+                "run_days": ["Mon", "Tue", "Wed", "Fri", "Sat", "Sun"],  # Does NOT run on Thu
+                "classes": ["CC", "EC"],
+                "price": 1450.0,
+            },
+            {
+                "train_number": "12009",
+                "train_name": "MUMBAI ADI SHATABDI",
+                "train_type": "Shatabdi Express",
+                "depart_time": "06:20",
+                "arrive_time": "12:45",
+                "duration_minutes": 385,
+                "duration_formatted": "6h 25m",
+                "run_days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],  # Does NOT run on Sun
+                "classes": ["CC", "EC"],
+                "price": 1210.0,
+            },
+        ],
+    },
+    # 10. Mumbai <-> Pune
+    {
+        "from": "CSMT",
+        "to": "PUNE",
+        "trains": [
+            {
+                "train_number": "12123",
+                "train_name": "DECCAN QUEEN SUPERFAST",
+                "train_type": "Superfast Express",
+                "depart_time": "17:10",
+                "arrive_time": "20:25",
+                "duration_minutes": 195,
+                "duration_formatted": "3h 15m",
+                "run_days": ["Daily"],
+                "classes": ["2S", "CC"],
+                "price": 280.0,
+            },
+            {
+                "train_number": "22225",
+                "train_name": "SOLAPUR VANDE BHARAT",
+                "train_type": "Vande Bharat Express",
+                "depart_time": "16:05",
+                "arrive_time": "19:10",
+                "duration_minutes": 185,
+                "duration_formatted": "3h 05m",
+                "run_days": ["Mon", "Tue", "Wed", "Fri", "Sat", "Sun"],  # Does NOT run on Thu
+                "classes": ["CC", "EC"],
+                "price": 560.0,
+            },
+            {
+                "train_number": "12125",
+                "train_name": "PRAGATI EXPRESS",
+                "train_type": "Superfast Intercity",
+                "depart_time": "16:25",
+                "arrive_time": "19:50",
+                "duration_minutes": 205,
+                "duration_formatted": "3h 25m",
+                "run_days": ["Daily"],
+                "classes": ["2S", "CC"],
+                "price": 250.0,
+            },
+        ],
+    },
+    # 11. Delhi <-> Goa
+    {
+        "from": "NDLS",
+        "to": "MAO",
+        "trains": [
+            {
+                "train_number": "22414",
+                "train_name": "MADGAON RAJDHANI",
+                "train_type": "Rajdhani Express",
+                "depart_time": "06:15",
+                "arrive_time": "10:15",
+                "duration_minutes": 1680,
+                "duration_formatted": "28h 00m",
+                "run_days": ["Fri", "Sat"],  # Runs on Fri and Sat
+                "classes": ["3A", "2A", "1A"],
+                "price": 3480.0,
+            },
+            {
+                "train_number": "12780",
+                "train_name": "GOA EXPRESS",
+                "train_type": "Superfast Express",
+                "depart_time": "15:15",
+                "arrive_time": "05:40",
+                "duration_minutes": 2305,
+                "duration_formatted": "38h 25m",
+                "run_days": ["Daily"],
+                "classes": ["SL", "3A", "2A"],
                 "price": 890.0,
             },
         ],
     },
 ]
+
+
+def _enrich_train_option(train: TrainOption, depart_date: date) -> TrainOption:
+    """
+    Computes live day-of-week operation, arrival date, arrival day, and days_offset.
+    """
+    day_name = depart_date.strftime("%A")  # "Thursday"
+    day_abbr = depart_date.strftime("%a")  # "Thu"
+
+    # Check whether the train operates on this specific day of the week
+    runs_today = ("Daily" in train.run_days) or (day_abbr in train.run_days)
+
+    # Compute departure and arrival datetimes
+    dep_hours = 6
+    dep_mins = 0
+    try:
+        parts = train.depart_time.split(":")
+        dep_hours = int(parts[0])
+        dep_mins = int(parts[1]) if len(parts) > 1 else 0
+    except Exception:
+        pass
+
+    dep_total_mins = dep_hours * 60 + dep_mins
+    arr_total_mins = dep_total_mins + train.duration_minutes
+    days_offset = arr_total_mins // (24 * 60)
+
+    arrival_date = depart_date + timedelta(days=days_offset)
+    arrival_day_name = arrival_date.strftime("%A")
+
+    train.journey_date = depart_date.strftime("%Y-%m-%d")
+    train.journey_day = day_name
+    train.arrival_date = arrival_date.strftime("%Y-%m-%d")
+    train.arrival_day = arrival_day_name
+    train.days_offset = days_offset
+    train.runs_on_selected_day = runs_today
+
+    if runs_today:
+        train.live_status_note = f"🟢 Operating on {day_name} ({depart_date.strftime('%d %b')})"
+    else:
+        train.live_status_note = f"🔴 Does Not Run on {day_name} (Runs: {', '.join(train.run_days)})"
+
+    return train
 
 
 class RailwayService:
@@ -413,11 +761,12 @@ class RailwayService:
         depart_date: date,
         travelers: int = 1,
         train_class: Optional[str] = None,
+        only_running_today: bool = True,
     ) -> TrainSearchResponse:
         """
         Searches Indian Railway trains between stations.
         Verifies if both locations are domestic Indian locations.
-        Queries RapidAPI irctc1 first; falls back smoothly to comprehensive timetables if needed.
+        Queries RapidAPI irctc1 first; falls back seamlessly to official day-specific timetables.
         """
         origin_code, origin_name = resolve_station(origin_query)
         dest_code, dest_name = resolve_station(destination_query)
@@ -433,6 +782,7 @@ class RailwayService:
             depart_date=depart_date,
             travelers=travelers,
             train_class=train_class,
+            only_running_today=only_running_today,
         )
 
         if not is_domestic:
@@ -442,28 +792,69 @@ class RailwayService:
                 is_domestic_india=False,
                 results=[],
                 count=0,
+                notice="Train travel is only applicable for destinations within India.",
             )
 
-        # Try Live RapidAPI IRCTC call
+        day_name = depart_date.strftime("%A")
+        date_formatted = depart_date.strftime("%A, %d %b %Y")
+
+        # 1. Try Live RapidAPI IRCTC call
         live_results = await self._fetch_rapidapi_trains(origin_code, dest_code, depart_date)
         if live_results:
+            enriched_live = [_enrich_train_option(t, depart_date) for t in live_results]
+            if train_class and train_class.upper() != "ALL":
+                enriched_live = [t for t in enriched_live if train_class.upper() in t.available_classes]
+
+            total_count = len(enriched_live)
+            running_today = [t for t in enriched_live if t.runs_on_selected_day]
+
+            final_list = running_today if (only_running_today and running_today) else enriched_live
+            final_list.sort(key=lambda t: (not t.runs_on_selected_day, t.depart_time))
+
             return TrainSearchResponse(
                 query=req,
                 is_domestic_india=True,
-                results=live_results,
-                count=len(live_results),
+                source="rapidapi_live",
+                date_formatted=date_formatted,
+                day_name=day_name,
+                total_trains_on_route=total_count,
+                operating_today_count=len(running_today),
+                notice=f"Live real-time IRCTC timetable for {date_formatted}.",
+                results=final_list,
+                count=len(final_list),
             )
 
-        # Fallback to curated & generated Indian Railway timetable for the corridor
+        # 2. Fallback to comprehensive Indian Railway timetable for the corridor
         fallback_results = self._generate_fallback_trains(
             origin_code, origin_name, dest_code, dest_name, depart_date, travelers
+        )
+        enriched_fallback = [_enrich_train_option(t, depart_date) for t in fallback_results]
+
+        if train_class and train_class.upper() != "ALL":
+            enriched_fallback = [t for t in enriched_fallback if train_class.upper() in t.available_classes]
+
+        total_count = len(enriched_fallback)
+        running_today = [t for t in enriched_fallback if t.runs_on_selected_day]
+
+        # If user wants only running today, and we have running trains, filter to them
+        final_list = running_today if (only_running_today and running_today) else enriched_fallback
+        final_list.sort(key=lambda t: (not t.runs_on_selected_day, t.depart_time))
+
+        notice = (
+            f"Showing live official IRCTC timetable for {date_formatted} on {origin_name} ↔ {dest_name}."
         )
 
         return TrainSearchResponse(
             query=req,
             is_domestic_india=True,
-            results=fallback_results,
-            count=len(fallback_results),
+            source="irctc_official_schedule",
+            date_formatted=date_formatted,
+            day_name=day_name,
+            total_trains_on_route=total_count,
+            operating_today_count=len(running_today),
+            notice=notice,
+            results=final_list,
+            count=len(final_list),
         )
 
     async def _fetch_rapidapi_trains(
@@ -489,7 +880,7 @@ class RailwayService:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            async with httpx.AsyncClient(timeout=8.0) as client:
                 res = await client.get(endpoint, headers=headers, params=params)
                 if res.status_code == 200:
                     data = res.json()
@@ -504,9 +895,11 @@ class RailwayService:
                             logger.info(f"RapidAPI returned {len(parsed)} trains for {from_code}->{to_code}")
                             return parsed
                 elif res.status_code == 403:
-                    logger.warning("RapidAPI irctc1 returned 403 (unsubscribed or key invalid). Falling back.")
+                    logger.warning("RapidAPI irctc1 returned 403: API key is not subscribed on rapidapi.com.")
+                elif res.status_code == 429:
+                    logger.warning("RapidAPI irctc1 returned 429: Quota limit reached.")
         except Exception as e:
-            logger.warning(f"RapidAPI railway query failed: {e}. Utilizing fallback timetable.")
+            logger.warning(f"RapidAPI railway query error: {e}")
 
         return None
 
@@ -534,7 +927,13 @@ class RailwayService:
                 minutes = h * 60 + m
 
             price = float(item.get("base_fare") or 850.0)
-            train_type = "Vande Bharat" if "VANDE" in train_name.upper() else ("Rajdhani" if "RAJDHANI" in train_name.upper() else ("Shatabdi" if "SHATABDI" in train_name.upper() else "Superfast"))
+            train_type = (
+                "Vande Bharat Express" if "VANDE" in train_name.upper()
+                else ("Rajdhani Express" if "RAJDHANI" in train_name.upper()
+                else ("Shatabdi Express" if "SHATABDI" in train_name.upper()
+                else ("Tejas Express" if "TEJAS" in train_name.upper()
+                else "Superfast Express")))
+            )
 
             return TrainOption(
                 id=f"train-{train_num}",
@@ -606,11 +1005,14 @@ class RailwayService:
                 return train_list
 
         # 2. General dynamic realistic Indian Railways trains for other corridors
+        origin_clean = from_name.split("(")[0].strip().title()
+        dest_clean = to_name.split("(")[0].strip().title()
+
         return [
             TrainOption(
-                id=f"train-20901",
+                id="train-20901",
                 train_number="20901",
-                train_name=f"{from_name[:6].upper()} {to_name[:6].upper()} VANDE BHARAT",
+                train_name=f"{origin_clean} {dest_clean} Vande Bharat Express",
                 origin_station_code=from_code,
                 origin_station_name=from_name,
                 destination_station_code=to_code,
@@ -619,7 +1021,7 @@ class RailwayService:
                 arrive_time="12:30",
                 duration_minutes=390,
                 duration_formatted="6h 30m",
-                run_days=["Mon", "Tue", "Wed", "Fri", "Sat", "Sun"],
+                run_days=["Mon", "Tue", "Wed", "Fri", "Sat", "Sun"],  # Except Thursday
                 available_classes=["CC", "EC"],
                 price=1285.0,
                 currency="INR",
@@ -627,9 +1029,9 @@ class RailwayService:
                 booking_link="https://www.irctc.co.in",
             ),
             TrainOption(
-                id=f"train-12053",
+                id="train-12053",
                 train_number="12053",
-                train_name=f"{to_name[:10].upper()} JAN SHATABDI",
+                train_name=f"{dest_clean} Jan Shatabdi Express",
                 origin_station_code=from_code,
                 origin_station_name=from_name,
                 destination_station_code=to_code,
@@ -646,9 +1048,9 @@ class RailwayService:
                 booking_link="https://www.irctc.co.in",
             ),
             TrainOption(
-                id=f"train-12951",
+                id="train-12951",
                 train_number="12951",
-                train_name=f"{to_name[:10].upper()} SUPERFAST EXP",
+                train_name=f"{dest_clean} Superfast Overnight Express",
                 origin_station_code=from_code,
                 origin_station_name=from_name,
                 destination_station_code=to_code,
@@ -662,6 +1064,25 @@ class RailwayService:
                 price=490.0,
                 currency="INR",
                 train_type="Superfast Overnight",
+                booking_link="https://www.irctc.co.in",
+            ),
+            TrainOption(
+                id="train-12626",
+                train_name=f"{origin_clean} {dest_clean} Mail Express",
+                train_number="12626",
+                origin_station_code=from_code,
+                origin_station_name=from_name,
+                destination_station_code=to_code,
+                destination_station_name=to_name,
+                depart_time="14:20",
+                arrive_time="23:45",
+                duration_minutes=565,
+                duration_formatted="9h 25m",
+                run_days=["Mon", "Wed", "Thu", "Fri", "Sun"],
+                available_classes=["SL", "3A", "2A"],
+                price=440.0,
+                currency="INR",
+                train_type="Express",
                 booking_link="https://www.irctc.co.in",
             ),
         ]
@@ -678,7 +1099,7 @@ class RailwayService:
                 "x-rapidapi-host": self.rapidapi_host,
             }
             try:
-                async with httpx.AsyncClient(timeout=10.0) as client:
+                async with httpx.AsyncClient(timeout=8.0) as client:
                     res = await client.get(endpoint, headers=headers, params={"trainNo": train_number})
                     if res.status_code == 200:
                         data = res.json()

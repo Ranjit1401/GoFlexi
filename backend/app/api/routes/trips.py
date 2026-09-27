@@ -150,7 +150,6 @@ def get_traveler_trips(
 ):
     # Ensure starter trips exist if user has none
     seed_starter_trips_if_empty(db, current_user)
-
     stmt = select(Trip).where(Trip.user_id == current_user.id)
     if status and status.strip():
         stmt = stmt.where(Trip.status.ilike(status.strip()))
