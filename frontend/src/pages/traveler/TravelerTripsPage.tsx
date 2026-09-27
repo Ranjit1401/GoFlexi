@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTrips, updateTrip } from '../../services/trips';
+import { getTrips, updateTrip, payTrip } from '../../services/trips';
+import { initiateRazorpayPayment } from '../../services/razorpay';
 import { TripCard } from '../../components/traveler/TripCard';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -10,6 +11,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Input } from '../../components/ui/Input';
 import { Trip } from '../../types/traveler';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   PlusCircle,
   Luggage,
@@ -37,6 +39,8 @@ export const TravelerTripsPage: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Edit Trip Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -119,6 +123,56 @@ export const TravelerTripsPage: React.FC = () => {
     } finally {
       setIsSavingEdit(false);
     }
+  };
+
+  const handleDirectPay = async (trip: Trip) => {
+    setIsProcessingPayment(true);
+
+    const parseNum = (str: string) => {
+      const digits = (str || '').replace(/[^0-9]/g, '');
+      return digits ? parseInt(digits, 10) : 45000;
+    };
+    const totalAmount = trip.costBreakdown?.total || parseNum(trip.budget);
+
+    initiateRazorpayPayment({
+      amount: totalAmount,
+      tripId: trip.id,
+      title: trip.title,
+      destination: trip.destination,
+      user: user ? { name: user.name, email: user.email } : null,
+      onSuccess: async (paymentId: string) => {
+        setIsProcessingPayment(false);
+        try {
+          const updated = await payTrip(trip.id);
+          setAllTrips((prev) =>
+            prev.map((t) => (t.id === updated.id ? { ...updated, paymentStatus: 'Paid', paymentId } : t))
+          );
+          setSelectedTrip((prev) =>
+            prev && prev.id === trip.id ? { ...prev, paymentStatus: 'Paid', paymentId } : prev
+          );
+        } catch {
+          setAllTrips((prev) =>
+            prev.map((t) => (t.id === trip.id ? { ...t, paymentStatus: 'Paid', paymentId } : t))
+          );
+          setSelectedTrip((prev) =>
+            prev && prev.id === trip.id ? { ...prev, paymentStatus: 'Paid', paymentId } : prev
+          );
+        }
+        showToast(
+          'success',
+          `Payment confirmed for ${trip.title}! Ref: ${paymentId}`,
+          'Payment Successful'
+        );
+      },
+      onError: (errMsg: string) => {
+        setIsProcessingPayment(false);
+        showToast('error', errMsg, 'Payment Failed');
+      },
+      onDismiss: () => {
+        setIsProcessingPayment(false);
+        showToast('info', 'Payment checkout was closed. You can settle the bill anytime.', 'Payment Cancelled');
+      },
+    });
   };
 
   const filteredTrips = allTrips.filter((t) => t.status === activeTab);
@@ -318,11 +372,21 @@ export const TravelerTripsPage: React.FC = () => {
                   <Button
                     size="sm"
                     variant="primary"
-                    onClick={() => navigate(`/user/billing?tripId=${selectedTrip.id}`)}
+                    disabled={isProcessingPayment}
+                    onClick={() => handleDirectPay(selectedTrip)}
                     className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs inline-flex items-center gap-1.5 shadow-sm"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Pay Now</span>
+                    <span>{isProcessingPayment ? 'Connecting...' : 'Pay with Razorpay'}</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate(`/user/billing?tripId=${selectedTrip.id}`)}
+                    className="rounded-xl text-slate-600 hover:bg-slate-100 text-xs inline-flex items-center gap-1"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>Breakdown</span>
                   </Button>
                 </div>
               </div>

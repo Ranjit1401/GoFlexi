@@ -18,39 +18,16 @@ import {
 } from 'lucide-react';
 import printerReference from '../../assets/voyagar-printer.png';
 import { getTrips, payTrip } from '../../services/trips';
+import { initiateRazorpayPayment } from '../../services/razorpay';
 import { Trip } from '../../types/traveler';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { api } from '../../services/api-client';
 import './TravelerBillingPage.css';
 
 type BillingState = 'ready' | 'generating' | 'printing' | 'final' | 'booking';
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayInstance;
-  }
-}
-
-type RazorpayCheckoutOptions = {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill?: { name?: string; email?: string; contact?: string };
-  theme?: { color?: string };
-  handler: (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
-  modal?: { ondismiss?: () => void };
-};
-
-type RazorpayInstance = {
-  open: () => void;
-};
 
 interface CostItem {
   label: string;
@@ -208,86 +185,36 @@ export const TravelerBillingPage: React.FC = () => {
     if (!activeTrip) return;
     setIsProcessingPayment(true);
 
-    const completeSettlement = async () => {
-      const updated = await payTrip(activeTrip.id);
-      setAllTrips((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-      showToast('success', `Payment confirmed for ${activeTrip.title}!`, 'Booking Finalized');
-      setState('booking');
-    };
-
-    try {
-      // 1. Try Razorpay checkout flow if configured
-      const scriptId = 'razorpay-checkout-js';
-      if (!document.getElementById(scriptId)) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement('script');
-          script.id = scriptId;
-          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Unable to load Razorpay Checkout'));
-          document.body.appendChild(script);
-        });
-      }
-
-      if (window.Razorpay) {
+    initiateRazorpayPayment({
+      amount: costData.total,
+      tripId: activeTrip.id,
+      title: activeTrip.title,
+      destination: activeTrip.destination,
+      user: user ? { name: user.name, email: user.email } : null,
+      onSuccess: async (paymentId: string) => {
+        setIsProcessingPayment(false);
         try {
-          const { data: order } = await api.post('/payments/create-order', {
-            amount: costData.total,
-            currency: 'INR',
-            receipt: `goflexi_${activeTrip.id.slice(0, 8)}_${Date.now()}`,
-          });
-
-          if (order && order.order_id && order.key_id) {
-            const checkout = new window.Razorpay({
-              key: order.key_id,
-              amount: order.amount,
-              currency: order.currency,
-              name: 'GoFlexi',
-              description: `${activeTrip.title} (${activeTrip.destination})`,
-              order_id: order.order_id,
-              theme: { color: '#1683F7' },
-              prefill: {
-                name: user?.name,
-                email: user?.email,
-              },
-              handler: async (response) => {
-                try {
-                  await api.post('/payments/verify', response);
-                } catch (verifyErr) {
-                  console.warn('Backend payment verification notice:', verifyErr);
-                }
-                await completeSettlement();
-              },
-              modal: {
-                ondismiss: () => {
-                  setIsProcessingPayment(false);
-                },
-              },
-            });
-            checkout.open();
-            return;
-          }
-        } catch (orderErr) {
-          console.warn('Razorpay order creation bypassed, completing via direct settlement:', orderErr);
+          const updated = await payTrip(activeTrip.id);
+          setAllTrips((prev) =>
+            prev.map((t) => (t.id === updated.id ? { ...updated, paymentStatus: 'Paid', paymentId } : t))
+          );
+        } catch {
+          setAllTrips((prev) =>
+            prev.map((t) => (t.id === activeTrip.id ? { ...t, paymentStatus: 'Paid', paymentId } : t))
+          );
         }
-      }
-
-      // 2. Direct settlement fallback
-      await completeSettlement();
-    } catch (err: any) {
-      console.error('Payment processing fallback:', err);
-      try {
-        await completeSettlement();
-      } catch (directErr: any) {
-        showToast(
-          'error',
-          directErr?.response?.data?.detail || 'Payment could not be processed. Please try again.',
-          'Payment Failed'
-        );
-      }
-    } finally {
-      setIsProcessingPayment(false);
-    }
+        showToast('success', `Payment confirmed for ${activeTrip.title}! Payment ID: ${paymentId}`, 'Booking Finalized');
+        setState('booking');
+      },
+      onError: (errorMessage: string) => {
+        setIsProcessingPayment(false);
+        showToast('error', errorMessage, 'Payment Failed');
+      },
+      onDismiss: () => {
+        setIsProcessingPayment(false);
+        showToast('info', 'Payment was closed. You can complete the settlement at any time.', 'Payment Cancelled');
+      },
+    });
   };
 
   if (isLoading) {
@@ -609,6 +536,31 @@ export const TravelerBillingPage: React.FC = () => {
                   <strong>₹{costData.total.toLocaleString('en-IN')}</strong>
                 </div>
               </div>
+
+              {!isPaid && (
+                <div className="pt-4 mt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-2.5">
+                  <button
+                    className="billing-primary-btn bg-emerald-600 hover:bg-emerald-500 border-emerald-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 flex-1 shadow-md hover:shadow-lg transition-all"
+                    onClick={handlePayTrip}
+                    disabled={isProcessingPayment}
+                  >
+                    <CreditCard size={18} />
+                    <span>
+                      {isProcessingPayment
+                        ? 'Connecting to Razorpay...'
+                        : `Pay ₹${costData.total.toLocaleString('en-IN')} with Razorpay`}
+                    </span>
+                    <ArrowRight size={16} />
+                  </button>
+                  <button
+                    className="billing-secondary-btn py-2.5 px-4 text-xs font-semibold rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                    onClick={() => setSplitOpen(true)}
+                  >
+                    <Users size={15} className="inline mr-1 text-slate-500" />
+                    Split Bill
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* Interactive Bill Printer */}

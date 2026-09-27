@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MapPin,
@@ -19,6 +19,7 @@ import {
   Compass,
   Star,
   Plane,
+  Train,
   Building2,
   RefreshCw,
   Bookmark,
@@ -38,6 +39,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { FlightSearchPanel } from '../../components/traveler/FlightSearchPanel';
+import { TrainSearchPanel } from '../../components/traveler/TrainSearchPanel';
 import { HotelSearchPanel } from '../../components/traveler/HotelSearchPanel';
 import { ActivityCard } from '../../components/traveler/ActivityCard';
 import { TripPlanTree } from '../../components/traveler/TripPlanTree';
@@ -56,6 +58,7 @@ import {
   recommendTrip,
 } from '../../services/trip-wizard';
 import { createTrip, CreateTripPayload } from '../../services/trips';
+import { initiateRazorpayPayment } from '../../services/razorpay';
 import {
   GeoResult,
   POIResult,
@@ -112,7 +115,12 @@ const TravelerNewTripWizardContent: React.FC = () => {
     budgetPreview,
     activities,
     travelStyle,
+    transportMode,
+    setTransportMode,
     selectedFlight,
+    selectedTrain,
+    setSelectedFlight,
+    setSelectedTrain,
     selectedHotel,
     generatedTripPlan,
     dateInsight,
@@ -125,7 +133,6 @@ const TravelerNewTripWizardContent: React.FC = () => {
     setBudgetPreview,
     toggleActivity,
     setTravelStyle,
-    setSelectedFlight,
     setSelectedHotel,
     setGeneratedTripPlan,
     setDateInsight,
@@ -134,6 +141,38 @@ const TravelerNewTripWizardContent: React.FC = () => {
 
   const flightBudgetRatio = budgetPreview?.flight_budget_ratio ?? DEFAULT_FLIGHT_BUDGET_RATIO;
   const hotelBudgetRatio = budgetPreview?.hotel_budget_ratio ?? DEFAULT_HOTEL_BUDGET_RATIO;
+
+  const INTERNATIONAL_CITIES = useMemo(
+    () => [
+      'dubai', 'abu dhabi', 'singapore', 'bangkok', 'bali', 'denpasar',
+      'london', 'paris', 'tokyo', 'new york', 'phuket', 'kuala lumpur',
+      'san francisco', 'maldives', 'rome', 'amsterdam', 'zurich', 'berlin',
+      'istanbul', 'doha', 'sydney', 'toronto', 'chicago', 'los angeles',
+      'vietnam', 'hanoi', 'thailand', 'malaysia', 'indonesia', 'switzerland',
+    ],
+    []
+  );
+
+  const isDomesticIndia = useMemo(() => {
+    if (
+      destinationGeo?.country_code?.toUpperCase() === 'IN' ||
+      destinationGeo?.country?.toLowerCase() === 'india'
+    ) {
+      return true;
+    }
+    const cleanDest = (destination || '').toLowerCase();
+    for (const intl of INTERNATIONAL_CITIES) {
+      if (cleanDest.includes(intl)) return false;
+    }
+    return true;
+  }, [destination, destinationGeo, INTERNATIONAL_CITIES]);
+
+  // If destination changed to international and mode was train, revert to flight
+  useEffect(() => {
+    if (!isDomesticIndia && transportMode === 'train') {
+      setTransportMode('flight');
+    }
+  }, [isDomesticIndia, transportMode, setTransportMode]);
 
   // Set default departure city from user profile if not customized
   useEffect(() => {
@@ -463,19 +502,27 @@ const TravelerNewTripWizardContent: React.FC = () => {
   };
 
   const computeTripCostBreakdown = () => {
-    const flightCost = selectedFlight?.price
-      ? selectedFlight.price * travelersCount
-      : Math.round(budgetMax * flightBudgetRatio);
+    let transportCost = 0;
+    if (transportMode === 'train' && isDomesticIndia) {
+      transportCost = selectedTrain?.price
+        ? selectedTrain.price * travelersCount
+        : Math.round(budgetMax * 0.12);
+    } else {
+      transportCost = selectedFlight?.price
+        ? selectedFlight.price * travelersCount
+        : Math.round(budgetMax * flightBudgetRatio);
+    }
+
     const durationDays = calculateTripDays(startDate, endDate);
     const hotelCost = selectedHotel?.price_per_night
       ? selectedHotel.price_per_night * Math.max(1, durationDays - 1)
       : Math.round(budgetMax * hotelBudgetRatio);
     const activitiesCost = activities.reduce((sum, a) => sum + (a.cost || 500), 0) * travelersCount;
-    const taxesCost = Math.round((flightCost + hotelCost + activitiesCost) * 0.08);
-    const totalCost = flightCost + hotelCost + activitiesCost + taxesCost;
+    const taxesCost = Math.round((transportCost + hotelCost + activitiesCost) * 0.08);
+    const totalCost = transportCost + hotelCost + activitiesCost + taxesCost;
 
     return {
-      flights: flightCost,
+      flights: transportCost,
       hotel: hotelCost,
       activities: activitiesCost,
       taxes: taxesCost,
@@ -495,11 +542,19 @@ const TravelerNewTripWizardContent: React.FC = () => {
       travelers_count: travelersCount,
       budget: `₹${breakdown.total.toLocaleString('en-IN')}`,
       status: 'Upcoming',
-      payment_status: payNow ? 'Paid' : 'Pending',
+      payment_status: 'Pending',
       cost_breakdown: breakdown,
       image_url: activities[0]?.preview_image || getDestinationImage(destination),
-      itinerary_summary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and flight with ${selectedFlight?.airline || 'Express Carrier'}.`,
-      tags: [travelStyle, `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`],
+      itinerary_summary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and ${
+        transportMode === 'train' && isDomesticIndia && selectedTrain
+          ? `Indian Railways (${selectedTrain.train_name} #${selectedTrain.train_number})`
+          : `flight with ${selectedFlight?.airline || 'Express Carrier'}`
+      }.`,
+      tags: [
+        travelStyle,
+        transportMode === 'train' && isDomesticIndia ? 'Indian Railways' : 'Air Travel',
+        `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`,
+      ],
       stops: activities.map((a) => a.name).slice(0, 5),
     };
 
@@ -521,14 +576,38 @@ const TravelerNewTripWizardContent: React.FC = () => {
     }
 
     if (payNow) {
-      showToast(
-        'success',
-        `Payment confirmed for ${destination}! Your itinerary is finalized.`,
-        'Payment Confirmed'
-      );
-      setTimeout(() => {
-        navigate(`/user/billing?tripId=${createdId || ''}&paid=true`);
-      }, 1000);
+      initiateRazorpayPayment({
+        amount: breakdown.total,
+        tripId: createdId,
+        title: `${destination} Custom Journey`,
+        destination: destination,
+        user: user ? { name: user.name, email: user.email } : null,
+        onSuccess: async (paymentId: string) => {
+          showToast(
+            'success',
+            `Payment confirmed for ${destination}! Ref: ${paymentId}`,
+            'Payment Confirmed'
+          );
+          setTimeout(() => {
+            navigate(`/user/billing?tripId=${createdId || ''}&paid=true`);
+          }, 800);
+        },
+        onError: (errorMsg: string) => {
+          setIsSaved(false);
+          showToast('error', errorMsg, 'Payment Failed');
+        },
+        onDismiss: () => {
+          setIsSaved(false);
+          showToast(
+            'info',
+            'Trip plan saved as pending! You can pay whenever you are ready in the Billing section.',
+            'Payment Closed'
+          );
+          setTimeout(() => {
+            navigate(`/user/billing?tripId=${createdId || ''}`);
+          }, 800);
+        },
+      });
     } else {
       showToast(
         'info',
@@ -1307,28 +1386,91 @@ const TravelerNewTripWizardContent: React.FC = () => {
         )}
 
         {/* ========================================================= */}
-        {/* STEP 7: RECOMMENDED FLIGHTS */}
+        {/* STEP 7: RECOMMENDED TRANSIT (FLIGHT OR TRAIN) */}
         {/* ========================================================= */}
         {step === 7 && (
           <div className="space-y-6">
-            <FlightSearchPanel
-              initialOrigin={departureCity}
-              initialDestination={destination}
-              initialDepartDate={startDate}
-              initialReturnDate={endDate}
-              initialAdults={travelersCount}
-              budgetMax={Math.round(budgetMax * flightBudgetRatio)}
-              travelStyle={travelStyle}
-              selectedFlightId={selectedFlight?.id}
-              onSelectFlight={(flight) => {
-                setSelectedFlight(flight);
-                showToast(
-                  'success',
-                  `Selected ${flight.airline} flight (₹${flight.price.toLocaleString('en-IN')})`,
-                  'Flight Chosen'
-                );
-              }}
-            />
+            {/* Conditional Transport Mode Selector for India */}
+            {isDomesticIndia ? (
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Preferred Transit Mode for {destination}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Domestic route within India: Choose between Flights or Indian Railways.
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setTransportMode('flight')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      transportMode === 'flight'
+                        ? 'bg-white text-navy-950 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Plane className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Flight / Air</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTransportMode('train')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      transportMode === 'train'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Train className="w-3.5 h-3.5" />
+                    <span>Indian Railways</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {transportMode === 'train' && isDomesticIndia ? (
+              <TrainSearchPanel
+                initialOrigin={departureCity}
+                initialDestination={destination}
+                initialDepartDate={startDate}
+                initialAdults={travelersCount}
+                budgetMax={Math.round(budgetMax * 0.15)}
+                travelStyle={travelStyle}
+                selectedTrainId={selectedTrain?.id}
+                onSelectTrain={(train) => {
+                  setSelectedTrain(train);
+                  showToast(
+                    'success',
+                    `Selected ${train.train_name} #${train.train_number} (₹${train.price.toLocaleString('en-IN')})`,
+                    'Train Selected'
+                  );
+                }}
+              />
+            ) : (
+              <FlightSearchPanel
+                initialOrigin={departureCity}
+                initialDestination={destination}
+                initialDepartDate={startDate}
+                initialReturnDate={endDate}
+                initialAdults={travelersCount}
+                budgetMax={Math.round(budgetMax * flightBudgetRatio)}
+                travelStyle={travelStyle}
+                selectedFlightId={selectedFlight?.id}
+                onSelectFlight={(flight) => {
+                  setSelectedFlight(flight);
+                  showToast(
+                    'success',
+                    `Selected ${flight.airline} flight (₹${flight.price.toLocaleString('en-IN')})`,
+                    'Flight Chosen'
+                  );
+                }}
+              />
+            )}
           </div>
         )}
 
@@ -1456,9 +1598,13 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       <span className="font-bold">{travelStyle}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-emerald-300 block uppercase">Flight</span>
+                      <span className="text-[10px] text-emerald-300 block uppercase">
+                        {transportMode === 'train' && isDomesticIndia ? 'Indian Railways' : 'Flight'}
+                      </span>
                       <span className="font-bold truncate block">
-                        {selectedFlight ? `${selectedFlight.airline} (₹${selectedFlight.price.toLocaleString('en-IN')})` : 'Recommended Route'}
+                        {transportMode === 'train' && isDomesticIndia
+                          ? (selectedTrain ? `${selectedTrain.train_name} (#${selectedTrain.train_number})` : 'Recommended Train Route')
+                          : (selectedFlight ? `${selectedFlight.airline} (₹${selectedFlight.price.toLocaleString('en-IN')})` : 'Recommended Route')}
                       </span>
                     </div>
                     <div>
@@ -1479,7 +1625,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-[11px] text-emerald-200/80">
-                      <span>Flights: ₹{computeTripCostBreakdown().flights.toLocaleString('en-IN')}</span>
+                      <span>{transportMode === 'train' && isDomesticIndia ? 'Trains' : 'Flights'}: ₹{computeTripCostBreakdown().flights.toLocaleString('en-IN')}</span>
                       <span>•</span>
                       <span>Stays: ₹{computeTripCostBreakdown().hotel.toLocaleString('en-IN')}</span>
                       <span>•</span>

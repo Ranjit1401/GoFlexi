@@ -75,3 +75,52 @@ class HotelSearchResponse(BaseModel):
     query: HotelSearchRequest
     results: List[HotelOption]
     count: int
+
+
+class TrainScheduleStop(BaseModel):
+    station_code: str
+    station_name: str
+    arrival_time: str
+    departure_time: str
+    halt_minutes: int = 0
+    distance_km: int = 0
+    day: int = 1
+
+
+class TrainOption(BaseModel):
+    id: str
+    train_number: str
+    train_name: str
+    origin_station_code: str
+    origin_station_name: str
+    destination_station_code: str
+    destination_station_name: str
+    depart_time: str
+    arrive_time: str
+    duration_minutes: int
+    duration_formatted: str
+    run_days: List[str] = Field(default_factory=list)
+    available_classes: List[str] = Field(default_factory=list)
+    price: float
+    currency: str = "INR"
+    train_type: str = "Express"
+    booking_link: Optional[str] = None
+    schedule: Optional[List[TrainScheduleStop]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TrainSearchRequest(BaseModel):
+    origin: str = Field(..., description="Origin city or railway station code")
+    destination: str = Field(..., description="Destination city or railway station code")
+    depart_date: date = Field(..., description="Date of journey (YYYY-MM-DD)")
+    travelers: int = Field(1, ge=1, le=10)
+    train_class: Optional[str] = Field(None, description="Preferred class: 1A, 2A, 3A, SL, CC, EC, 2S")
+
+
+class TrainSearchResponse(BaseModel):
+    query: TrainSearchRequest
+    is_domestic_india: bool = True
+    results: List[TrainOption]
+    count: int
+

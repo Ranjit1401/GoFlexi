@@ -6,7 +6,7 @@ import {
   DateInsight,
   TripPlan,
 } from '../types/trip-planner';
-import { FlightOption, HotelOption } from '../types/travel-search';
+import { FlightOption, HotelOption, TrainOption } from '../types/travel-search';
 
 export interface TripWizardState {
   step: number;
@@ -23,7 +23,9 @@ export interface TripWizardState {
   budgetPreview: BudgetPreview | null;
   activities: WizardActivity[];
   travelStyle: string;
+  transportMode: 'flight' | 'train';
   selectedFlight: FlightOption | null;
+  selectedTrain: TrainOption | null;
   selectedHotel: HotelOption | null;
   generatedTripPlan: TripPlan | null;
   dateInsight: DateInsight | null;
@@ -42,7 +44,9 @@ type TripWizardAction =
   | { type: 'REMOVE_ACTIVITY'; payload: string }
   | { type: 'TOGGLE_ACTIVITY'; payload: WizardActivity }
   | { type: 'SET_TRAVEL_STYLE'; payload: string }
+  | { type: 'SET_TRANSPORT_MODE'; payload: 'flight' | 'train' }
   | { type: 'SET_SELECTED_FLIGHT'; payload: FlightOption | null }
+  | { type: 'SET_SELECTED_TRAIN'; payload: TrainOption | null }
   | { type: 'SET_SELECTED_HOTEL'; payload: HotelOption | null }
   | { type: 'SET_GENERATED_TRIP_PLAN'; payload: TripPlan | null }
   | { type: 'SET_DATE_INSIGHT'; payload: DateInsight | null }
@@ -70,7 +74,9 @@ const initialState: TripWizardState = {
   budgetPreview: null,
   activities: [],
   travelStyle: 'Balanced',
+  transportMode: 'flight',
   selectedFlight: null,
+  selectedTrain: null,
   selectedHotel: null,
   generatedTripPlan: null,
   dateInsight: null,
@@ -90,6 +96,7 @@ function tripWizardReducer(state: TripWizardState, action: TripWizardAction): Tr
         budgetPreview: isNew ? null : state.budgetPreview,
         dateInsight: isNew ? null : state.dateInsight,
         selectedFlight: isNew ? null : state.selectedFlight,
+        selectedTrain: isNew ? null : state.selectedTrain,
         selectedHotel: isNew ? null : state.selectedHotel,
         generatedTripPlan: isNew ? null : state.generatedTripPlan,
       };
@@ -139,8 +146,12 @@ function tripWizardReducer(state: TripWizardState, action: TripWizardAction): Tr
     }
     case 'SET_TRAVEL_STYLE':
       return { ...state, travelStyle: action.payload };
+    case 'SET_TRANSPORT_MODE':
+      return { ...state, transportMode: action.payload };
     case 'SET_SELECTED_FLIGHT':
       return { ...state, selectedFlight: action.payload };
+    case 'SET_SELECTED_TRAIN':
+      return { ...state, selectedTrain: action.payload };
     case 'SET_SELECTED_HOTEL':
       return { ...state, selectedHotel: action.payload };
     case 'SET_GENERATED_TRIP_PLAN':
@@ -169,7 +180,9 @@ interface TripWizardContextType extends TripWizardState {
   removeActivity: (xid: string) => void;
   toggleActivity: (activity: WizardActivity) => void;
   setTravelStyle: (style: string) => void;
+  setTransportMode: (mode: 'flight' | 'train') => void;
   setSelectedFlight: (flight: FlightOption | null) => void;
+  setSelectedTrain: (train: TrainOption | null) => void;
   setSelectedHotel: (hotel: HotelOption | null) => void;
   setGeneratedTripPlan: (plan: TripPlan | null) => void;
   setDateInsight: (insight: DateInsight | null) => void;
@@ -206,8 +219,12 @@ export const TripWizardProvider: React.FC<{ children: ReactNode }> = ({ children
     dispatch({ type: 'TOGGLE_ACTIVITY', payload: activity });
   const setTravelStyle = (style: string) =>
     dispatch({ type: 'SET_TRAVEL_STYLE', payload: style });
+  const setTransportMode = (mode: 'flight' | 'train') =>
+    dispatch({ type: 'SET_TRANSPORT_MODE', payload: mode });
   const setSelectedFlight = (flight: FlightOption | null) =>
     dispatch({ type: 'SET_SELECTED_FLIGHT', payload: flight });
+  const setSelectedTrain = (train: TrainOption | null) =>
+    dispatch({ type: 'SET_SELECTED_TRAIN', payload: train });
   const setSelectedHotel = (hotel: HotelOption | null) =>
     dispatch({ type: 'SET_SELECTED_HOTEL', payload: hotel });
   const setGeneratedTripPlan = (plan: TripPlan | null) =>
@@ -234,7 +251,9 @@ export const TripWizardProvider: React.FC<{ children: ReactNode }> = ({ children
         removeActivity,
         toggleActivity,
         setTravelStyle,
+        setTransportMode,
         setSelectedFlight,
+        setSelectedTrain,
         setSelectedHotel,
         setGeneratedTripPlan,
         setDateInsight,
