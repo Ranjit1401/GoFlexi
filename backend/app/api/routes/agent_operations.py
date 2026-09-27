@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select, or_, func
+from sqlalchemy import select, or_, func, update
 
 from app.db.database import get_db
 from app.models.user import User
@@ -753,9 +753,25 @@ def get_notifications(
     return db.execute(stmt).scalars().all()
 
 
-@router.put("/notifications/{notif_id}/read", response_model=NotificationResponse, summary="Mark notification as read")
+@router.put("/notifications/mark-all-read", summary="Mark all operational notifications as read")
+def mark_all_notifications_read(
+    agent_tuple=Depends(get_current_agent),
+    db: Session = Depends(get_db)
+):
+    agent: Agent = agent_tuple[1]
+    db.execute(
+        update(AgentNotification)
+        .where(AgentNotification.agent_id == agent.id, AgentNotification.is_read == False)
+        .values(is_read=True)
+    )
+    db.commit()
+    return {"status": "ok", "message": "All notifications marked as read"}
+
+
+@router.put("/notifications/{notif_id}/read", response_model=NotificationResponse, summary="Mark notification as read or toggle")
 def mark_notification_read(
     notif_id: str,
+    read: Optional[bool] = Query(None, description="Explicit boolean value, or toggle if not provided"),
     agent_tuple=Depends(get_current_agent),
     db: Session = Depends(get_db)
 ):
@@ -770,7 +786,11 @@ def mark_notification_read(
     if not notif:
         raise HTTPException(status_code=404, detail="Notification not found")
 
-    notif.is_read = True
+    if read is not None:
+        notif.is_read = read
+    else:
+        notif.is_read = not notif.is_read
+
     db.commit()
     db.refresh(notif)
     return notif

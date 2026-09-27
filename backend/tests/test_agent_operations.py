@@ -131,3 +131,62 @@ def test_agent_vendors_crud(client, agent_headers):
     assert del_resp.status_code == 200
     assert del_resp.json()["status"] == "deleted"
 
+
+def test_agent_tours_and_summaries(client: TestClient, agent_headers: dict):
+    # List tours
+    resp = client.get("/api/agent/tours", headers=agent_headers)
+    assert resp.status_code == 200
+    tours = resp.json()
+    assert len(tours) >= 3
+
+    # Create tour
+    new_tour = {
+        "name": "Wayanad Rainforest Expedition",
+        "destination": "Wayanad, Kerala",
+        "duration": "4 Days / 3 Nights",
+        "budget_per_person": 22000,
+        "max_participants": 12,
+        "status": "Upcoming"
+    }
+    create_resp = client.post("/api/agent/tours", json=new_tour, headers=agent_headers)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    assert created["name"] == "Wayanad Rainforest Expedition"
+    assert created["status"] == "Upcoming"
+
+    # Summaries
+    sum_resp = client.get("/api/agent/tours/summaries", headers=agent_headers)
+    assert sum_resp.status_code == 200
+    summaries = sum_resp.json()
+    assert len(summaries) >= 3
+    assert "tour" in summaries[0]
+    assert "traveler" in summaries[0]
+
+
+def test_agent_notifications_and_mutations(client: TestClient, agent_headers: dict):
+    # List notifications
+    resp = client.get("/api/agent/notifications", headers=agent_headers)
+    assert resp.status_code == 200
+    notifs = resp.json()
+    assert len(notifs) >= 4
+    notif_id = notifs[0]["id"]
+
+    # Toggle read
+    read_resp = client.put(f"/api/agent/notifications/{notif_id}/read?read=true", headers=agent_headers)
+    assert read_resp.status_code == 200
+    assert read_resp.json()["is_read"] is True
+
+    # Mark all read
+    all_read_resp = client.put("/api/agent/notifications/mark-all-read", headers=agent_headers)
+    assert all_read_resp.status_code == 200
+    assert all_read_resp.json()["status"] == "ok"
+
+    # Verify all are read
+    verify_resp = client.get("/api/agent/notifications", headers=agent_headers)
+    assert all(n["is_read"] is True for n in verify_resp.json())
+
+    # Dismiss/delete one
+    del_resp = client.delete(f"/api/agent/notifications/{notif_id}", headers=agent_headers)
+    assert del_resp.status_code == 200
+    assert del_resp.json()["status"] == "dismissed"
+
