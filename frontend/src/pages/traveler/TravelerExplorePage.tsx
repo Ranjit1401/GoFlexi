@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getDestinations, DestinationListItem } from '../../services/destinations';
 import { DestinationCard } from '../../components/traveler/DestinationCard';
-import { Modal } from '../../components/ui/Modal';
+import { DestinationDetailModal } from '../../components/traveler/DestinationDetailModal';
 import { Button } from '../../components/ui/Button';
 import { LoadingState } from '../../components/ui/LoadingState';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -304,66 +304,13 @@ export const TravelerExplorePage: React.FC = () => {
         </div>
       )}
 
-      {/* Destination Quick Preview Modal */}
+      {/* Destination Big Screen Experience with Travel Blog & Pinterest-Style Related Places */}
       {selectedDestination && (
-        <Modal
-          isOpen={Boolean(selectedDestination)}
+        <DestinationDetailModal
+          destination={selectedDestination}
           onClose={() => setSelectedDestination(null)}
-          title={selectedDestination.name}
-          subtitle={selectedDestination.tagline}
-          maxWidth="lg"
-        >
-          <div className="space-y-5">
-            <div className="rounded-2xl overflow-hidden aspect-[16/9] relative bg-slate-100">
-              <img
-                src={selectedDestination.imageUrl || getDestinationImage(selectedDestination.name)}
-                alt={selectedDestination.name}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = getDestinationImage(selectedDestination.name);
-                }}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-xl text-xs font-bold text-slate-800 shadow">
-                Est. {selectedDestination.estimatedBudget}
-              </div>
-            </div>
-
-            <p className="text-sm text-slate-600 leading-relaxed">
-              {selectedDestination.description}
-            </p>
-
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-                Highlighted Experiences
-              </h4>
-              <ul className="space-y-1.5 text-xs text-slate-600">
-                {selectedDestination.highlightExperiences?.map((exp, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    <span>{exp}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <div className="text-xs text-slate-500">
-                Best season: <span className="font-semibold text-slate-800">{selectedDestination.bestSeason}</span>
-              </div>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  const dest = selectedDestination;
-                  setSelectedDestination(null);
-                  navigate(`/user/trips/new?dest=${encodeURIComponent(dest.name)}`);
-                }}
-                className="rounded-xl"
-              >
-                Plan Trip to {selectedDestination.name}
-              </Button>
-            </div>
-          </div>
-        </Modal>
+          onSelectDestination={(d) => setSelectedDestination(d as EnhancedDestination)}
+        />
       )}
     </div>
   );

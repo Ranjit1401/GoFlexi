@@ -25,7 +25,11 @@ import {
   Share2,
   Info,
   ExternalLink,
+  LocateFixed,
+  X,
+  Navigation,
 } from 'lucide-react';
+import { getCurrentLocationCity } from '../../utils/geolocation';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -79,8 +83,15 @@ export {
 // -------------------------------------------------------------
 const TravelerNewTripWizardContent: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const { user } = useAuth();
+
+  const destParam = searchParams.get('dest');
+  const originParam = searchParams.get('origin');
+
+  const [isLocatingDeparture, setIsLocatingDeparture] = useState(false);
+  const [detectedLocationLabel, setDetectedLocationLabel] = useState<string | null>(null);
 
   const {
     step,
@@ -125,10 +136,29 @@ const TravelerNewTripWizardContent: React.FC = () => {
 
   // Set default departure city from user profile if not customized
   useEffect(() => {
-    if (user?.location && departureCity === 'Mumbai') {
+    if (user?.location && departureCity === 'Mumbai' && !originParam) {
       setDepartureCity(user.location);
     }
-  }, [user?.location]);
+  }, [user?.location, originParam]);
+
+  const handleDetectCurrentLocation = async () => {
+    setIsLocatingDeparture(true);
+    try {
+      const loc = await getCurrentLocationCity();
+      setDepartureCity(loc.city);
+      setDetectedLocationLabel(loc.formatted || loc.city);
+      showToast('success', `Departure origin set to ${loc.city}`, '📍 Location Detected');
+    } catch (err: any) {
+      console.error('Failed to get current location:', err);
+      showToast(
+        'error',
+        err?.message || 'Unable to detect GPS position. Please enter your city manually.',
+        'Location Error'
+      );
+    } finally {
+      setIsLocatingDeparture(false);
+    }
+  };
 
   // Featured destinations and instant presets
   const FEATURED_GEO_PRESETS: Record<string, GeoResult> = {
@@ -221,18 +251,31 @@ const TravelerNewTripWizardContent: React.FC = () => {
     }
   };
 
-  // Initial load for Step 1 default destination
+  // Initial load for Step 1 default destination & search params
   const hasLoadedStep1Ref = useRef(false);
   useEffect(() => {
     if (!hasLoadedStep1Ref.current) {
       hasLoadedStep1Ref.current = true;
-      if (destinationGeo) {
+      if (destParam && destParam.trim()) {
+        handleSelectFeaturedDest(destParam.trim());
+      } else if (destinationGeo) {
         loadPopularActivities(destinationGeo.latitude, destinationGeo.longitude);
       } else {
         handleSelectFeaturedDest(destination || 'Goa');
       }
+
+      if (originParam && originParam.trim()) {
+        setDepartureCity(originParam.trim());
+      }
     }
-  }, []);
+  }, [destParam, originParam]);
+
+  // If destParam changes in URL (e.g. from Explore navigation)
+  useEffect(() => {
+    if (destParam && destParam.trim() && destParam.trim().toLowerCase() !== destination.toLowerCase()) {
+      handleSelectFeaturedDest(destParam.trim());
+    }
+  }, [destParam]);
 
   // -----------------------------------------------------------
   // Step 2: Date Insights (Weather + Crowd Heuristic)
@@ -532,21 +575,46 @@ const TravelerNewTripWizardContent: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Destination Input with Live Autocomplete */}
+              {/* Destination Input with Live Autocomplete & Manual Clear */}
               <div className="relative">
-                <Input
-                  label="Destination City or Region"
-                  placeholder="e.g. Goa, Manali, Jaipur, Tokyo..."
-                  value={destination}
-                  onChange={(e) => handleDestinationInputChange(e.target.value)}
-                  onFocus={() => destSuggestions.length > 0 && setShowDestDropdown(true)}
-                  icon={<MapPin className="w-4 h-4 text-brand-600" />}
-                />
-                {loadingDestSearch && (
-                  <div className="absolute right-3 top-9 text-slate-400">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  </div>
-                )}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Destination City or Region
+                  </label>
+                  <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
+                    Manual Entry Supported
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    placeholder="Type any city e.g. Goa, Manali, Paris, Tokyo..."
+                    value={destination}
+                    onChange={(e) => handleDestinationInputChange(e.target.value)}
+                    onFocus={() => destSuggestions.length > 0 && setShowDestDropdown(true)}
+                    icon={<MapPin className="w-4 h-4 text-brand-600" />}
+                    rightElement={
+                      destination ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDestination('');
+                            setDestSuggestions([]);
+                            setShowDestDropdown(false);
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                          title="Clear to enter custom destination"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      ) : undefined
+                    }
+                  />
+                  {loadingDestSearch && (
+                    <div className="absolute right-9 top-1/2 -translate-y-1/2 text-slate-400">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    </div>
+                  )}
+                </div>
                 {showDestDropdown && destSuggestions.length > 0 && (
                   <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 max-h-56 overflow-y-auto divide-y divide-slate-100">
                     {destSuggestions.map((item) => (
@@ -569,20 +637,80 @@ const TravelerNewTripWizardContent: React.FC = () => {
                     ))}
                   </div>
                 )}
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Enter any custom place name or choose from popular hubs below.
+                </span>
               </div>
 
-              {/* Departing From Field */}
+              {/* Departing From Field with Option 1: Manual Input & Option 2: Current Location Button */}
               <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Departing From (Origin City)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleDetectCurrentLocation}
+                    disabled={isLocatingDeparture}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                    title="Track my GPS location and auto-fill current city"
+                  >
+                    <LocateFixed className={`w-3.5 h-3.5 ${isLocatingDeparture ? 'animate-spin text-brand-600' : 'text-brand-600'}`} />
+                    <span>{isLocatingDeparture ? 'Tracking GPS...' : '📍 Use Current Location'}</span>
+                  </button>
+                </div>
                 <Input
-                  label="Departing From (Origin City)"
-                  placeholder="e.g. Mumbai, Delhi, Bengaluru..."
+                  placeholder="e.g. Mumbai, Delhi, Bengaluru, London..."
                   value={departureCity}
-                  onChange={(e) => setDepartureCity(e.target.value)}
-                  icon={<MapPin className="w-4 h-4 text-slate-400" />}
+                  onChange={(e) => {
+                    setDepartureCity(e.target.value);
+                    if (detectedLocationLabel) setDetectedLocationLabel(null);
+                  }}
+                  icon={<Plane className="w-4 h-4 text-slate-400" />}
+                  rightElement={
+                    departureCity ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDepartureCity('');
+                          setDetectedLocationLabel(null);
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                        title="Clear to enter custom departure city"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    ) : undefined
+                  }
                 />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Used for real-time flight route search and price previews.
-                </span>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                  <span>
+                    {detectedLocationLabel ? (
+                      <span className="text-emerald-600 font-bold flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        Auto-detected: {detectedLocationLabel}
+                      </span>
+                    ) : (
+                      'Used for live flight route matching & pricing.'
+                    )}
+                  </span>
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <span className="text-slate-400">Hubs:</span>
+                    {['Mumbai', 'Delhi', 'Bengaluru'].map((hub) => (
+                      <button
+                        key={hub}
+                        type="button"
+                        onClick={() => {
+                          setDepartureCity(hub);
+                          setDetectedLocationLabel(null);
+                        }}
+                        className="text-brand-600 hover:underline font-semibold cursor-pointer"
+                      >
+                        {hub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
