@@ -97,3 +97,33 @@ export async function getWikivoyageSummary(destination: string): Promise<Wikivoy
   }
   return null;
 }
+
+export async function generateTripPlan(payload: TripPlanRequest): Promise<TripPlanResponse> {
+  const resp = await api.post<TripPlanResponse>('/copilot/plan', payload);
+  return resp.data;
+}
+
+export async function getDigitalTwinSimulation(params: {
+  latitude: number;
+  longitude: number;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  rainfallMm?: number;
+  temperatureC?: number;
+  stormDurationHours?: number;
+}): Promise<import('../types/trip-planner').DigitalTwinResponse> {
+  const resp = await api.get('/trip-wizard/digital-twin', {
+    params: {
+      lat: params.latitude,
+      lon: params.longitude,
+      destination: params.destination,
+      start_date: params.startDate,
+      end_date: params.endDate,
+      rainfall_mm: params.rainfallMm,
+      temperature_c: params.temperatureC,
+      storm_duration_hours: params.stormDurationHours,
+    },
+  });
+  return resp.data;
+}

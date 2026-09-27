@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CopilotChatMessage, DiscoveredPlace, TripLocation, TripPlan } from '../../types/trip-planner';
 import { TripMapPanel } from './TripMapPanel';
+import { WeatherDigitalTwin } from './WeatherDigitalTwin';
 
 interface AiTripAssistantProps {
   messages: CopilotChatMessage[];
@@ -107,15 +108,15 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
   ];
 
   return (
-    <div className="flex h-full flex-col border-l border-slate-200 bg-white">
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col bg-white">
+      <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1683F7]/10 text-[#1683F7]">
             <Sparkles className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[#071225]">GoFlexi AI Assistant</h3>
-            <p className="mt-0.5 text-[10px] text-slate-500">Your personal travel co-pilot</p>
+            <h3 className="text-base font-semibold text-[#071225]">GoFlexi AI Assistant</h3>
+            <p className="mt-0.5 text-[11px] text-slate-500">Your personal travel co-pilot</p>
           </div>
         </div>
         <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold text-emerald-600">
@@ -129,7 +130,7 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
-            className={`flex items-center justify-center gap-1.5 border-b-2 px-2 py-3 text-[10px] font-semibold transition ${
+            className={`flex items-center justify-center gap-1.5 border-b-2 px-2 py-3.5 text-[11px] font-semibold transition ${
               activeTab === id
                 ? 'border-[#1683F7] text-[#1683F7]'
                 : 'border-transparent text-slate-500 hover:text-[#071225]'
@@ -143,7 +144,7 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
 
       {activeTab === 'chat' && (
         <>
-          <div className="flex-1 overflow-y-auto p-3.5">
+          <div className="flex-1 min-h-0 overflow-y-auto p-5">
             {messages.length === 0 && !isLoading ? (
               <div className="flex h-full min-h-64 flex-col items-center justify-center text-center">
                 <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#1683F7]/10 text-[#1683F7]">
@@ -155,7 +156,7 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {messages.map((msg) => {
                   const isUser = msg.sender === 'user';
                   return (
@@ -273,7 +274,7 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t border-slate-200 p-3">
+          <div className="border-t border-slate-200 p-4">
             <form onSubmit={handleSubmit} className="relative">
               <input
                 type="text"
@@ -281,7 +282,7 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
                 onChange={(event) => setInputText(event.target.value)}
                 disabled={isLoading}
                 placeholder="Ask anything about your next trip…"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-3 pr-10 text-[11px] text-[#071225] outline-none focus:border-[#1683F7] focus:ring-2 focus:ring-[#1683F7]/10"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-4 pr-11 text-[12px] text-[#071225] outline-none focus:border-[#1683F7] focus:ring-2 focus:ring-[#1683F7]/10"
               />
               <button
                 type="submit"
@@ -366,7 +367,7 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
                 ].map(({ label, value, icon: Icon }) => (
                   <div key={label} className="rounded-xl border border-slate-200 bg-white p-3">
                     <Icon className="h-4 w-4 text-[#1683F7]" />
-                    <p className="mt-2 text-[9px] text-slate-500">{label}</p>
+                    <p className="mt-2 text-[10px] text-slate-500">{label}</p>
                     <p className="mt-0.5 text-xs font-semibold text-[#071225]">{value}</p>
                   </div>
                 ))}
@@ -389,6 +390,8 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
                   </span>
                 </div>
               </div>
+
+              <WeatherDigitalTwin plan={tripPlan} />
             </div>
           )}
         </div>

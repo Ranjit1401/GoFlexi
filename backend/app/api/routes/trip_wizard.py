@@ -22,10 +22,12 @@ from app.schemas.trip_wizard import (
     WizardActivity,
     TripRecommendationRequest,
     TripRecommendationResponse,
+    DigitalTwinResponse,
 )
 from app.services.geocoding_service import geocode_place, haversine_km
 from app.services.poi_service import search_activities, get_activity_detail
 from app.services.date_insight_service import get_date_insights, parse_date
+from app.services.digital_twin_service import get_digital_twin
 from app.services.ranking_service import (
     rank_flights,
     rank_hotels,
@@ -134,6 +136,38 @@ async def get_date_insight_endpoint(
 
 
 @router.get(
+    "/digital-twin",
+    response_model=DigitalTwinResponse,
+    summary="Live weather + what-if digital twin simulation",
+)
+async def get_digital_twin_endpoint(
+    lat: float = Query(..., description="Destination latitude"),
+    lon: float = Query(..., description="Destination longitude"),
+    destination: str = Query(..., min_length=1, description="Destination name"),
+    start_date: str = Query(..., description="Trip start date YYYY-MM-DD"),
+    end_date: str = Query(..., description="Trip end date YYYY-MM-DD"),
+    rainfall_mm: Optional[float] = Query(None, ge=0, le=500),
+    temperature_c: Optional[float] = Query(None, ge=-50, le=60),
+    storm_duration_hours: Optional[float] = Query(None, ge=0, le=72),
+    traveler: User = Depends(get_current_traveler),
+):
+    """
+    Extends the existing travel planner with a weather-driven digital twin.
+    Live weather is the baseline; optional parameters create an isolated what-if scenario.
+    """
+    return await get_digital_twin(
+        destination=destination,
+        lat=lat,
+        lon=lon,
+        start_date=start_date,
+        end_date=end_date,
+        rainfall_mm=rainfall_mm,
+        temperature_c=temperature_c,
+        storm_duration_hours=storm_duration_hours,
+    )
+
+
+@router.get(
     "/budget-preview",
     response_model=BudgetPreview,
     summary="Live flight and accommodation budget preview bounds",
@@ -143,84 +177,110 @@ async def get_budget_preview(
     start_date: str = Query(..., description="Departure date YYYY-MM-DD"),
     end_date: str = Query(..., description="Return date YYYY-MM-DD"),
     travelers: int = Query(1, ge=1, le=20, description="Party size"),
-    departure_city: str = Query("Mumbai", description="Origin city"),
+    departure_city: str = Query(..., min_length=2, description="Origin city"),
     traveler: User = Depends(get_current_traveler),
 ):
     """
-    Queries live flight and hotel pricing previews to compute realistic min–max budget bounds.
+    Queries live flight and hotel pricing only.
+    If an upstream provider does not return data, the endpoint fails instead
+    of presenting fabricated budget numbers.
     """
     start_d = parse_date(start_date)
     end_d = parse_date(end_date)
     nights = max(1, (end_d - start_d).days)
 
-    # 1. Flight prices
-    flight_min = 3500.0 * travelers
-    flight_max = 9500.0 * travelers
     try:
         origin_raw = await travel_search_client.search_airports(departure_city)
         origin_suggs = _parse_airport_suggestions(origin_raw)
         dest_raw = await travel_search_client.search_airports(destination)
         dest_suggs = _parse_airport_suggestions(dest_raw)
 
-        if origin_suggs and dest_suggs:
-            origin_apt = _pick_best_airport(origin_suggs, departure_city)
-            dest_apt = _pick_best_airport(dest_suggs, destination)
-
-            raw_flights = await travel_search_client.search_flights(
-                origin_sky_id=origin_apt.skyId,
-                dest_sky_id=dest_apt.skyId,
-                origin_entity_id=origin_apt.entityId,
-                dest_entity_id=dest_apt.entityId,
-                date=start_date,
-                return_date=end_date,
-                adults=travelers,
+        if not origin_suggs or not dest_suggs:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Could not resolve origin or destination airport.",
             )
-            flight_options = _parse_flight_options(raw_flights)
-            if flight_options:
-                flight_prices = [f.price for f in flight_options]
-                flight_min = min(flight_prices)
-                flight_max = max(flight_prices)
-    except Exception:
-        pass
 
-    # 2. Hotel prices
-    hotel_min = 2800.0
-    hotel_max = 14500.0
-    try:
+        origin_apt = _pick_best_airport(origin_suggs, departure_city)
+        dest_apt = _pick_best_airport(dest_suggs, destination)
+
+        raw_flights = await travel_search_client.search_flights(
+            origin_sky_id=origin_apt.skyId,
+            dest_sky_id=dest_apt.skyId,
+            origin_entity_id=origin_apt.entityId,
+            dest_entity_id=dest_apt.entityId,
+            date=start_date,
+            return_date=end_date,
+            adults=travelers,
+        )
+        flight_options = _parse_flight_options(raw_flights)
+
+        if not flight_options:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No live flight prices were returned for this trip.",
+            )
+
         hotel_dest_raw = await travel_search_client.search_hotel_destination(destination)
         hotel_dests = _parse_hotel_destinations(hotel_dest_raw)
-        if hotel_dests:
-            entity_id = hotel_dests[0]["entityId"]
-            raw_hotels = await travel_search_client.search_hotels(
-                entity_id=entity_id,
-                check_in=start_date,
-                check_out=end_date,
-                adults=travelers,
-                rooms=max(1, (travelers + 1) // 2),
-                destination=destination,
+
+        if not hotel_dests:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Could not resolve the hotel destination.",
             )
-            hotel_options = _parse_hotel_options(raw_hotels)
-            if hotel_options:
-                hotel_prices = [h.price_per_night for h in hotel_options]
-                hotel_min = min(hotel_prices)
-                hotel_max = max(hotel_prices)
-    except Exception:
-        pass
 
-    min_total = round(flight_min + (hotel_min * nights), 0)
-    max_total = round(flight_max + (hotel_max * nights), 0)
+        raw_hotels = await travel_search_client.search_hotels(
+            entity_id=hotel_dests[0]["entityId"],
+            check_in=start_date,
+            check_out=end_date,
+            adults=travelers,
+            rooms=max(1, (travelers + 1) // 2),
+            destination=destination,
+        )
+        hotel_options = _parse_hotel_options(raw_hotels)
 
-    return BudgetPreview(
-        min_price=min_total,
-        max_price=max_total,
-        flight_min=flight_min,
-        flight_max=flight_max,
-        hotel_min=hotel_min,
-        hotel_max=hotel_max,
-        currency="INR",
-        flight_budget_ratio=FLIGHT_BUDGET_RATIO,
-        hotel_budget_ratio=HOTEL_BUDGET_RATIO,
-    )
+        if not hotel_options:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No live hotel prices were returned for this trip.",
+            )
+
+        flight_prices = [flight.price for flight in flight_options if flight.price > 0]
+        hotel_prices = [hotel.price_per_night for hotel in hotel_options if hotel.price_per_night > 0]
+
+        if not flight_prices or not hotel_prices:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Live pricing was returned without usable prices.",
+            )
+
+        flight_min = min(flight_prices)
+        flight_max = max(flight_prices)
+        hotel_min = min(hotel_prices)
+        hotel_max = max(hotel_prices)
+
+        min_total = round(flight_min + (hotel_min * nights), 0)
+        max_total = round(flight_max + (hotel_max * nights), 0)
+
+        return BudgetPreview(
+            min_price=min_total,
+            max_price=max_total,
+            flight_min=flight_min,
+            flight_max=flight_max,
+            hotel_min=hotel_min,
+            hotel_max=hotel_max,
+            currency="INR",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Live budget preview failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Live travel pricing is temporarily unavailable.",
+        ) from exc
 
 
 @router.post(

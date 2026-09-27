@@ -17,7 +17,7 @@ import {
   PlusCircle,
 } from 'lucide-react';
 import printerReference from '../../assets/voyagar-printer.png';
-import { getTrips, payTrip } from '../../services/trips';
+import { api } from '../../services/api-client';
 import { initiateRazorpayPayment } from '../../services/razorpay';
 import { Trip } from '../../types/traveler';
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +28,46 @@ import { Button } from '../../components/ui/Button';
 import './TravelerBillingPage.css';
 
 type BillingState = 'ready' | 'generating' | 'printing' | 'final' | 'booking';
+
+interface BillingTripResponse {
+  id: string;
+  title: string;
+  destination: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  travelers_count: number;
+  budget: string;
+  status: Trip['status'];
+  payment_status?: Trip['paymentStatus'];
+  payment_id?: string | null;
+  paid_at?: string | null;
+  cost_breakdown?: Trip['costBreakdown'] | null;
+  image_url?: string | null;
+  itinerary_summary?: string | null;
+  tags?: string[] | null;
+  stops?: string[] | null;
+}
+
+const mapBillingTrip = (item: BillingTripResponse): Trip => ({
+  id: item.id,
+  title: item.title,
+  destination: item.destination,
+  startDate: item.start_date,
+  endDate: item.end_date,
+  days: item.days,
+  travelersCount: item.travelers_count,
+  budget: item.budget,
+  status: item.status,
+  paymentStatus: item.payment_status || 'Pending',
+  paymentId: item.payment_id || undefined,
+  paidAt: item.paid_at || undefined,
+  costBreakdown: item.cost_breakdown || undefined,
+  imageUrl: item.image_url || '',
+  itinerarySummary: item.itinerary_summary || '',
+  tags: item.tags || [],
+  stops: item.stops || [],
+});
 
 interface CostItem {
   label: string;
@@ -63,7 +103,8 @@ export const TravelerBillingPage: React.FC = () => {
     const load = async () => {
       setIsLoading(true);
       try {
-        const trips = await getTrips();
+        const tripResponse = await api.get<BillingTripResponse[]>('/trips');
+        const trips = (tripResponse.data || []).map(mapBillingTrip);
         if (!mounted) return;
         setAllTrips(trips);
 
@@ -167,56 +208,9 @@ export const TravelerBillingPage: React.FC = () => {
       });
     }
 
-    let subtotal = items.reduce((sum, item) => sum + item.raw, 0);
-    let taxes = breakdown?.taxes || 0;
-    let total = breakdown?.total ?? (subtotal + taxes);
-
-    if (items.length === 0 && (activeTrip.budget || total > 0)) {
-      const parseNum = (str: string) => {
-        const digits = (str || '').replace(/[^0-9]/g, '');
-        return digits ? parseInt(digits, 10) : 0;
-      };
-      const numBudget = total > 0 ? total : parseNum(activeTrip.budget);
-      if (numBudget > 0) {
-        const flight = Math.round(numBudget * 0.35);
-        const hotel = Math.round(numBudget * 0.45);
-        const activities = Math.round(numBudget * 0.12);
-        taxes = Math.round(numBudget * 0.08);
-        subtotal = flight + hotel + activities;
-        total = subtotal + taxes;
-
-        items.push(
-          {
-            label: 'Flights & Transit',
-            detail: `${activeTrip.destination} Route`,
-            meta: `${activeTrip.travelersCount} Travellers`,
-            price: `₹${flight.toLocaleString('en-IN')}`,
-            raw: flight,
-          },
-          {
-            label: 'Accommodation',
-            detail: `${activeTrip.days} nights · ${activeTrip.destination}`,
-            meta: 'Curated Hotel / Villa',
-            price: `₹${hotel.toLocaleString('en-IN')}`,
-            raw: hotel,
-          },
-          {
-            label: 'Experiences & Activities',
-            detail: activeTrip.stops?.slice(0, 2).join(', ') || 'Local Highlights & Tours',
-            meta: `${activeTrip.travelersCount} Guests`,
-            price: `₹${activities.toLocaleString('en-IN')}`,
-            raw: activities,
-          },
-          {
-            label: 'Taxes & Surcharges',
-            detail: 'GST & Service Surcharges',
-            meta: 'Standard Fee',
-            price: `₹${taxes.toLocaleString('en-IN')}`,
-            raw: taxes,
-          },
-        );
-      }
-    }
+    const subtotal = items.reduce((sum, item) => sum + item.raw, 0);
+    const taxes = breakdown?.taxes || 0;
+    const total = breakdown?.total ?? (subtotal + taxes);
 
     return { items, subtotal, taxes, total };
   }, [activeTrip]);
@@ -237,7 +231,8 @@ export const TravelerBillingPage: React.FC = () => {
       onSuccess: async (paymentId: string) => {
         setIsProcessingPayment(false);
         try {
-          const updated = await payTrip(activeTrip.id);
+          const paymentResponse = await api.put<BillingTripResponse>(`/trips/${activeTrip.id}/pay`);
+          const updated = mapBillingTrip(paymentResponse.data);
           setAllTrips((prev) =>
             prev.map((t) => (t.id === updated.id ? { ...updated, paymentStatus: 'Paid', paymentId } : t))
           );

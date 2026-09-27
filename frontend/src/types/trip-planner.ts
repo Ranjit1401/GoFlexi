@@ -197,6 +197,39 @@ export interface WeatherOutlook {
   daily_summary?: string;
 }
 
+
+export interface DigitalTwinImpact {
+  name: string;
+  change_pct: number;
+  uncertainty_pct: number;
+  direction: 'increase' | 'decrease' | 'stable';
+  explanation: string;
+}
+
+export interface SocialSignal {
+  title: string;
+  score?: number;
+  created_at?: string;
+  source: string;
+  url?: string;
+}
+
+export interface DigitalTwinResponse {
+  destination: string;
+  live_weather: WeatherOutlook;
+  scenario: {
+    rainfall_mm: number;
+    temperature_c: number;
+    storm_duration_hours: number;
+  };
+  system_risk_probability: number;
+  system_risk_uncertainty: number;
+  impacts: DigitalTwinImpact[];
+  social_signals: SocialSignal[];
+  social_signal_status: string;
+  updated_at: string;
+}
+
 export interface DateInsight {
   weather: WeatherOutlook;
   crowd_score: number;

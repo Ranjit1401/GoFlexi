@@ -103,3 +103,37 @@ class TripRecommendationResponse(BaseModel):
     alternate_flights: List[FlightOption] = Field(default_factory=list)
     alternate_hotels: List[HotelOption] = Field(default_factory=list)
     message: str
+
+
+class DigitalTwinImpact(BaseModel):
+    name: str
+    change_pct: float
+    uncertainty_pct: float
+    direction: Literal["increase", "decrease", "stable"]
+    explanation: str
+
+
+class SocialSignal(BaseModel):
+    title: str
+    score: Optional[int] = None
+    created_at: Optional[str] = None
+    source: str
+    url: Optional[str] = None
+
+
+class DigitalTwinScenario(BaseModel):
+    rainfall_mm: float
+    temperature_c: float
+    storm_duration_hours: float
+
+
+class DigitalTwinResponse(BaseModel):
+    destination: str
+    live_weather: WeatherOutlook
+    scenario: DigitalTwinScenario
+    system_risk_probability: int
+    system_risk_uncertainty: int
+    impacts: List[DigitalTwinImpact] = Field(default_factory=list)
+    social_signals: List[SocialSignal] = Field(default_factory=list)
+    social_signal_status: str = "No public signals available."
+    updated_at: str

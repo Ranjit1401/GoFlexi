@@ -21,8 +21,11 @@ import { TripPlan, TripLocation, CopilotChatMessage, DiscoveredPlace } from '../
 import { sendCopilotChat } from '../../services/trip-planner';
 import { createTrip } from '../../services/trips';
 import { searchFlights, searchHotels } from '../../services/travel-search';
+import { generateTripPlan } from '../../services/trip-wizard';
 import { TripGlobe } from '../../components/traveler/TripGlobe';
 import { AiTripAssistant } from '../../components/traveler/AiTripAssistant';
+import { WeatherDigitalTwin } from '../../components/traveler/WeatherDigitalTwin';
+import { getActivityImage } from '../../utils/placeImages';
 
 const DURATION_OPTIONS = [
   { label: '3 Days', days: 3 },
@@ -83,7 +86,7 @@ export const AiTripCopilotPage: React.FC = () => {
     setIsSaved(false);
 
     try {
-      const response = await sendCopilotChat({
+      let response = await sendCopilotChat({
         message: userPrompt,
         trip_id: tripPlan?.id,
         trip_state: tripPlan,
@@ -106,6 +109,29 @@ export const AiTripCopilotPage: React.FC = () => {
       }
 
       if (newDest) setDestinationQuery(newDest);
+
+      // If the conversational search returned places but did not create the structured itinerary,
+      // call the existing plan endpoint so Trip Map + Insights become populated immediately.
+      const wantsPlan = /\b(plan|itinerary|trip plan|create.*trip|organize.*trip)\b/i.test(userPrompt);
+      if (!response.trip_plan && wantsPlan && newDest) {
+        try {
+          const planned = await generateTripPlan({
+            message: userPrompt,
+            trip_context: {
+              destinations: [newDest],
+              travelers: travelersCount,
+            },
+          });
+          response = {
+            ...response,
+            message: planned.message || response.message,
+            trip_plan: planned.trip_plan,
+            locations: planned.trip_plan.locations,
+          };
+        } catch (planError) {
+          console.warn('Structured trip planning fallback failed:', planError);
+        }
+      }
 
       if (
         tripPlan?.destination &&
@@ -183,7 +209,6 @@ export const AiTripCopilotPage: React.FC = () => {
     handleSendMessage(`Create a ${selectedDuration}-day itinerary from these places`);
   };
 
-
   const handleSaveTrip = async () => {
     if (!tripPlan && selectedPlaces.length === 0) {
       if (destinationQuery.trim()) {
@@ -198,6 +223,7 @@ export const AiTripCopilotPage: React.FC = () => {
     }
 
     setIsSaved(true);
+
     const startDate =
       tripPlan.start_date ||
       new Date().toISOString().split('T')[0];
@@ -476,72 +502,92 @@ export const AiTripCopilotPage: React.FC = () => {
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3">
-          <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1683F7]">AI Co-Pilot</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#071225]">
-                Explore the world <span className="text-[#1683F7]">your way.</span>
-              </h2>
-              <p className="mt-1 max-w-xl text-xs text-slate-500">
-                Plan smarter. Ask GoFlexi AI to discover destinations, build a route, and organize a trip from live travel data.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-              <p className="mb-1.5 px-1 text-[9px] font-bold uppercase tracking-wider text-[#071225]">Choose your vehicle</p>
-              <div className="grid grid-cols-6 gap-1">
-                {VEHICLES.map(({ label, icon: Icon }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => setVehicle(label)}
-                    className={`flex min-w-14 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-semibold transition ${
-                      vehicle === label
-                        ? 'bg-[#1683F7] text-white shadow-sm'
-                        : 'bg-[#F7F9FC] text-slate-500 hover:text-[#071225]'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <TripGlobe
-              locations={globeLocations}
-              routes={tripPlan?.routes || []}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3 lg:p-4">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[minmax(360px,0.82fr)_minmax(520px,1.18fr)]">
+          <section className="min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <AiTripAssistant
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              onAddPlace={handleAddPlace}
+              selectedPlaces={selectedPlaces}
               selectedLocation={selectedLocation}
-              onSelectLocation={setSelectedLocation}
+              tripPlan={tripPlan}
+              isLoading={isLoading}
+              error={error}
+              onRetry={() => {
+                const lastUserMessage = [...messages].reverse().find((message) => message.sender === 'user');
+                if (lastUserMessage) handleSendMessage(lastUserMessage.text);
+              }}
             />
-            {error && (
-              <div className="absolute bottom-20 left-1/2 z-20 w-[min(460px,calc(100%-2rem))] -translate-x-1/2 rounded-xl border border-rose-200 bg-white p-3 text-xs text-rose-600 shadow-lg">
-                {error}
-              </div>
-            )}
-          </div>
-        </main>
+          </section>
 
-        <aside className="h-[46%] w-full flex-shrink-0 overflow-hidden p-3 pt-0 xl:h-full xl:w-[390px] xl:pl-0 xl:pt-3">
-          <AiTripAssistant
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            onAddPlace={handleAddPlace}
-            selectedPlaces={selectedPlaces}
-            selectedLocation={selectedLocation}
-            tripPlan={tripPlan}
-            isLoading={isLoading}
-            error={error}
-            onRetry={() => {
-              const lastUserMessage = [...messages].reverse().find((message) => message.sender === 'user');
-              if (lastUserMessage) handleSendMessage(lastUserMessage.text);
-            }}
-          />
-        </aside>
+          <section className="grid min-h-0 grid-rows-[minmax(330px,1.2fr)_minmax(230px,0.8fr)] gap-3 overflow-hidden">
+            <div className="relative min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-[#071225] shadow-sm">
+              <TripGlobe
+                locations={globeLocations}
+                routes={tripPlan?.routes || []}
+                selectedLocation={selectedLocation}
+                onSelectLocation={setSelectedLocation}
+              />
+              {error && (
+                <div className="absolute bottom-4 left-1/2 z-20 w-[min(460px,calc(100%-2rem))] -translate-x-1/2 rounded-xl border border-rose-200 bg-white p-3 text-xs text-rose-600 shadow-lg">
+                  {error}
+                </div>
+              )}
+            </div>
+
+            <div className="min-h-0 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              {!tripPlan ? (
+                <div className="flex h-full items-center justify-center text-center">
+                  <div>
+                    <p className="text-sm font-semibold text-[#071225]">Your trip details will appear here</p>
+                    <p className="mt-1 text-[11px] text-slate-500">Ask GoFlexi to plan a trip to populate live weather and places.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#1683F7]">Live destination data</p>
+                      <h3 className="mt-0.5 text-base font-semibold text-[#071225]">{tripPlan.destination}</h3>
+                    </div>
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-semibold text-emerald-700">Live</span>
+                  </div>
+
+                  <WeatherDigitalTwin plan={tripPlan} />
+
+                  {tripPlan.locations.filter((location) => location.type !== 'destination' && location.type !== 'origin').length > 0 && (
+                    <div>
+                      <div className="mb-2 flex items-center justify-between px-1">
+                        <h3 className="text-sm font-semibold text-[#071225]">Top places</h3>
+                        <span className="text-[10px] text-[#1683F7]">From your trip plan</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                        {tripPlan.locations
+                          .filter((location) => location.type !== 'destination' && location.type !== 'origin')
+                          .slice(0, 4)
+                          .map((location) => (
+                            <button
+                              key={location.id}
+                              type="button"
+                              onClick={() => setSelectedLocation(location)}
+                              className="overflow-hidden rounded-xl border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-[#1683F7]/40 hover:shadow-sm"
+                            >
+                              <img src={getActivityImage(location.name, location.type)} alt={location.name} className="h-20 w-full object-cover" />
+                              <div className="p-2">
+                                <p className="truncate text-[10px] font-semibold text-[#071225]">{location.name}</p>
+                                <p className="mt-0.5 truncate text-[9px] text-slate-500">{location.type}</p>
+                              </div>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
