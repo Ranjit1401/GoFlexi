@@ -11,6 +11,7 @@ from app.api.routes import (
     travel_search,
     trip_wizard,
     trips,
+    agent_operations,
 )
 
 app = FastAPI(
@@ -53,4 +54,5 @@ app.include_router(copilot.router, prefix=settings.API_V1_STR)
 app.include_router(travel_search.router, prefix=settings.API_V1_STR)
 app.include_router(trip_wizard.router, prefix=settings.API_V1_STR)
 app.include_router(trips.router, prefix=settings.API_V1_STR)
+app.include_router(agent_operations.router, prefix=settings.API_V1_STR)
 
