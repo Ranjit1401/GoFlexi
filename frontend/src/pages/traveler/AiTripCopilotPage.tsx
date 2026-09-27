@@ -4,75 +4,70 @@ import {
   Bookmark,
   Check,
   RotateCcw,
-  Compass,
-  ArrowRight,
   Calendar,
   Wallet,
   Users,
   MapPin,
   ChevronDown,
-  Layers,
-  Plane
+  Car,
+  Bike,
+  TrainFront,
+  BusFront,
+  Plane,
+  Truck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { TripPlan, TripLocation, CopilotChatMessage, DiscoveredPlace } from '../../types/trip-planner';
-import { generateTripPlan, sendCopilotChat } from '../../services/trip-planner';
+import { sendCopilotChat } from '../../services/trip-planner';
 import { createTrip } from '../../services/trips';
-import { TripPlanTree } from '../../components/traveler/TripPlanTree';
+import { searchFlights, searchHotels } from '../../services/travel-search';
 import { TripGlobe } from '../../components/traveler/TripGlobe';
 import { AiTripAssistant } from '../../components/traveler/AiTripAssistant';
 
-const POPULAR_DESTINATIONS = ['Visakhapatnam', 'Jaipur', 'Goa', 'Manali', 'Srinagar', 'Udaipur', 'Kerala'];
 const DURATION_OPTIONS = [
   { label: '3 Days', days: 3 },
   { label: '4 Days', days: 4 },
   { label: '5 Days', days: 5 },
-  { label: '7 Days', days: 7 }
+  { label: '7 Days', days: 7 },
 ];
+
 const TRAVELER_OPTIONS = [
   { label: 'Solo (1)', count: 1 },
   { label: 'Couple (2)', count: 2 },
   { label: 'Family (4)', count: 4 },
-  { label: 'Group (6)', count: 6 }
+  { label: 'Group (6)', count: 6 },
 ];
+
 const BUDGET_OPTIONS = ['Budget-Friendly', 'Balanced Comfort', 'Luxury Heritage'];
+
+const VEHICLES = [
+  { label: 'Car', icon: Car },
+  { label: 'Bike', icon: Bike },
+  { label: 'Train', icon: TrainFront },
+  { label: 'Bus', icon: BusFront },
+  { label: 'Flight', icon: Plane },
+  { label: 'Van', icon: Truck },
+];
 
 export const AiTripCopilotPage: React.FC = () => {
   const { user } = useAuth();
 
-  // Authoritative Shared Trip State
   const [selectedPlaces, setSelectedPlaces] = useState<DiscoveredPlace[]>([]);
   const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
   const [locations, setLocations] = useState<TripLocation[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<TripLocation | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isSaved, setIsSaved] = useState(false);
 
-  // Top Header Context Filter State
-  const [destinationQuery, setDestinationQuery] = useState<string>('');
-  const [selectedDuration, setSelectedDuration] = useState<number>(3);
-  const [travelersCount, setTravelersCount] = useState<number>(2);
-  const [budgetTier, setBudgetTier] = useState<string>('Balanced Comfort');
-
-  // Popover menus state
+  const [destinationQuery, setDestinationQuery] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(3);
+  const [travelersCount, setTravelersCount] = useState(1);
+  const [budgetTier, setBudgetTier] = useState('');
+  const [vehicle, setVehicle] = useState('Car');
   const [activeMenu, setActiveMenu] = useState<'where' | 'when' | 'who' | 'budget' | null>(null);
 
-  // Chat message thread state
-  const [messages, setMessages] = useState<CopilotChatMessage[]>([
-    {
-      id: 'msg_welcome',
-      sender: 'assistant',
-      text: "Welcome to GoFlexi AI Trip Co-Pilot! 🌍\n\nI'm your real-time travel planning assistant powered by Groq LLM and GoFlexi's verified destination database. Ask me to discover destinations, explore verified places, add them to your trip, and build an itinerary when you're ready.",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      suggestedActions: [
-        'I want to visit Visakhapatnam',
-        'I want to visit Jaipur',
-        'Where should I go?',
-        'Explore beaches in Goa'
-      ]
-    },
-  ]);
+  const [messages, setMessages] = useState<CopilotChatMessage[]>([]);
 
   const handleSendMessage = async (userPrompt: string) => {
     const userMsg: CopilotChatMessage = {
@@ -96,47 +91,45 @@ export const AiTripCopilotPage: React.FC = () => {
         trip_context: {
           destinations: destinationQuery ? [destinationQuery] : undefined,
           travelers: travelersCount,
-        }
+        },
       });
 
-      // 1. Synchronize Destination & Header State
       let newDest = destinationQuery;
+
       if (response.trip_updates?.destination) {
         newDest = response.trip_updates.destination;
-        setDestinationQuery(newDest);
       } else if (response.trip_plan?.destination) {
         newDest = response.trip_plan.destination;
-        setDestinationQuery(newDest);
-      } else if (response.locations && response.locations.length > 0) {
-        const destLoc = response.locations.find((l) => l.type === 'destination');
-        if (destLoc) {
-          newDest = destLoc.name;
-          setDestinationQuery(destLoc.name);
-        }
+      } else {
+        const destinationLocation = response.locations?.find((location) => location.type === 'destination');
+        if (destinationLocation) newDest = destinationLocation.name;
       }
 
-      // If destination changed, clear previous trip plan
-      if (tripPlan && tripPlan.destination && newDest && tripPlan.destination.toLowerCase() !== newDest.toLowerCase()) {
+      if (newDest) setDestinationQuery(newDest);
+
+      if (
+        tripPlan?.destination &&
+        newDest &&
+        tripPlan.destination.toLowerCase() !== newDest.toLowerCase()
+      ) {
         setTripPlan(null);
       }
 
-      // 2. Synchronize Selected Places
       if (response.selected_places !== undefined) {
         setSelectedPlaces(response.selected_places);
       }
 
-      // 3. Synchronize 3D Globe Locations & Selected Card Target
-      if (response.locations && response.locations.length > 0) {
+      if (response.locations?.length) {
         setLocations(response.locations);
         const latestPlace = response.locations[response.locations.length - 1];
-        const destLoc = response.locations.find((l) => l.type === 'destination') || response.locations[0];
-        setSelectedLocation(response.intent === 'ADD_PLACE' ? latestPlace : destLoc);
+        const destinationLocation =
+          response.locations.find((location) => location.type === 'destination') || response.locations[0];
+        setSelectedLocation(response.intent === 'ADD_PLACE' ? latestPlace : destinationLocation);
       } else if (response.intent === 'CASUAL_CHAT' && !newDest) {
         setLocations([]);
         setSelectedLocation(null);
       }
 
-      // 4. Synchronize Authoritative Trip Plan state (only if itinerary was created/modified)
       if (response.trip_plan) {
         setTripPlan(response.trip_plan);
         if (response.trip_plan.duration_days) {
@@ -144,33 +137,35 @@ export const AiTripCopilotPage: React.FC = () => {
         }
       }
 
-      // Add Assistant Message with Discovered Places & Suggested Actions
-      const assistantMsg: CopilotChatMessage = {
-        id: `msg_a_${Date.now()}`,
-        sender: 'assistant',
-        text: response.message,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        places: response.places || [],
-        suggestedActions: response.suggested_actions || [],
-        plan: response.trip_plan || undefined,
-      };
-
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg_a_${Date.now()}`,
+          sender: 'assistant',
+          text: response.message,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          places: response.places || [],
+          suggestedActions: response.suggested_actions || [],
+          plan: response.trip_plan || undefined,
+        },
+      ]);
     } catch (err: any) {
       const errorDetail =
         err.response?.data?.detail?.message ||
         err.response?.data?.detail ||
         err.message ||
         'GoFlexi AI is temporarily unavailable. Please try again.';
-      setError(errorDetail);
 
-      const errorMsg: CopilotChatMessage = {
-        id: `msg_err_${Date.now()}`,
-        sender: 'assistant',
-        text: `Notice: ${errorDetail}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      setError(errorDetail);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg_err_${Date.now()}`,
+          sender: 'assistant',
+          text: `Notice: ${errorDetail}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -188,41 +183,102 @@ export const AiTripCopilotPage: React.FC = () => {
     handleSendMessage(`Create a ${selectedDuration}-day itinerary from these places`);
   };
 
-  const handleSelectLocation = (loc: TripLocation) => {
-    setSelectedLocation(loc);
-  };
 
   const handleSaveTrip = async () => {
     if (!tripPlan && selectedPlaces.length === 0) {
-      handleSendMessage(`I want to visit ${destinationQuery}`);
+      if (destinationQuery.trim()) {
+        await handleSendMessage(`I want to visit ${destinationQuery.trim()}`);
+      }
       return;
     }
+
     if (!tripPlan) {
-      handleSendMessage(`Create a ${selectedDuration}-day itinerary from these places`);
+      await handleSendMessage(`Create a ${selectedDuration}-day itinerary from these places`);
       return;
     }
+
     setIsSaved(true);
+    const startDate =
+      tripPlan.start_date ||
+      new Date().toISOString().split('T')[0];
+
+    const endDate =
+      tripPlan.end_date ||
+      new Date(Date.parse(startDate) + Math.max(1, tripPlan.duration_days - 1) * 86400000)
+        .toISOString()
+        .split('T')[0];
+
+    let costBreakdown: { flights?: number; hotel?: number; total?: number } | undefined;
+
     try {
+      const pricingTasks = await Promise.allSettled([
+        tripPlan.origin
+          ? searchFlights({
+              origin: tripPlan.origin,
+              destination: tripPlan.destination,
+              depart_date: startDate,
+              return_date: endDate,
+              adults: travelersCount,
+              currency: 'INR',
+            })
+          : Promise.reject(new Error('Trip origin is not available')),
+        searchHotels({
+          destination: tripPlan.destination,
+          check_in: startDate,
+          check_out: endDate,
+          adults: travelersCount,
+          rooms: Math.max(1, Math.ceil(travelersCount / 2)),
+          currency: 'INR',
+        }),
+      ]);
+
+      const flightResult = pricingTasks[0].status === 'fulfilled'
+        ? pricingTasks[0].value.results
+        : [];
+      const hotelResult = pricingTasks[1].status === 'fulfilled'
+        ? pricingTasks[1].value.results
+        : [];
+
+      const cheapestFlight = [...flightResult].sort((a, b) => a.price - b.price)[0];
+      const cheapestHotel = [...hotelResult].sort((a, b) => a.price_per_night - b.price_per_night)[0];
+
+      const flightCost = cheapestFlight?.price;
+      const nights = Math.max(1, Math.round(
+        (Date.parse(endDate) - Date.parse(startDate)) / 86400000,
+      ));
+      const hotelCost = cheapestHotel ? cheapestHotel.price_per_night * nights : undefined;
+
+      if (flightCost || hotelCost) {
+        costBreakdown = {
+          ...(flightCost ? { flights: flightCost } : {}),
+          ...(hotelCost ? { hotel: hotelCost } : {}),
+          total: (flightCost || 0) + (hotelCost || 0),
+        };
+      }
+
       await createTrip({
         title: tripPlan.title || `${tripPlan.destination} Journey`,
-        destination: tripPlan.destination || 'Custom Destination',
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: new Date(Date.now() + (tripPlan.duration_days || 4) * 86400000).toISOString().split('T')[0],
-        days: tripPlan.duration_days || 4,
-        travelers_count: 2,
-        budget: tripPlan.estimated_budget || '₹35,000',
+        destination: tripPlan.destination,
+        start_date: startDate,
+        end_date: endDate,
+        days: tripPlan.duration_days,
+        travelers_count: travelersCount,
+        budget: tripPlan.estimated_budget || budgetTier,
         status: 'Upcoming',
         payment_status: 'Pending',
-        itinerary_summary: `${tripPlan.duration_days || 4}-day curated AI journey to ${tripPlan.destination}.`,
+        cost_breakdown: costBreakdown,
+        itinerary_summary: `${tripPlan.duration_days}-day AI-planned journey to ${tripPlan.destination}.`,
         tags: ['AI Co-Pilot', tripPlan.destination],
-        stops: tripPlan.locations?.map((l) => l.name) || [],
+        stops: tripPlan.locations?.map((location) => location.name) || [],
       });
     } catch (err) {
       console.error('Failed to persist AI Co-Pilot trip:', err);
-    }
-    setTimeout(() => {
+      setError('The trip could not be saved. Please try again.');
       setIsSaved(false);
-    }, 4000);
+      return;
+    }
+
+    window.setTimeout(() => setIsSaved(false), 2500);
   };
 
   const handleReset = () => {
@@ -233,221 +289,162 @@ export const AiTripCopilotPage: React.FC = () => {
     setDestinationQuery('');
     setError(null);
     setIsSaved(false);
-    setMessages([
-      {
-        id: `msg_reset_${Date.now()}`,
-        sender: 'assistant',
-        text: "Workspace reset. Where would you like to plan your next journey?",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        suggestedActions: [
-          'I want to visit Visakhapatnam',
-          'I want to visit Jaipur',
-          'Explore beaches in Goa',
-          'Where should I go?'
-        ]
-      },
-    ]);
+    setMessages([]);
   };
 
-  const applyHeaderFilter = (filterType: 'where' | 'when' | 'who' | 'budget', val: any) => {
+  const applyHeaderFilter = (
+    filterType: 'where' | 'when' | 'who' | 'budget',
+    value: string | number,
+  ) => {
     setActiveMenu(null);
+
     if (filterType === 'where') {
-      setDestinationQuery(val);
-      handleSendMessage(`I want to visit ${val}`);
-    } else if (filterType === 'when') {
-      setSelectedDuration(val);
-      if (tripPlan) {
-        handleSendMessage(`Adjust this trip to ${val} days with a balanced itinerary.`);
-      } else {
-        handleSendMessage(`I want to plan a ${val}-day trip to ${destinationQuery}.`);
-      }
-    } else if (filterType === 'who') {
-      setTravelersCount(val);
-      if (tripPlan) {
-        handleSendMessage(`Update itinerary for ${val} travelers.`);
-      }
-    } else if (filterType === 'budget') {
-      setBudgetTier(val);
-      if (tripPlan) {
-        handleSendMessage(`Recalculate trip pacing for a ${val.toLowerCase()} budget.`);
-      }
+      const destination = String(value).trim();
+      setDestinationQuery(destination);
+      if (destination) handleSendMessage(`I want to visit ${destination}`);
+    }
+
+    if (filterType === 'when') {
+      const days = Number(value);
+      setSelectedDuration(days);
+      handleSendMessage(
+        tripPlan
+          ? `Adjust this trip to ${days} days.`
+          : `I want to plan a ${days}-day trip${destinationQuery ? ` to ${destinationQuery}` : ''}.`,
+      );
+    }
+
+    if (filterType === 'who') {
+      const travelers = Number(value);
+      setTravelersCount(travelers);
+      if (tripPlan) handleSendMessage(`Update itinerary for ${travelers} travelers.`);
+    }
+
+    if (filterType === 'budget') {
+      const budget = String(value);
+      setBudgetTier(budget);
+      if (tripPlan) handleSendMessage(`Recalculate this trip for a ${budget} budget.`);
     }
   };
 
+  const globeLocations = locations.length > 0 ? locations : tripPlan?.locations || [];
+
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden bg-slate-950 text-slate-100 select-none">
-      {/* Top Header / Context Navigation Bar */}
-      <header className="h-16 px-4 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 flex items-center justify-between flex-shrink-0 z-30">
-        {/* Brand & Workspace Title */}
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#F7F9FC] text-[#071225]">
+      <header className="z-30 flex h-16 flex-shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1683F7] text-white shadow-sm">
+            <Sparkles className="h-4 w-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold tracking-tight text-white leading-none">
-                GoFlexi Trip Planning
-              </h1>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-700/60 font-semibold tracking-wide uppercase">
+              <h1 className="text-sm font-bold">GoFlexi Trip Planning</h1>
+              <span className="rounded-full bg-[#1683F7]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#1683F7]">
                 AI Co-Pilot
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 hidden sm:block">
-              Conversational destination discovery & 3D visual route engine
+            <p className="mt-0.5 hidden text-[10px] text-slate-500 sm:block">
+              Conversational destination discovery & visual route planning
             </p>
           </div>
         </div>
 
-        {/* Structured Trip Context Controls: [Where] [When] [Who] [Budget] */}
-        <div className="hidden lg:flex items-center gap-2 bg-slate-950/70 border border-slate-800 rounded-2xl p-1 shadow-inner relative">
-          {/* [Where] Button & Dropdown */}
+        <div className="hidden items-center gap-1 rounded-2xl border border-slate-200 bg-[#F7F9FC] p-1 lg:flex">
           <div className="relative">
             <button
               type="button"
               onClick={() => setActiveMenu(activeMenu === 'where' ? null : 'where')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-800/80 text-xs transition-colors text-slate-200"
+              className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-left hover:bg-white"
             >
-              <MapPin className="w-3.5 h-3.5 text-indigo-400" />
-              <div className="text-left leading-tight">
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold block">Where</span>
-                <span className="font-semibold text-white truncate max-w-[120px]">
+              <MapPin className="h-3.5 w-3.5 text-[#1683F7]" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Where</span>
+                <span className="block max-w-[120px] truncate text-[10px] font-semibold">
                   {tripPlan?.destination || destinationQuery || 'Choose destination'}
                 </span>
               </div>
-              <ChevronDown className="w-3 h-3 text-slate-500" />
+              <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
-
             {activeMenu === 'where' && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mb-1 border-b border-slate-800">
-                  Select Destination
-                </div>
-                {POPULAR_DESTINATIONS.map((dest) => (
-                  <button
-                    key={dest}
-                    type="button"
-                    onClick={() => applyHeaderFilter('where', dest)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-indigo-600/30 text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                  >
-                    <span>{dest}</span>
-                    {destinationQuery === dest && <Check className="w-3 h-3 text-indigo-400" />}
-                  </button>
-                ))}
+              <div className="absolute left-0 top-full z-50 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                <input
+                  autoFocus
+                  value={destinationQuery}
+                  onChange={(event) => setDestinationQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') applyHeaderFilter('where', destinationQuery);
+                  }}
+                  placeholder="Enter a destination"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-xs outline-none focus:border-[#1683F7]"
+                />
+                <p className="px-2 pt-2 text-[9px] text-slate-400">Press Enter to ask GoFlexi AI.</p>
               </div>
             )}
           </div>
 
-          <div className="h-6 w-[1px] bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200" />
 
-          {/* [When] Button & Dropdown */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setActiveMenu(activeMenu === 'when' ? null : 'when')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-800/80 text-xs transition-colors text-slate-200"
-            >
-              <Calendar className="w-3.5 h-3.5 text-amber-400" />
-              <div className="text-left leading-tight">
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold block">When</span>
-                <span className="font-semibold text-white">
-                  {tripPlan ? `${tripPlan.duration_days} Days` : `${selectedDuration} Days`}
-                </span>
+            <button type="button" onClick={() => setActiveMenu(activeMenu === 'when' ? null : 'when')} className="flex items-center gap-2 rounded-xl px-3 py-1.5 hover:bg-white">
+              <Calendar className="h-3.5 w-3.5 text-[#1683F7]" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">When</span>
+                <span className="text-[10px] font-semibold">{tripPlan?.duration_days || selectedDuration} Days</span>
               </div>
-              <ChevronDown className="w-3 h-3 text-slate-500" />
+              <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
-
             {activeMenu === 'when' && (
-              <div className="absolute top-full left-0 mt-2 w-40 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mb-1 border-b border-slate-800">
-                  Trip Duration
-                </div>
+              <div className="absolute left-0 top-full z-50 mt-2 w-36 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
                 {DURATION_OPTIONS.map((item) => (
-                  <button
-                    key={item.days}
-                    type="button"
-                    onClick={() => applyHeaderFilter('when', item.days)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-amber-500/20 text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                  >
-                    <span>{item.label}</span>
-                    {selectedDuration === item.days && <Check className="w-3 h-3 text-amber-400" />}
+                  <button key={item.days} type="button" onClick={() => applyHeaderFilter('when', item.days)} className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs hover:bg-[#1683F7]/5">
+                    {item.label}
+                    {selectedDuration === item.days && <Check className="h-3 w-3 text-[#1683F7]" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="h-6 w-[1px] bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200" />
 
-          {/* [Who] Button & Dropdown */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setActiveMenu(activeMenu === 'who' ? null : 'who')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-800/80 text-xs transition-colors text-slate-200"
-            >
-              <Users className="w-3.5 h-3.5 text-sky-400" />
-              <div className="text-left leading-tight">
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold block">Who</span>
-                <span className="font-semibold text-white">
-                  {travelersCount} Traveler{travelersCount > 1 ? 's' : ''}
-                </span>
+            <button type="button" onClick={() => setActiveMenu(activeMenu === 'who' ? null : 'who')} className="flex items-center gap-2 rounded-xl px-3 py-1.5 hover:bg-white">
+              <Users className="h-3.5 w-3.5 text-[#1683F7]" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Who</span>
+                <span className="text-[10px] font-semibold">{travelersCount} Traveler{travelersCount !== 1 ? 's' : ''}</span>
               </div>
-              <ChevronDown className="w-3 h-3 text-slate-500" />
+              <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
-
             {activeMenu === 'who' && (
-              <div className="absolute top-full left-0 mt-2 w-44 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mb-1 border-b border-slate-800">
-                  Party Size
-                </div>
+              <div className="absolute left-0 top-full z-50 mt-2 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
                 {TRAVELER_OPTIONS.map((item) => (
-                  <button
-                    key={item.count}
-                    type="button"
-                    onClick={() => applyHeaderFilter('who', item.count)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-sky-500/20 text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                  >
-                    <span>{item.label}</span>
-                    {travelersCount === item.count && <Check className="w-3 h-3 text-sky-400" />}
+                  <button key={item.count} type="button" onClick={() => applyHeaderFilter('who', item.count)} className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs hover:bg-[#1683F7]/5">
+                    {item.label}
+                    {travelersCount === item.count && <Check className="h-3 w-3 text-[#1683F7]" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="h-6 w-[1px] bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200" />
 
-          {/* [Budget] Button & Dropdown */}
           <div className="relative">
-            <button
-              type="button"
-              onClick={() => setActiveMenu(activeMenu === 'budget' ? null : 'budget')}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-800/80 text-xs transition-colors text-slate-200"
-            >
-              <Wallet className="w-3.5 h-3.5 text-emerald-400" />
-              <div className="text-left leading-tight">
-                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold block">Budget</span>
-                <span className="font-semibold text-white truncate max-w-[90px]">
-                  {tripPlan?.estimated_budget || budgetTier}
-                </span>
+            <button type="button" onClick={() => setActiveMenu(activeMenu === 'budget' ? null : 'budget')} className="flex items-center gap-2 rounded-xl px-3 py-1.5 hover:bg-white">
+              <Wallet className="h-3.5 w-3.5 text-[#1683F7]" />
+              <div>
+                <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Budget</span>
+                <span className="max-w-[90px] truncate text-[10px] font-semibold">{tripPlan?.estimated_budget || budgetTier || 'Set budget'}</span>
               </div>
-              <ChevronDown className="w-3 h-3 text-slate-500" />
+              <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
-
             {activeMenu === 'budget' && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50">
-                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 py-1 mb-1 border-b border-slate-800">
-                  Budget Style
-                </div>
-                {BUDGET_OPTIONS.map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    onClick={() => applyHeaderFilter('budget', style)}
-                    className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-emerald-500/20 text-slate-200 hover:text-white transition-colors flex items-center justify-between"
-                  >
-                    <span>{style}</span>
-                    {budgetTier === style && <Check className="w-3 h-3 text-emerald-400" />}
+              <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                {BUDGET_OPTIONS.map((item) => (
+                  <button key={item} type="button" onClick={() => applyHeaderFilter('budget', item)} className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs hover:bg-[#1683F7]/5">
+                    {item}
+                    {budgetTier === item && <Check className="h-3 w-3 text-[#1683F7]" />}
                   </button>
                 ))}
               </div>
@@ -455,96 +452,96 @@ export const AiTripCopilotPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Controls: Reset & Save Trip */}
         <div className="flex items-center gap-2">
           {(tripPlan || selectedPlaces.length > 0) && (
-            <button
-              type="button"
-              onClick={handleReset}
-              className="px-2.5 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs text-slate-400 hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset</span>
+            <button type="button" onClick={handleReset} className="rounded-xl border border-slate-200 px-2.5 py-1.5 text-xs text-slate-500 hover:bg-slate-50">
+              <RotateCcw className="h-3.5 w-3.5" />
             </button>
           )}
-
           <button
             type="button"
             onClick={handleSaveTrip}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shadow-md ${
-              isSaved
-                ? 'bg-slate-800 text-slate-200 border border-slate-600 shadow-none'
-                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/40 hover:scale-[1.02]'
+            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold ${
+              isSaved ? 'border border-emerald-200 bg-emerald-50 text-emerald-600' : 'bg-[#1683F7] text-white hover:bg-[#0f72dc]'
             }`}
-            title={tripPlan ? "Trip state active in current session (cloud persistence coming in future phase)" : "Plan your trip"}
           >
-            {isSaved ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span>Saved in Session</span>
-              </>
-            ) : tripPlan ? (
-              <>
-                <Bookmark className="w-4 h-4" />
-                <span>Save to Session</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                <span>Plan Trip</span>
-              </>
-            )}
+            {isSaved ? <Check className="h-3.5 w-3.5" /> : <Bookmark className="h-3.5 w-3.5" />}
+            {isSaved ? 'Saved' : tripPlan ? 'Save Trip' : 'Plan Trip'}
           </button>
-
-          {/* Traveler Avatar */}
           {user && (
-            <div className="ml-1 pl-2 border-l border-slate-800 hidden sm:flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-semibold text-slate-200 shadow-inner">
-                {user.name.charAt(0).toUpperCase()}
-              </div>
+            <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-[#071225] text-xs font-semibold text-white sm:flex">
+              {user.name.charAt(0).toUpperCase()}
             </div>
           )}
         </div>
       </header>
 
-      {/* 3-Panel Mindtrip-Inspired Planning Workspace */}
-      <div className="flex-1 flex flex-row overflow-hidden relative">
-        {/* LEFT PANEL (~24%): Authoritative Structured Selected Places & Itinerary Tree */}
-        <div className="w-[310px] xl:w-[350px] flex-shrink-0 h-full overflow-hidden border-r border-slate-800">
-          <TripPlanTree
-            destination={destinationQuery}
-            selectedPlaces={selectedPlaces}
-            plan={tripPlan}
-            selectedLocation={selectedLocation}
-            onSelectLocation={handleSelectLocation}
-            onRemovePlace={handleRemovePlace}
-            onCreateItineraryRequest={handleCreateItinerary}
-            isLoading={isLoading}
-          />
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden xl:flex-row">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3">
+          <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#1683F7]">AI Co-Pilot</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#071225]">
+                Explore the world <span className="text-[#1683F7]">your way.</span>
+              </h2>
+              <p className="mt-1 max-w-xl text-xs text-slate-500">
+                Plan smarter. Ask GoFlexi AI to discover destinations, build a route, and organize a trip from live travel data.
+              </p>
+            </div>
 
-        {/* CENTER PANEL (~50%): Existing Interactive 3D Globe & Route Map */}
-        <div className="flex-1 h-full relative overflow-hidden bg-slate-950">
-          <TripGlobe
-            locations={locations.length > 0 ? locations : (tripPlan?.locations || [])}
-            routes={tripPlan?.routes || []}
-            selectedLocation={selectedLocation}
-            onSelectLocation={handleSelectLocation}
-          />
-        </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+              <p className="mb-1.5 px-1 text-[9px] font-bold uppercase tracking-wider text-[#071225]">Choose your vehicle</p>
+              <div className="grid grid-cols-6 gap-1">
+                {VEHICLES.map(({ label, icon: Icon }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setVehicle(label)}
+                    className={`flex min-w-14 flex-col items-center gap-1 rounded-xl px-3 py-2 text-[9px] font-semibold transition ${
+                      vehicle === label
+                        ? 'bg-[#1683F7] text-white shadow-sm'
+                        : 'bg-[#F7F9FC] text-slate-500 hover:text-[#071225]'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
-        {/* RIGHT PANEL (~26%): Real Groq Conversational AI Assistant */}
-        <div className="w-[330px] xl:w-[390px] flex-shrink-0 h-full overflow-hidden">
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <TripGlobe
+              locations={globeLocations}
+              routes={tripPlan?.routes || []}
+              selectedLocation={selectedLocation}
+              onSelectLocation={setSelectedLocation}
+            />
+            {error && (
+              <div className="absolute bottom-20 left-1/2 z-20 w-[min(460px,calc(100%-2rem))] -translate-x-1/2 rounded-xl border border-rose-200 bg-white p-3 text-xs text-rose-600 shadow-lg">
+                {error}
+              </div>
+            )}
+          </div>
+        </main>
+
+        <aside className="h-[46%] w-full flex-shrink-0 overflow-hidden p-3 pt-0 xl:h-full xl:w-[390px] xl:pl-0 xl:pt-3">
           <AiTripAssistant
             messages={messages}
             onSendMessage={handleSendMessage}
             onAddPlace={handleAddPlace}
             selectedPlaces={selectedPlaces}
+            selectedLocation={selectedLocation}
+            tripPlan={tripPlan}
             isLoading={isLoading}
             error={error}
-            onRetry={() => handleSendMessage(messages[messages.length - 1]?.text || 'I want to visit Jaipur')}
+            onRetry={() => {
+              const lastUserMessage = [...messages].reverse().find((message) => message.sender === 'user');
+              if (lastUserMessage) handleSendMessage(lastUserMessage.text);
+            }}
           />
-        </div>
+        </aside>
       </div>
     </div>
   );

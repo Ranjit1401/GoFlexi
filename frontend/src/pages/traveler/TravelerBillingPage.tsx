@@ -134,55 +134,98 @@ export const TravelerBillingPage: React.FC = () => {
       };
     }
 
-    const parseNum = (str: string) => {
-      const digits = (str || '').replace(/[^0-9]/g, '');
-      return digits ? parseInt(digits, 10) : 45000;
-    };
+    const breakdown = activeTrip.costBreakdown;
+    const items: CostItem[] = [];
 
-    const numBudget = activeTrip.costBreakdown?.total || parseNum(activeTrip.budget);
-    const flight = activeTrip.costBreakdown?.flights ?? Math.round(numBudget * 0.35);
-    const hotel = activeTrip.costBreakdown?.hotel ?? Math.round(numBudget * 0.45);
-    const activities = activeTrip.costBreakdown?.activities ?? Math.round(numBudget * 0.12);
-    const taxes = activeTrip.costBreakdown?.taxes ?? Math.round(numBudget * 0.08);
-    const subtotal = flight + hotel + activities;
-    const total = activeTrip.costBreakdown?.total ?? (subtotal + taxes);
-
-    const items: CostItem[] = [
-      {
+    if (breakdown?.flights && breakdown.flights > 0) {
+      items.push({
         label: 'Flights & Transit',
-        detail: `${activeTrip.destination} Route`,
+        detail: `${activeTrip.destination} live fare`,
         meta: `${activeTrip.travelersCount} Travellers`,
-        price: `₹${flight.toLocaleString('en-IN')}`,
-        raw: flight,
-      },
-      {
+        price: `₹${breakdown.flights.toLocaleString('en-IN')}`,
+        raw: breakdown.flights,
+      });
+    }
+
+    if (breakdown?.hotel && breakdown.hotel > 0) {
+      items.push({
         label: 'Accommodation',
-        detail: `${activeTrip.days} nights · ${activeTrip.destination}`,
-        meta: 'Curated Hotel / Villa',
-        price: `₹${hotel.toLocaleString('en-IN')}`,
-        raw: hotel,
-      },
-      {
+        detail: `Live hotel quote · ${activeTrip.destination}`,
+        meta: `${Math.max(1, activeTrip.days - 1)} nights`,
+        price: `₹${breakdown.hotel.toLocaleString('en-IN')}`,
+        raw: breakdown.hotel,
+      });
+    }
+
+    if (breakdown?.activities && breakdown.activities > 0) {
+      items.push({
         label: 'Experiences & Activities',
-        detail: activeTrip.stops?.slice(0, 2).join(', ') || 'Local Highlights & Tours',
+        detail: activeTrip.stops?.slice(0, 2).join(', ') || 'Verified trip activities',
         meta: `${activeTrip.travelersCount} Guests`,
-        price: `₹${activities.toLocaleString('en-IN')}`,
-        raw: activities,
-      },
-      {
-        label: 'Taxes & Surcharges',
-        detail: 'GST & Service Surcharges',
-        meta: 'Standard Fee',
-        price: `₹${taxes.toLocaleString('en-IN')}`,
-        raw: taxes,
-      },
-    ];
+        price: `₹${breakdown.activities.toLocaleString('en-IN')}`,
+        raw: breakdown.activities,
+      });
+    }
+
+    let subtotal = items.reduce((sum, item) => sum + item.raw, 0);
+    let taxes = breakdown?.taxes || 0;
+    let total = breakdown?.total ?? (subtotal + taxes);
+
+    if (items.length === 0 && (activeTrip.budget || total > 0)) {
+      const parseNum = (str: string) => {
+        const digits = (str || '').replace(/[^0-9]/g, '');
+        return digits ? parseInt(digits, 10) : 0;
+      };
+      const numBudget = total > 0 ? total : parseNum(activeTrip.budget);
+      if (numBudget > 0) {
+        const flight = Math.round(numBudget * 0.35);
+        const hotel = Math.round(numBudget * 0.45);
+        const activities = Math.round(numBudget * 0.12);
+        taxes = Math.round(numBudget * 0.08);
+        subtotal = flight + hotel + activities;
+        total = subtotal + taxes;
+
+        items.push(
+          {
+            label: 'Flights & Transit',
+            detail: `${activeTrip.destination} Route`,
+            meta: `${activeTrip.travelersCount} Travellers`,
+            price: `₹${flight.toLocaleString('en-IN')}`,
+            raw: flight,
+          },
+          {
+            label: 'Accommodation',
+            detail: `${activeTrip.days} nights · ${activeTrip.destination}`,
+            meta: 'Curated Hotel / Villa',
+            price: `₹${hotel.toLocaleString('en-IN')}`,
+            raw: hotel,
+          },
+          {
+            label: 'Experiences & Activities',
+            detail: activeTrip.stops?.slice(0, 2).join(', ') || 'Local Highlights & Tours',
+            meta: `${activeTrip.travelersCount} Guests`,
+            price: `₹${activities.toLocaleString('en-IN')}`,
+            raw: activities,
+          },
+          {
+            label: 'Taxes & Surcharges',
+            detail: 'GST & Service Surcharges',
+            meta: 'Standard Fee',
+            price: `₹${taxes.toLocaleString('en-IN')}`,
+            raw: taxes,
+          },
+        );
+      }
+    }
 
     return { items, subtotal, taxes, total };
   }, [activeTrip]);
 
   const handlePayTrip = async () => {
-    if (!activeTrip) return;
+    if (!activeTrip || costData.total <= 0) {
+      showToast('error', 'Live pricing is required before payment can be started.', 'Pricing Unavailable');
+      return;
+    }
     setIsProcessingPayment(true);
 
     initiateRazorpayPayment({
@@ -427,10 +470,12 @@ export const TravelerBillingPage: React.FC = () => {
               <span>Subtotal</span>
               <strong>₹{costData.subtotal.toLocaleString('en-IN')}</strong>
             </div>
-            <div className="billing-bill-row compact">
-              <span>Taxes &amp; Surcharges</span>
-              <strong>₹{costData.taxes.toLocaleString('en-IN')}</strong>
-            </div>
+            {costData.taxes > 0 && (
+              <div className="billing-bill-row compact">
+                <span>Taxes &amp; Surcharges</span>
+                <strong>₹{costData.taxes.toLocaleString('en-IN')}</strong>
+              </div>
+            )}
             <hr />
             <div className="billing-bill-row billing-final-total">
               <strong>TOTAL DUE</strong>
@@ -471,7 +516,7 @@ export const TravelerBillingPage: React.FC = () => {
               <button
                 className="billing-primary-btn bg-emerald-600 hover:bg-emerald-500 border-emerald-600"
                 onClick={handlePayTrip}
-                disabled={isProcessingPayment}
+                disabled={isProcessingPayment || costData.total <= 0}
               >
                 <CreditCard size={17} />
                 {isProcessingPayment
@@ -524,10 +569,12 @@ export const TravelerBillingPage: React.FC = () => {
                   <span>Subtotal</span>
                   <strong>₹{costData.subtotal.toLocaleString('en-IN')}</strong>
                 </div>
-                <div>
-                  <span>Taxes &amp; Surcharges</span>
-                  <strong>₹{costData.taxes.toLocaleString('en-IN')}</strong>
-                </div>
+                {costData.taxes > 0 && (
+                  <div>
+                    <span>Taxes &amp; Surcharges</span>
+                    <strong>₹{costData.taxes.toLocaleString('en-IN')}</strong>
+                  </div>
+                )}
                 <div className="billing-grand-total">
                   <span>
                     <b>ESTIMATED TOTAL</b>
@@ -542,7 +589,7 @@ export const TravelerBillingPage: React.FC = () => {
                   <button
                     className="billing-primary-btn bg-emerald-600 hover:bg-emerald-500 border-emerald-600 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 flex-1 shadow-md hover:shadow-lg transition-all"
                     onClick={handlePayTrip}
-                    disabled={isProcessingPayment}
+                    disabled={isProcessingPayment || costData.total <= 0}
                   >
                     <CreditCard size={18} />
                     <span>
@@ -579,7 +626,7 @@ export const TravelerBillingPage: React.FC = () => {
                     ? 'Your receipt is being printed'
                     : state === 'generating'
                     ? 'Checking live vendor tariffs'
-                    : 'Tap the printer to generate receipt'}
+                    : (costData.total > 0 ? 'Tap the printer to generate receipt' : 'Live pricing required before printing')}
                 </small>
               </div>
               <div className="billing-printer-wrap">
@@ -629,7 +676,7 @@ export const TravelerBillingPage: React.FC = () => {
                 <button
                   className={`billing-printer-button ${state === 'generating' ? 'pressed' : ''}`}
                   onClick={() => setState('generating')}
-                  disabled={state !== 'ready'}
+                  disabled={state !== 'ready' || costData.total <= 0}
                 >
                   {state === 'generating' ? (
                     <span className="billing-loader" />
@@ -644,7 +691,7 @@ export const TravelerBillingPage: React.FC = () => {
             </section>
           </div>
           <p className="billing-footnote">
-            All prices and tariffs are guaranteed upon settlement. Unpaid itineraries remain editable up until payment.
+            Live provider prices are estimates and may change with availability. Unpaid itineraries remain editable up until payment.
           </p>
         </>
       )}
@@ -709,7 +756,7 @@ export const TravelerBillingPage: React.FC = () => {
                   setSplitOpen(false);
                   handlePayTrip();
                 }}
-                disabled={isProcessingPayment}
+                disabled={isProcessingPayment || costData.total <= 0}
               >
                 {isProcessingPayment ? 'Processing...' : 'Settle Group Bill Now'}
                 <ArrowRight size={17} />
