@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { mockTrips } from '../../data/trips';
+import { getTrips } from '../../services/trips';
 import { RecommendationCard } from '../../components/traveler/RecommendationCard';
 import { TripCard } from '../../components/traveler/TripCard';
 import { DraggableCopilotWidget } from '../../components/traveler/DraggableCopilotWidget';
@@ -44,8 +44,24 @@ export const TravelerDashboardPage: React.FC = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [quickDestinationInput, setQuickDestinationInput] = useState('');
 
-  // Upcoming trips (includes Goa Escape)
-  const upcomingTrips = mockTrips.filter((t) => t.status === 'Upcoming');
+  const [upcomingTrips, setUpcomingTrips] = useState<Trip[]>([]);
+  const [loadingTrips, setLoadingTrips] = useState<boolean>(true);
+
+  const fetchTrips = useCallback(async () => {
+    setLoadingTrips(true);
+    try {
+      const data = await getTrips('Upcoming');
+      setUpcomingTrips(data);
+    } catch {
+      setUpcomingTrips([]);
+    } finally {
+      setLoadingTrips(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
 
   const fetchRecommendations = useCallback(async (forceRefresh: boolean = false) => {
     const cached = getCachedRecommendations();
@@ -358,7 +374,11 @@ export const TravelerDashboardPage: React.FC = () => {
           </Button>
         </div>
 
-        {upcomingTrips.length > 0 ? (
+        {loadingTrips ? (
+          <div className="p-8 text-center text-slate-400 text-xs animate-pulse bg-white rounded-3xl border border-slate-100">
+            Loading upcoming trips...
+          </div>
+        ) : upcomingTrips.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 max-w-4xl">
             {upcomingTrips.map((trip) => (
               <TripCard

@@ -22,8 +22,22 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
     statusBadge = <Badge variant="warning" size="sm">Draft</Badge>;
   }
 
+  const isPaid = trip.paymentStatus === 'Paid';
+  const paymentBadge = isPaid ? (
+    <Badge variant="success" size="sm" className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
+      ✓ Paid
+    </Badge>
+  ) : (
+    <Badge variant="warning" size="sm" className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold">
+      Pending Payment
+    </Badge>
+  );
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden flex flex-col md:flex-row group hover:-translate-y-0.5 w-full max-w-lg">
+    <div
+      onClick={() => onViewDetails?.(trip)}
+      className="bg-white rounded-2xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden flex flex-col md:flex-row group hover:-translate-y-0.5 w-full max-w-lg cursor-pointer"
+    >
       {/* Thumbnail */}
       <div className="md:w-36 lg:w-40 h-36 md:h-auto relative overflow-hidden bg-slate-100 flex-shrink-0">
         <img
@@ -32,8 +46,9 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
           onError={() => setImgError(true)}
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        <div className="absolute top-2.5 left-2.5 md:hidden">
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 md:hidden">
           {statusBadge}
+          {paymentBadge}
         </div>
       </div>
 
@@ -42,7 +57,10 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
         <div>
           <div className="flex items-start justify-between gap-3 mb-1.5">
             <div>
-              <div className="hidden md:block mb-1.5">{statusBadge}</div>
+              <div className="hidden md:flex items-center gap-1.5 mb-1.5">
+                {statusBadge}
+                {paymentBadge}
+              </div>
               <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-600 transition-colors leading-snug">
                 {trip.title}
               </h3>
@@ -87,7 +105,10 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails }) => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onViewDetails?.(trip)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails?.(trip);
+            }}
             className="h-8 px-3 text-xs group-hover:bg-slate-900 group-hover:text-white transition-colors"
           >
             <span>View Trip</span>

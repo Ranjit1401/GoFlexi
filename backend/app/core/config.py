@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     RAPIDAPI_HOST: str = (
         "sky-scrapper.p.rapidapi.com"
     )
+    RAPIDAPI_RAILWAY_KEY: str = ""
+    RAPIDAPI_RAILWAY_HOST: str = "irctc1.p.rapidapi.com"
+
+    @property
+    def rapidapi_railway_key(self) -> str:
+        return (self.RAPIDAPI_RAILWAY_KEY or self.RAPIDAPI_KEY or "").strip()
 
     # SerpApi
     SERPAPI_API_KEY: str = ""

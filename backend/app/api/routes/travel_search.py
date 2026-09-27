@@ -1,5 +1,6 @@
 import uuid
 import re
+from datetime import date
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -13,11 +14,19 @@ from app.schemas.travel_search import (
     HotelSearchRequest,
     HotelOption,
     HotelSearchResponse,
+    TrainOption,
+    TrainScheduleStop,
+    TrainSearchRequest,
+    TrainSearchResponse,
 )
 from app.services.travel_search_service import (
     TravelSearchAPIError,
     travel_search_client,
     extract_price,
+)
+from app.services.railway_service import (
+    railway_client,
+    is_domestic_indian_location,
 )
 
 router = APIRouter(prefix="/travel-search", tags=["Travel Search"])
@@ -694,3 +703,107 @@ async def post_search_hotels(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Hotel search is temporarily unavailable",
         )
+
+
+# =====================================================================
+# INDIAN RAILWAY (IRCTC) SEARCH & SCHEDULE ROUTES
+# =====================================================================
+
+@router.get(
+    "/is-domestic-india",
+    summary="Check if destination and origin are domestic within India",
+)
+def get_is_domestic_india(
+    destination: str = Query(..., description="Destination name or city"),
+    origin: Optional[str] = Query(None, description="Origin name or city"),
+) -> dict:
+    dest_is_india = is_domestic_indian_location(destination)
+    orig_is_india = is_domestic_indian_location(origin) if origin else True
+    return {
+        "is_domestic_india": dest_is_india and orig_is_india,
+        "destination_is_india": dest_is_india,
+        "origin_is_india": orig_is_india,
+    }
+
+
+@router.post(
+    "/trains",
+    response_model=TrainSearchResponse,
+    summary="Search Indian Railway trains and schedules between stations",
+)
+async def post_search_trains(
+    request: TrainSearchRequest,
+    traveler: User = Depends(get_current_traveler),
+):
+    """
+    Searches Indian Railway train schedules between Indian stations.
+    If trip is international (outside India), returns is_domestic_india=False with empty results.
+    """
+    try:
+        response = await railway_client.search_trains_between_stations(
+            origin_query=request.origin,
+            destination_query=request.destination,
+            depart_date=request.depart_date,
+            travelers=request.travelers,
+            train_class=request.train_class,
+        )
+        return response
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Indian railway search error: {str(exc)}",
+        )
+
+
+@router.get(
+    "/trains",
+    response_model=TrainSearchResponse,
+    summary="Search Indian Railway trains via query parameters",
+)
+async def get_search_trains(
+    origin: str = Query(..., description="Origin city or railway station code"),
+    destination: str = Query(..., description="Destination city or railway station code"),
+    depart_date: date = Query(..., description="Date of journey (YYYY-MM-DD)"),
+    travelers: int = Query(1, ge=1, le=10),
+    train_class: Optional[str] = Query(None, description="Preferred class e.g. CC, 3A, 2A, SL"),
+    traveler: User = Depends(get_current_traveler),
+):
+    """
+    GET endpoint for searching Indian Railway train schedules.
+    """
+    try:
+        response = await railway_client.search_trains_between_stations(
+            origin_query=origin,
+            destination_query=destination,
+            depart_date=depart_date,
+            travelers=travelers,
+            train_class=train_class,
+        )
+        return response
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Indian railway search error: {str(exc)}",
+        )
+
+
+@router.get(
+    "/train-schedule/{train_number}",
+    response_model=List[TrainScheduleStop],
+    summary="Get station halts and timetable for an Indian Railway train",
+)
+async def get_train_schedule(
+    train_number: str,
+    traveler: User = Depends(get_current_traveler),
+):
+    """
+    Returns the timetable and station halts for a given Indian Railway train number.
+    """
+    stops = await railway_client.get_train_schedule(train_number)
+    if stops is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Schedule for train #{train_number} not found",
+        )
+    return stops
+

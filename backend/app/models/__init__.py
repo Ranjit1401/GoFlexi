@@ -12,6 +12,13 @@ from app.models.destination import (
     DestinationSource,
 )
 
+from app.models.trip import Trip
+from app.models.booking import Booking
+from app.models.schedule import Schedule
+from app.models.vendor import Vendor
+from app.models.tour import Tour
+from app.models.notification import AgentNotification
+
 __all__ = [
     "User",
     "Agent",
@@ -26,5 +33,11 @@ __all__ = [
     "DestinationPace",
     "DestinationBestMonth",
     "DestinationSource",
+    "Trip",
+    "Booking",
+    "Schedule",
+    "Vendor",
+    "Tour",
+    "AgentNotification",
 ]
 

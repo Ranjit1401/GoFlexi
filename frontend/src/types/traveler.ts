@@ -25,6 +25,14 @@ export interface Destination {
   bestSeason: string;
 }
 
+export interface TripCostBreakdown {
+  flights?: number;
+  hotel?: number;
+  activities?: number;
+  taxes?: number;
+  total?: number;
+}
+
 export interface Trip {
   id: string;
   title: string;
@@ -35,6 +43,10 @@ export interface Trip {
   travelersCount: number;
   budget: string;
   status: 'Upcoming' | 'Past' | 'Draft';
+  paymentStatus?: 'Pending' | 'Paid';
+  paymentId?: string;
+  paidAt?: string;
+  costBreakdown?: TripCostBreakdown;
   imageUrl: string;
   itinerarySummary: string;
   tags: string[];

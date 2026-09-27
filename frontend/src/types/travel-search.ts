@@ -71,3 +71,50 @@ export interface HotelDestinationSuggestion {
   name: string;
   entityType?: string;
 }
+
+export interface TrainScheduleStop {
+  station_code: string;
+  station_name: string;
+  arrival_time: string;
+  departure_time: string;
+  halt_minutes: number;
+  distance_km: number;
+  day: number;
+}
+
+export interface TrainOption {
+  id: string;
+  train_number: string;
+  train_name: string;
+  origin_station_code: string;
+  origin_station_name: string;
+  destination_station_code: string;
+  destination_station_name: string;
+  depart_time: string;
+  arrive_time: string;
+  duration_minutes: number;
+  duration_formatted: string;
+  run_days: string[];
+  available_classes: string[];
+  price: number;
+  currency: string;
+  train_type: string;
+  booking_link?: string | null;
+  schedule?: TrainScheduleStop[] | null;
+}
+
+export interface TrainSearchRequest {
+  origin: string;
+  destination: string;
+  depart_date: string;
+  travelers?: number;
+  train_class?: string;
+}
+
+export interface TrainSearchResponse {
+  query: TrainSearchRequest;
+  is_domestic_india: boolean;
+  results: TrainOption[];
+  count: number;
+}
+

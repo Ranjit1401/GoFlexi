@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
-import { mockTourPackages } from '../../data/tours';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getTours, createTour as apiCreateTour } from '../../services/tours';
 import { TourPackage } from '../../types/agent';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { LoadingState } from '../../components/ui/LoadingState';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { useToast } from '../../context/ToastContext';
-import { PlusCircle, MapPin, Calendar, Users, ArrowRight, Clock, Star } from 'lucide-react';
+import { PlusCircle, MapPin, Calendar, Users, ArrowRight, Clock, Star, AlertCircle, RefreshCw } from 'lucide-react';
 import { getDestinationImage } from '../../utils/placeImages';
 
 export const AgentToursPage: React.FC = () => {
   const { showToast } = useToast();
-  const [tours, setTours] = useState<TourPackage[]>(mockTourPackages);
+  const [tours, setTours] = useState<TourPackage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<'Active' | 'Upcoming' | 'Completed'>('Active');
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New tour fields
   const [tourTitle, setTourTitle] = useState('');
@@ -22,34 +28,58 @@ export const AgentToursPage: React.FC = () => {
   const [price, setPrice] = useState('₹38,000');
   const [slots, setSlots] = useState(15);
 
+  const fetchTours = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const data = await getTours();
+      setTours(data);
+    } catch (err) {
+      console.error('Failed to load tours:', err);
+      setErrorMessage('Unable to load tour package inventory. Please check your connection and retry.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTours();
+  }, [fetchTours]);
+
   const filteredTours = tours.filter((t) => t.category === activeTab);
 
-  const handleCreateTour = (e: React.FormEvent) => {
+  const handleCreateTour = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tourTitle.trim()) {
-      showToast('error', 'Tour title is required.');
+      showToast('error', 'Tour title is required.', 'Validation Error');
       return;
     }
 
-    const newTour: TourPackage = {
-      id: 'pkg-' + Date.now(),
-      title: tourTitle.trim(),
-      destination,
-      duration,
-      pricePerPerson: price,
-      category: 'Upcoming',
-      totalSlots: slots,
-      bookedSlots: 0,
-      startDate: '01 Aug 2026',
-      endDate: '06 Aug 2026',
-      imageUrl: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=600&q=80'
-    };
+    setIsSubmitting(true);
+    try {
+      const numericPrice = Number(price.replace(/[^0-9]/g, '')) || 35000;
+      const created = await apiCreateTour({
+        name: tourTitle.trim(),
+        destination,
+        duration,
+        budget_per_person: numericPrice,
+        max_participants: slots,
+        status: 'Upcoming',
+        image_url: getDestinationImage(destination || tourTitle),
+        description: `${duration} curated tour package to ${destination}.`,
+      });
 
-    setTours([newTour, ...tours]);
-    setCreateModalOpen(false);
-    setTourTitle('');
-    showToast('success', `Tour package "${newTour.title}" created successfully!`);
-    setActiveTab('Upcoming');
+      setTours((prev) => [created, ...prev]);
+      setCreateModalOpen(false);
+      setTourTitle('');
+      showToast('success', `Tour package "${created.title}" created successfully!`, 'Tour Created');
+      setActiveTab('Upcoming');
+    } catch (err) {
+      console.error('Failed to create tour package:', err);
+      showToast('error', 'Could not create tour package. Please try again.', 'Creation Failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -87,7 +117,7 @@ export const AgentToursPage: React.FC = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+              className={`pb-3 px-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 cursor-pointer ${
                 isActive
                   ? 'border-navy-950 text-navy-950'
                   : 'border-transparent text-slate-500 hover:text-slate-900'
@@ -106,123 +136,143 @@ export const AgentToursPage: React.FC = () => {
         })}
       </div>
 
-      {/* Tours Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTours.map((pkg) => {
-          const occupancyRate = Math.round((pkg.bookedSlots / pkg.totalSlots) * 100);
-
-          return (
+      {/* Content */}
+      {isLoading ? (
+        <LoadingState message="Loading tour inventory catalog..." />
+      ) : errorMessage ? (
+        <div className="bg-red-50/70 border border-red-200 rounded-3xl p-8 text-center max-w-lg mx-auto">
+          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800">Error loading tours</h3>
+          <p className="text-xs text-slate-600 mt-1 mb-5">{errorMessage}</p>
+          <Button variant="primary" onClick={fetchTours} className="rounded-xl inline-flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            <span>Retry</span>
+          </Button>
+        </div>
+      ) : filteredTours.length === 0 ? (
+        <EmptyState
+          title={`No ${activeTab.toLowerCase()} tour packages`}
+          description="Ready to list a new travel package for client bookings?"
+          action={
+            <Button
+              variant="primary"
+              onClick={() => setCreateModalOpen(true)}
+              className="rounded-xl"
+            >
+              Create New Package
+            </Button>
+          }
+        />
+      ) : (
+        /* Tours Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTours.map((tour) => (
             <div
-              key={pkg.id}
-              className="bg-white rounded-3xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all overflow-hidden flex flex-col justify-between group"
+              key={tour.id}
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-card overflow-hidden hover:border-slate-300 transition-all flex flex-col justify-between group"
             >
               <div>
-                <div className="aspect-[16/10] relative overflow-hidden bg-slate-100">
+                <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
                   <img
-                    src={getDestinationImage(pkg.destination) || pkg.imageUrl}
-                    alt={pkg.title}
+                    src={tour.imageUrl || getDestinationImage(tour.destination)}
+                    alt={tour.title}
                     onError={(e) => {
-                      if (pkg.imageUrl) {
-                        (e.currentTarget as HTMLImageElement).src = pkg.imageUrl;
-                      }
+                      (e.currentTarget as HTMLImageElement).src = getDestinationImage(tour.destination);
                     }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-3 left-3">
-                    <Badge variant={pkg.category === 'Active' ? 'success' : pkg.category === 'Upcoming' ? 'warning' : 'neutral'}>
-                      {pkg.category}
-                    </Badge>
+                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-xl text-xs font-bold text-slate-800 shadow">
+                    {tour.pricePerPerson} <span className="text-[10px] text-slate-400 font-normal">/ pax</span>
                   </div>
-                  <div className="absolute bottom-3 right-3 bg-navy-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-bold text-white">
-                    {pkg.pricePerPerson} / person
-                  </div>
+                  <Badge
+                    variant={tour.category === 'Active' ? 'success' : 'neutral'}
+                    className="absolute top-3 left-3 shadow"
+                  >
+                    {tour.category}
+                  </Badge>
                 </div>
 
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <MapPin className="w-3.5 h-3.5 text-amber-500" />
-                    <span className="font-semibold text-slate-700">{pkg.destination}</span>
+                <div className="p-5">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium mb-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-brand-500" />
+                    <span>{tour.destination}</span>
                     <span className="text-slate-300">•</span>
-                    <span>{pkg.duration}</span>
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{tour.duration}</span>
                   </div>
 
-                  <h3 className="text-base font-bold text-navy-950 group-hover:text-brand-600 transition-colors">
-                    {pkg.title}
+                  <h3 className="text-base font-bold text-navy-950 group-hover:text-brand-600 transition-colors line-clamp-1 mb-3">
+                    {tour.title}
                   </h3>
 
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{pkg.startDate} — {pkg.endDate}</span>
-                  </div>
-
                   {/* Slot progress */}
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between text-xs font-semibold mb-1">
-                      <span className="text-slate-500">Slots Booked: {pkg.bookedSlots}/{pkg.totalSlots}</span>
-                      <span className="text-navy-950">{occupancyRate}%</span>
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+                    <div className="flex items-center justify-between text-slate-600">
+                      <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                        <Users className="w-3.5 h-3.5" /> Capacity
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        {tour.bookedSlots} / {tour.totalSlots} Slots
+                      </span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full ${
-                          occupancyRate >= 90 ? 'bg-rose-500' : occupancyRate >= 50 ? 'bg-amber-500' : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${occupancyRate}%` }}
+                        className="h-full bg-gradient-to-r from-brand-500 to-indigo-600 rounded-full"
+                        style={{ width: `${Math.min(100, (tour.bookedSlots / tour.totalSlots) * 100)}%` }}
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-5 pt-0">
+              <div className="px-5 pb-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <span className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  {tour.startDate}
+                </span>
+
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={() => showToast('info', `Opening roster for ${pkg.title}`)}
-                  className="w-full justify-center rounded-xl"
+                  variant="outline"
+                  onClick={() => showToast('info', `Opening management view for ${tour.title}`, 'Tour Management')}
+                  className="rounded-xl group-hover:bg-navy-900 group-hover:text-white transition-colors"
                 >
-                  <span>Manage Tour Roster</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  <span>Manage</span>
+                  <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Create Tour Modal */}
       <Modal
         isOpen={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        title="Create New Tour Package"
-        subtitle="Configure package details, dates, and total seat quota."
+        title="Create Tour Package"
+        subtitle="Publish a new multi-day package itinerary to your booking inventory."
         maxWidth="md"
       >
         <form onSubmit={handleCreateTour} className="space-y-4">
           <Input
             label="Tour Package Title"
-            placeholder="e.g. Kashmir Autumn Shikara & Apple Harvest"
+            placeholder="e.g. Goa Luxury Beach & Heritage"
             value={tourTitle}
             onChange={(e) => setTourTitle(e.target.value)}
             required
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                Destination
-              </label>
-              <select
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 p-2.5 text-sm bg-white text-slate-800"
-              >
-                {['Goa', 'Manali', 'Kerala', 'Meghalaya', 'Rajasthan', 'Andaman', 'Kashmir', 'Sikkim'].map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
+            <Input
+              label="Destination"
+              placeholder="e.g. Goa"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+            />
             <Input
               label="Duration"
+              placeholder="e.g. 5 Days / 4 Nights"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
             />
@@ -231,14 +281,15 @@ export const AgentToursPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Price Per Person"
+              placeholder="e.g. ₹38,000"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
             />
             <Input
               label="Total Slots"
               type="number"
-              value={slots}
-              onChange={(e) => setSlots(parseInt(e.target.value) || 10)}
+              value={String(slots)}
+              onChange={(e) => setSlots(Number(e.target.value))}
             />
           </div>
 
@@ -251,8 +302,8 @@ export const AgentToursPage: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" className="rounded-xl">
-              Publish Package
+            <Button type="submit" variant="primary" disabled={isSubmitting} className="rounded-xl">
+              {isSubmitting ? 'Creating...' : 'Publish Tour'}
             </Button>
           </div>
         </form>

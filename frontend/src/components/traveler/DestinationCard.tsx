@@ -17,7 +17,10 @@ export const DestinationCard: React.FC<DestinationCardProps> = ({ destination, o
   const displayImage = imgError ? authenticImage : (destination.imageUrl || authenticImage);
 
   return (
-    <div className="group bg-white rounded-3xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden flex flex-col hover:-translate-y-1">
+    <div
+      onClick={() => onExplore?.(destination)}
+      className="group bg-white rounded-3xl border border-slate-200/80 shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden flex flex-col hover:-translate-y-1 cursor-pointer"
+    >
       {/* Image container */}
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         <img

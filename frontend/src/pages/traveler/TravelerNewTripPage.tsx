@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MapPin,
@@ -19,13 +19,19 @@ import {
   Compass,
   Star,
   Plane,
+  Train,
   Building2,
   RefreshCw,
   Bookmark,
   Share2,
   Info,
   ExternalLink,
+  LocateFixed,
+  X,
+  Navigation,
+  CreditCard,
 } from 'lucide-react';
+import { getCurrentLocationCity } from '../../utils/geolocation';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -33,6 +39,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { FlightSearchPanel } from '../../components/traveler/FlightSearchPanel';
+import { TrainSearchPanel } from '../../components/traveler/TrainSearchPanel';
 import { HotelSearchPanel } from '../../components/traveler/HotelSearchPanel';
 import { ActivityCard } from '../../components/traveler/ActivityCard';
 import { TripPlanTree } from '../../components/traveler/TripPlanTree';
@@ -50,6 +57,8 @@ import {
   getWikivoyageSummary,
   recommendTrip,
 } from '../../services/trip-wizard';
+import { createTrip, CreateTripPayload } from '../../services/trips';
+import { initiateRazorpayPayment } from '../../services/razorpay';
 import {
   GeoResult,
   POIResult,
@@ -78,8 +87,15 @@ export {
 // -------------------------------------------------------------
 const TravelerNewTripWizardContent: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const { user } = useAuth();
+
+  const destParam = searchParams.get('dest');
+  const originParam = searchParams.get('origin');
+
+  const [isLocatingDeparture, setIsLocatingDeparture] = useState(false);
+  const [detectedLocationLabel, setDetectedLocationLabel] = useState<string | null>(null);
 
   const {
     step,
@@ -99,7 +115,12 @@ const TravelerNewTripWizardContent: React.FC = () => {
     budgetPreview,
     activities,
     travelStyle,
+    transportMode,
+    setTransportMode,
     selectedFlight,
+    selectedTrain,
+    setSelectedFlight,
+    setSelectedTrain,
     selectedHotel,
     generatedTripPlan,
     dateInsight,
@@ -112,7 +133,6 @@ const TravelerNewTripWizardContent: React.FC = () => {
     setBudgetPreview,
     toggleActivity,
     setTravelStyle,
-    setSelectedFlight,
     setSelectedHotel,
     setGeneratedTripPlan,
     setDateInsight,
@@ -122,12 +142,63 @@ const TravelerNewTripWizardContent: React.FC = () => {
   const flightBudgetRatio = budgetPreview?.flight_budget_ratio ?? DEFAULT_FLIGHT_BUDGET_RATIO;
   const hotelBudgetRatio = budgetPreview?.hotel_budget_ratio ?? DEFAULT_HOTEL_BUDGET_RATIO;
 
+  const INTERNATIONAL_CITIES = useMemo(
+    () => [
+      'dubai', 'abu dhabi', 'singapore', 'bangkok', 'bali', 'denpasar',
+      'london', 'paris', 'tokyo', 'new york', 'phuket', 'kuala lumpur',
+      'san francisco', 'maldives', 'rome', 'amsterdam', 'zurich', 'berlin',
+      'istanbul', 'doha', 'sydney', 'toronto', 'chicago', 'los angeles',
+      'vietnam', 'hanoi', 'thailand', 'malaysia', 'indonesia', 'switzerland',
+    ],
+    []
+  );
+
+  const isDomesticIndia = useMemo(() => {
+    if (
+      destinationGeo?.country_code?.toUpperCase() === 'IN' ||
+      destinationGeo?.country?.toLowerCase() === 'india'
+    ) {
+      return true;
+    }
+    const cleanDest = (destination || '').toLowerCase();
+    for (const intl of INTERNATIONAL_CITIES) {
+      if (cleanDest.includes(intl)) return false;
+    }
+    return true;
+  }, [destination, destinationGeo, INTERNATIONAL_CITIES]);
+
+  // If destination changed to international and mode was train, revert to flight
+  useEffect(() => {
+    if (!isDomesticIndia && transportMode === 'train') {
+      setTransportMode('flight');
+    }
+  }, [isDomesticIndia, transportMode, setTransportMode]);
+
   // Set default departure city from user profile if not customized
   useEffect(() => {
-    if (user?.location && departureCity === 'Mumbai') {
+    if (user?.location && departureCity === 'Mumbai' && !originParam) {
       setDepartureCity(user.location);
     }
-  }, [user?.location]);
+  }, [user?.location, originParam]);
+
+  const handleDetectCurrentLocation = async () => {
+    setIsLocatingDeparture(true);
+    try {
+      const loc = await getCurrentLocationCity();
+      setDepartureCity(loc.city);
+      setDetectedLocationLabel(loc.formatted || loc.city);
+      showToast('success', `Departure origin set to ${loc.city}`, '📍 Location Detected');
+    } catch (err: any) {
+      console.error('Failed to get current location:', err);
+      showToast(
+        'error',
+        err?.message || 'Unable to detect GPS position. Please enter your city manually.',
+        'Location Error'
+      );
+    } finally {
+      setIsLocatingDeparture(false);
+    }
+  };
 
   // Featured destinations and instant presets
   const FEATURED_GEO_PRESETS: Record<string, GeoResult> = {
@@ -220,18 +291,31 @@ const TravelerNewTripWizardContent: React.FC = () => {
     }
   };
 
-  // Initial load for Step 1 default destination
+  // Initial load for Step 1 default destination & search params
   const hasLoadedStep1Ref = useRef(false);
   useEffect(() => {
     if (!hasLoadedStep1Ref.current) {
       hasLoadedStep1Ref.current = true;
-      if (destinationGeo) {
+      if (destParam && destParam.trim()) {
+        handleSelectFeaturedDest(destParam.trim());
+      } else if (destinationGeo) {
         loadPopularActivities(destinationGeo.latitude, destinationGeo.longitude);
       } else {
         handleSelectFeaturedDest(destination || 'Goa');
       }
+
+      if (originParam && originParam.trim()) {
+        setDepartureCity(originParam.trim());
+      }
     }
-  }, []);
+  }, [destParam, originParam]);
+
+  // If destParam changes in URL (e.g. from Explore navigation)
+  useEffect(() => {
+    if (destParam && destParam.trim() && destParam.trim().toLowerCase() !== destination.toLowerCase()) {
+      handleSelectFeaturedDest(destParam.trim());
+    }
+  }, [destParam]);
 
   // -----------------------------------------------------------
   // Step 2: Date Insights (Weather + Crowd Heuristic)
@@ -417,38 +501,123 @@ const TravelerNewTripWizardContent: React.FC = () => {
     }
   };
 
-  const handleSaveTrip = () => {
-    setIsSaved(true);
-    const newTrip = {
-      id: `trip-${Date.now()}`,
-      title: `${destination} Custom Journey`,
-      destination: destination,
-      startDate: startDate,
-      endDate: endDate,
-      days: calculateTripDays(startDate, endDate),
-      travelersCount: travelersCount,
-      budget: `₹${budgetMax.toLocaleString('en-IN')}`,
-      status: 'Upcoming' as const,
-      imageUrl: activities[0]?.preview_image || getDestinationImage(destination),
-      itinerarySummary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and flight with ${selectedFlight?.airline || 'Express Carrier'}.`,
-      tags: [travelStyle, `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`],
-      stops: activities.map((a) => a.name).slice(0, 5),
-    };
-    try {
-      const existing = JSON.parse(localStorage.getItem('goflexi_custom_trips') || '[]');
-      localStorage.setItem('goflexi_custom_trips', JSON.stringify([newTrip, ...existing]));
-    } catch {
-      // Ignore localStorage issues
+  const computeTripCostBreakdown = () => {
+    let transportCost = 0;
+    if (transportMode === 'train' && isDomesticIndia) {
+      transportCost = selectedTrain?.price
+        ? selectedTrain.price * travelersCount
+        : Math.round(budgetMax * 0.12);
+    } else {
+      transportCost = selectedFlight?.price
+        ? selectedFlight.price * travelersCount
+        : Math.round(budgetMax * flightBudgetRatio);
     }
 
-    showToast(
-      'success',
-      `Trip to ${destination} saved to your account!`,
-      'Trip Saved'
-    );
-    setTimeout(() => {
-      navigate('/user/trips');
-    }, 1200);
+    const durationDays = calculateTripDays(startDate, endDate);
+    const hotelCost = selectedHotel?.price_per_night
+      ? selectedHotel.price_per_night * Math.max(1, durationDays - 1)
+      : Math.round(budgetMax * hotelBudgetRatio);
+    const activitiesCost = activities.reduce((sum, a) => sum + (a.cost || 500), 0) * travelersCount;
+    const taxesCost = Math.round((transportCost + hotelCost + activitiesCost) * 0.08);
+    const totalCost = transportCost + hotelCost + activitiesCost + taxesCost;
+
+    return {
+      flights: transportCost,
+      hotel: hotelCost,
+      activities: activitiesCost,
+      taxes: taxesCost,
+      total: totalCost,
+    };
+  };
+
+  const handleSaveTrip = async (payNow: boolean = false) => {
+    setIsSaved(true);
+    const breakdown = computeTripCostBreakdown();
+    const tripPayload: CreateTripPayload = {
+      title: `${destination} Custom Journey`,
+      destination: destination,
+      start_date: startDate,
+      end_date: endDate,
+      days: calculateTripDays(startDate, endDate),
+      travelers_count: travelersCount,
+      budget: `₹${breakdown.total.toLocaleString('en-IN')}`,
+      status: 'Upcoming',
+      payment_status: 'Pending',
+      cost_breakdown: breakdown,
+      image_url: activities[0]?.preview_image || getDestinationImage(destination),
+      itinerary_summary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and ${
+        transportMode === 'train' && isDomesticIndia && selectedTrain
+          ? `Indian Railways (${selectedTrain.train_name} #${selectedTrain.train_number})`
+          : `flight with ${selectedFlight?.airline || 'Express Carrier'}`
+      }.`,
+      tags: [
+        travelStyle,
+        transportMode === 'train' && isDomesticIndia ? 'Indian Railways' : 'Air Travel',
+        `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`,
+      ],
+      stops: activities.map((a) => a.name).slice(0, 5),
+    };
+
+    let createdId = '';
+    try {
+      const created = await createTrip(tripPayload);
+      createdId = created.id;
+    } catch (err) {
+      console.error('Failed to save trip to backend:', err);
+      // Fallback to localStorage just in case network is down
+      try {
+        const localTrip = { id: `trip-${Date.now()}`, ...tripPayload };
+        createdId = localTrip.id;
+        const existing = JSON.parse(localStorage.getItem('goflexi_custom_trips') || '[]');
+        localStorage.setItem('goflexi_custom_trips', JSON.stringify([localTrip, ...existing]));
+      } catch {
+        // Ignore
+      }
+    }
+
+    if (payNow) {
+      initiateRazorpayPayment({
+        amount: breakdown.total,
+        tripId: createdId,
+        title: `${destination} Custom Journey`,
+        destination: destination,
+        user: user ? { name: user.name, email: user.email } : null,
+        onSuccess: async (paymentId: string) => {
+          showToast(
+            'success',
+            `Payment confirmed for ${destination}! Ref: ${paymentId}`,
+            'Payment Confirmed'
+          );
+          setTimeout(() => {
+            navigate(`/user/billing?tripId=${createdId || ''}&paid=true`);
+          }, 800);
+        },
+        onError: (errorMsg: string) => {
+          setIsSaved(false);
+          showToast('error', errorMsg, 'Payment Failed');
+        },
+        onDismiss: () => {
+          setIsSaved(false);
+          showToast(
+            'info',
+            'Trip plan saved as pending! You can pay whenever you are ready in the Billing section.',
+            'Payment Closed'
+          );
+          setTimeout(() => {
+            navigate(`/user/billing?tripId=${createdId || ''}`);
+          }, 800);
+        },
+      });
+    } else {
+      showToast(
+        'info',
+        `Payment skipped. Your trip is saved as pending and queued in your Billing section!`,
+        'Trip Saved (Pay Later)'
+      );
+      setTimeout(() => {
+        navigate(`/user/billing?tripId=${createdId || ''}`);
+      }, 1000);
+    }
   };
 
   // -----------------------------------------------------------
@@ -461,7 +630,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
       if (!generatedTripPlan) {
         handleGenerateRecommendation();
       } else {
-        handleSaveTrip();
+        handleSaveTrip(false);
       }
     }
   };
@@ -524,21 +693,46 @@ const TravelerNewTripWizardContent: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Destination Input with Live Autocomplete */}
+              {/* Destination Input with Live Autocomplete & Manual Clear */}
               <div className="relative">
-                <Input
-                  label="Destination City or Region"
-                  placeholder="e.g. Goa, Manali, Jaipur, Tokyo..."
-                  value={destination}
-                  onChange={(e) => handleDestinationInputChange(e.target.value)}
-                  onFocus={() => destSuggestions.length > 0 && setShowDestDropdown(true)}
-                  icon={<MapPin className="w-4 h-4 text-brand-600" />}
-                />
-                {loadingDestSearch && (
-                  <div className="absolute right-3 top-9 text-slate-400">
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  </div>
-                )}
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Destination City or Region
+                  </label>
+                  <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
+                    Manual Entry Supported
+                  </span>
+                </div>
+                <div className="relative">
+                  <Input
+                    placeholder="Type any city e.g. Goa, Manali, Paris, Tokyo..."
+                    value={destination}
+                    onChange={(e) => handleDestinationInputChange(e.target.value)}
+                    onFocus={() => destSuggestions.length > 0 && setShowDestDropdown(true)}
+                    icon={<MapPin className="w-4 h-4 text-brand-600" />}
+                    rightElement={
+                      destination ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDestination('');
+                            setDestSuggestions([]);
+                            setShowDestDropdown(false);
+                          }}
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                          title="Clear to enter custom destination"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      ) : undefined
+                    }
+                  />
+                  {loadingDestSearch && (
+                    <div className="absolute right-9 top-1/2 -translate-y-1/2 text-slate-400">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    </div>
+                  )}
+                </div>
                 {showDestDropdown && destSuggestions.length > 0 && (
                   <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 max-h-56 overflow-y-auto divide-y divide-slate-100">
                     {destSuggestions.map((item) => (
@@ -561,20 +755,80 @@ const TravelerNewTripWizardContent: React.FC = () => {
                     ))}
                   </div>
                 )}
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Enter any custom place name or choose from popular hubs below.
+                </span>
               </div>
 
-              {/* Departing From Field */}
+              {/* Departing From Field with Option 1: Manual Input & Option 2: Current Location Button */}
               <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Departing From (Origin City)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleDetectCurrentLocation}
+                    disabled={isLocatingDeparture}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                    title="Track my GPS location and auto-fill current city"
+                  >
+                    <LocateFixed className={`w-3.5 h-3.5 ${isLocatingDeparture ? 'animate-spin text-brand-600' : 'text-brand-600'}`} />
+                    <span>{isLocatingDeparture ? 'Tracking GPS...' : '📍 Use Current Location'}</span>
+                  </button>
+                </div>
                 <Input
-                  label="Departing From (Origin City)"
-                  placeholder="e.g. Mumbai, Delhi, Bengaluru..."
+                  placeholder="e.g. Mumbai, Delhi, Bengaluru, London..."
                   value={departureCity}
-                  onChange={(e) => setDepartureCity(e.target.value)}
-                  icon={<MapPin className="w-4 h-4 text-slate-400" />}
+                  onChange={(e) => {
+                    setDepartureCity(e.target.value);
+                    if (detectedLocationLabel) setDetectedLocationLabel(null);
+                  }}
+                  icon={<Plane className="w-4 h-4 text-slate-400" />}
+                  rightElement={
+                    departureCity ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDepartureCity('');
+                          setDetectedLocationLabel(null);
+                        }}
+                        className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                        title="Clear to enter custom departure city"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    ) : undefined
+                  }
                 />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Used for real-time flight route search and price previews.
-                </span>
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                  <span>
+                    {detectedLocationLabel ? (
+                      <span className="text-emerald-600 font-bold flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        Auto-detected: {detectedLocationLabel}
+                      </span>
+                    ) : (
+                      'Used for live flight route matching & pricing.'
+                    )}
+                  </span>
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <span className="text-slate-400">Hubs:</span>
+                    {['Mumbai', 'Delhi', 'Bengaluru'].map((hub) => (
+                      <button
+                        key={hub}
+                        type="button"
+                        onClick={() => {
+                          setDepartureCity(hub);
+                          setDetectedLocationLabel(null);
+                        }}
+                        className="text-brand-600 hover:underline font-semibold cursor-pointer"
+                      >
+                        {hub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1132,28 +1386,91 @@ const TravelerNewTripWizardContent: React.FC = () => {
         )}
 
         {/* ========================================================= */}
-        {/* STEP 7: RECOMMENDED FLIGHTS */}
+        {/* STEP 7: RECOMMENDED TRANSIT (FLIGHT OR TRAIN) */}
         {/* ========================================================= */}
         {step === 7 && (
           <div className="space-y-6">
-            <FlightSearchPanel
-              initialOrigin={departureCity}
-              initialDestination={destination}
-              initialDepartDate={startDate}
-              initialReturnDate={endDate}
-              initialAdults={travelersCount}
-              budgetMax={Math.round(budgetMax * flightBudgetRatio)}
-              travelStyle={travelStyle}
-              selectedFlightId={selectedFlight?.id}
-              onSelectFlight={(flight) => {
-                setSelectedFlight(flight);
-                showToast(
-                  'success',
-                  `Selected ${flight.airline} flight (₹${flight.price.toLocaleString('en-IN')})`,
-                  'Flight Chosen'
-                );
-              }}
-            />
+            {/* Conditional Transport Mode Selector for India */}
+            {isDomesticIndia ? (
+              <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Preferred Transit Mode for {destination}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Domestic route within India: Choose between Flights or Indian Railways.
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setTransportMode('flight')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      transportMode === 'flight'
+                        ? 'bg-white text-navy-950 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Plane className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Flight / Air</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTransportMode('train')}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      transportMode === 'train'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Train className="w-3.5 h-3.5" />
+                    <span>Indian Railways</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {transportMode === 'train' && isDomesticIndia ? (
+              <TrainSearchPanel
+                initialOrigin={departureCity}
+                initialDestination={destination}
+                initialDepartDate={startDate}
+                initialAdults={travelersCount}
+                budgetMax={Math.round(budgetMax * 0.15)}
+                travelStyle={travelStyle}
+                selectedTrainId={selectedTrain?.id}
+                onSelectTrain={(train) => {
+                  setSelectedTrain(train);
+                  showToast(
+                    'success',
+                    `Selected ${train.train_name} #${train.train_number} (₹${train.price.toLocaleString('en-IN')})`,
+                    'Train Selected'
+                  );
+                }}
+              />
+            ) : (
+              <FlightSearchPanel
+                initialOrigin={departureCity}
+                initialDestination={destination}
+                initialDepartDate={startDate}
+                initialReturnDate={endDate}
+                initialAdults={travelersCount}
+                budgetMax={Math.round(budgetMax * flightBudgetRatio)}
+                travelStyle={travelStyle}
+                selectedFlightId={selectedFlight?.id}
+                onSelectFlight={(flight) => {
+                  setSelectedFlight(flight);
+                  showToast(
+                    'success',
+                    `Selected ${flight.airline} flight (₹${flight.price.toLocaleString('en-IN')})`,
+                    'Flight Chosen'
+                  );
+                }}
+              />
+            )}
           </div>
         )}
 
@@ -1237,16 +1554,26 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={handleSaveTrip}
+                        onClick={() => handleSaveTrip(false)}
                         disabled={isSaved}
-                        className="rounded-xl text-xs bg-white text-emerald-950 hover:bg-emerald-50"
+                        className="rounded-xl text-xs bg-white text-emerald-950 hover:bg-emerald-50 font-semibold"
                       >
-                        <Bookmark className="w-3.5 h-3.5 mr-1" />
-                        {isSaved ? 'Saved!' : 'Save Trip'}
+                        <Clock className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                        {isSaved ? 'Saved!' : 'Skip Payment (Pay Later)'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleSaveTrip(true)}
+                        disabled={isSaved}
+                        className="rounded-xl text-xs bg-emerald-500 hover:bg-emerald-400 text-navy-950 font-bold shadow-md"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 mr-1" />
+                        Proceed to Payment
                       </Button>
                       <Button
                         size="sm"
@@ -1271,9 +1598,13 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       <span className="font-bold">{travelStyle}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-emerald-300 block uppercase">Flight</span>
+                      <span className="text-[10px] text-emerald-300 block uppercase">
+                        {transportMode === 'train' && isDomesticIndia ? 'Indian Railways' : 'Flight'}
+                      </span>
                       <span className="font-bold truncate block">
-                        {selectedFlight ? `${selectedFlight.airline} (₹${selectedFlight.price.toLocaleString('en-IN')})` : 'Recommended Route'}
+                        {transportMode === 'train' && isDomesticIndia
+                          ? (selectedTrain ? `${selectedTrain.train_name} (#${selectedTrain.train_number})` : 'Recommended Train Route')
+                          : (selectedFlight ? `${selectedFlight.airline} (₹${selectedFlight.price.toLocaleString('en-IN')})` : 'Recommended Route')}
                       </span>
                     </div>
                     <div>
@@ -1281,6 +1612,26 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       <span className="font-bold truncate block">
                         {selectedHotel ? selectedHotel.name : 'Curated Resort'}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Estimated Cost Breakdown Strip */}
+                  <div className="p-3 bg-emerald-950/60 rounded-xl border border-emerald-700/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-300 font-bold">
+                      <Wallet className="w-4 h-4" />
+                      <span>Total Estimated Cost:</span>
+                      <span className="text-white text-sm font-extrabold ml-1">
+                        ₹{computeTripCostBreakdown().total.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-emerald-200/80">
+                      <span>{transportMode === 'train' && isDomesticIndia ? 'Trains' : 'Flights'}: ₹{computeTripCostBreakdown().flights.toLocaleString('en-IN')}</span>
+                      <span>•</span>
+                      <span>Stays: ₹{computeTripCostBreakdown().hotel.toLocaleString('en-IN')}</span>
+                      <span>•</span>
+                      <span>Activities: ₹{computeTripCostBreakdown().activities.toLocaleString('en-IN')}</span>
+                      <span>•</span>
+                      <span>Taxes: ₹{computeTripCostBreakdown().taxes.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </div>
@@ -1345,22 +1696,45 @@ const TravelerNewTripWizardContent: React.FC = () => {
             Back
           </Button>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleNext}
-            disabled={isRecommending}
-            className="rounded-xl px-6 bg-navy-900 hover:bg-navy-800"
-          >
-            <span>
-              {step === totalSteps
-                ? generatedTripPlan
-                  ? 'Complete & Save Trip'
-                  : 'Generate My Trip Plan'
-                : 'Continue'}
-            </span>
-            <ArrowRight className="w-4 h-4 ml-1.5" />
-          </Button>
+          {step === totalSteps && generatedTripPlan ? (
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleSaveTrip(false)}
+                disabled={isSaved}
+                className="rounded-xl px-5 border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold"
+              >
+                <span>Skip Payment (Pay Later)</span>
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => handleSaveTrip(true)}
+                disabled={isSaved}
+                className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-500 font-bold shadow-lg shadow-emerald-600/20 text-white inline-flex items-center gap-2"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Proceed to Payment (₹{computeTripCostBreakdown().total.toLocaleString('en-IN')})</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleNext}
+              disabled={isRecommending}
+              className="rounded-xl px-6 bg-navy-900 hover:bg-navy-800"
+            >
+              <span>
+                {step === totalSteps
+                  ? 'Generate My Trip Plan'
+                  : 'Continue'}
+              </span>
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

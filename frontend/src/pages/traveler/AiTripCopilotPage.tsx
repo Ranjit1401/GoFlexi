@@ -16,7 +16,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { TripPlan, TripLocation, CopilotChatMessage, DiscoveredPlace } from '../../types/trip-planner';
-import { sendCopilotChat } from '../../services/trip-planner';
+import { generateTripPlan, sendCopilotChat } from '../../services/trip-planner';
+import { createTrip } from '../../services/trips';
 import { TripPlanTree } from '../../components/traveler/TripPlanTree';
 import { TripGlobe } from '../../components/traveler/TripGlobe';
 import { AiTripAssistant } from '../../components/traveler/AiTripAssistant';
@@ -191,7 +192,7 @@ export const AiTripCopilotPage: React.FC = () => {
     setSelectedLocation(loc);
   };
 
-  const handleSaveTrip = () => {
+  const handleSaveTrip = async () => {
     if (!tripPlan && selectedPlaces.length === 0) {
       handleSendMessage(`I want to visit ${destinationQuery}`);
       return;
@@ -201,6 +202,24 @@ export const AiTripCopilotPage: React.FC = () => {
       return;
     }
     setIsSaved(true);
+    try {
+      await createTrip({
+        title: tripPlan.title || `${tripPlan.destination} Journey`,
+        destination: tripPlan.destination || 'Custom Destination',
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: new Date(Date.now() + (tripPlan.duration_days || 4) * 86400000).toISOString().split('T')[0],
+        days: tripPlan.duration_days || 4,
+        travelers_count: 2,
+        budget: tripPlan.estimated_budget || '₹35,000',
+        status: 'Upcoming',
+        payment_status: 'Pending',
+        itinerary_summary: `${tripPlan.duration_days || 4}-day curated AI journey to ${tripPlan.destination}.`,
+        tags: ['AI Co-Pilot', tripPlan.destination],
+        stops: tripPlan.locations?.map((l) => l.name) || [],
+      });
+    } catch (err) {
+      console.error('Failed to persist AI Co-Pilot trip:', err);
+    }
     setTimeout(() => {
       setIsSaved(false);
     }, 4000);

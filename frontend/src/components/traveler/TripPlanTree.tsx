@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Plane,
+  Train,
   Building2,
   Calendar,
   Compass,
@@ -413,19 +414,22 @@ export const TripPlanTree: React.FC<TripPlanTreeProps> = ({
       {/* Tab 4: Transport / Flights */}
       {activeTab === 'transport' && plan && (
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
-          {transportNodes.map((trans) => (
-            <div
-              key={trans.id}
-              onClick={() => trans.location && onSelectLocation(trans.location)}
-              className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/70 text-xs text-white cursor-pointer hover:border-indigo-500 transition-colors"
-            >
-              <div className="flex items-center gap-2 mb-1 text-sky-400">
-                <Plane className="w-4 h-4" />
-                <span className="font-semibold">{trans.title}</span>
+          {transportNodes.map((trans) => {
+            const isTrain = trans.title.toLowerCase().includes('train') || trans.title.toLowerCase().includes('rail') || trans.title.toLowerCase().includes('express');
+            return (
+              <div
+                key={trans.id}
+                onClick={() => trans.location && onSelectLocation(trans.location)}
+                className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/70 text-xs text-white cursor-pointer hover:border-indigo-500 transition-colors"
+              >
+                <div className={`flex items-center gap-2 mb-1 ${isTrain ? 'text-amber-400' : 'text-sky-400'}`}>
+                  {isTrain ? <Train className="w-4 h-4" /> : <Plane className="w-4 h-4" />}
+                  <span className="font-semibold">{trans.title}</span>
+                </div>
+                <p className="text-[11px] text-slate-400">{trans.subtitle}</p>
               </div>
-              <p className="text-[11px] text-slate-400">{trans.subtitle}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
