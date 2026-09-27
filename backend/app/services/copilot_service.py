@@ -159,49 +159,34 @@ def _classify_intent(
     msg: str,
     has_plan: bool,
     has_selected_places: bool,
-    active_dest: Optional[str]
+    active_dest: Optional[str],
+    matched_dest: Optional[Destination] = None
 ) -> str:
     """
     Robust intent classification covering all 9 required intent flows.
+    Correctly recognizes destination mentions and prevents falling into CASUAL_CHAT.
     """
     clean = msg.strip().lower()
 
-    # 1. GREETING / CASUAL CHAT
-    casual_patterns = [
-        r"^(hello|hi|hey|heya|howdy|hola|greetings)\b",
-        r"^good\s+(morning|afternoon|evening|day)\b",
-        r"^(thanks|thank\s+you|thx)\b",
-        r"^(what\s+can\s+you\s+do|who\s+are\s+you|what\s+are\s+you|help)\b",
-    ]
-    if any(re.search(pat, clean) for pat in casual_patterns):
-        # Only casual if they didn't also specify an action like "hello, plan a trip to Jaipur"
-        if not re.search(r"\b(visit|plan|itinerary|book|place|places|add|remove|jaipur|goa|manali)\b", clean):
-            return INTENT_CASUAL_CHAT
-
-    # 2. REMOVE PLACE
+    # 1. REMOVE PLACE
     if re.search(r"\b(remove|delete|drop|exclude)\s+(.+)", clean):
         return INTENT_REMOVE_PLACE
 
-    # 3. ADD PLACE
+    # 2. ADD PLACE
     if re.search(r"\b(add|include|put)\s+(.+?)(?:\s+to\s+(?:my\s+)?trip|\s*$)", clean):
         return INTENT_ADD_PLACE
 
-    # 4. SHOW MORE PLACES
+    # 3. SHOW MORE PLACES
     if re.search(r"\b(show\s+(?:me\s+)?more\s+places|more\s+places|more\s+attractions|more\s+sights|more\s+options|more\s+recommendations)\b", clean):
         return INTENT_SHOW_MORE_PLACES
 
-    # 5. ITINERARY REQUEST (Explicit only!)
-    itinerary_patterns = [
-        r"\b(create|build|make|generate|organize|give\s+me)\s+(?:an?\s+)?(?:(\d+)[\s-]day\s+)?itinerary\b",
-        r"\bplan\s+(?:a\s+)?(\d+)[\s-]days?\s+(?:trip|itinerary|journey)\b",
-        r"\bplan\s+my\s+trip\b",
-        r"\borganize\s+(?:these\s+)?places\s+into\b",
-        r"\bbuild\s+an?\s+itinerary\s+from\b",
-        r"\bplan\s+\d+\s+days\s+in\b",
-        r"\bcreate\s+a\s+\d+[\s-]day\s+itinerary\s+from\s+these\s+places\b"
-    ]
-    if any(re.search(pat, clean) for pat in itinerary_patterns):
-        return INTENT_ITINERARY_REQUEST
+    # 4. TRIP INFORMATION
+    if re.search(r"\b(what('s|\s+is)\s+(?:currently\s+)?in\s+my\s+trip|show\s+my\s+(?:selected\s+)?places|what\s+have\s+i\s+added|summary\s+of\s+my\s+trip)\b", clean):
+        return INTENT_TRIP_INFORMATION
+
+    # 5. DESTINATION RECOMMENDATION
+    if re.search(r"\b(where\s+should\s+i\s+go|suggest\s+(?:a\s+)?destination|recommend\s+(?:a\s+)?destination|where\s+to\s+travel|where\s+to\s+go)\b", clean):
+        return INTENT_DESTINATION_RECOMMENDATION
 
     # 6. ITINERARY MODIFICATION (Only if an itinerary is already active)
     if has_plan:
@@ -213,20 +198,43 @@ def _classify_intent(
         if any(re.search(pat, clean) for pat in modification_patterns):
             return INTENT_ITINERARY_MODIFICATION
 
-    # 7. TRIP INFORMATION
-    if re.search(r"\b(what('s|\s+is)\s+(?:currently\s+)?in\s+my\s+trip|show\s+my\s+(?:selected\s+)?places|what\s+have\s+i\s+added|summary\s+of\s+my\s+trip)\b", clean):
-        return INTENT_TRIP_INFORMATION
+    # 7. EXPLICIT ITINERARY REQUEST
+    # Only triggered on explicit request (especially when places have been selected)
+    itinerary_patterns = [
+        r"\b(create|build|make|generate|organize|give\s+me)\s+(?:an?\s+)?(?:(\d+)[\s-]day\s+)?itinerary\b",
+        r"\bplan\s+(?:a\s+)?(\d+)[\s-]days?\s+(?:trip|itinerary|journey)\b",
+        r"\bplan\s+my\s+trip\b",
+        r"\borganize\s+(?:these\s+)?places\s+into\b",
+        r"\bbuild\s+an?\s+itinerary\s+from\b",
+        r"\bplan\s+\d+\s+days\s+in\b",
+        r"\bcreate\s+a\s+\d+[\s-]day\s+itinerary\s+from\s+these\s+places\b",
+        r"\bplan\s+(?:a\s+)?(\d+)[\s-]day\s+itinerary\s+from\s+these\s+places\b"
+    ]
+    if any(re.search(pat, clean) for pat in itinerary_patterns):
+        return INTENT_ITINERARY_REQUEST
 
-    # 8. DESTINATION RECOMMENDATION
-    if re.search(r"\b(where\s+should\s+i\s+go|suggest\s+(?:a\s+)?destination|recommend\s+(?:a\s+)?destination|where\s+to\s+travel|where\s+to\s+go)\b", clean):
-        return INTENT_DESTINATION_RECOMMENDATION
+    # 8. DESTINATION DISCOVERY & PLACE DISCOVERY
+    # If a real destination is detected in the database, prioritize discovery over casual chat!
+    if matched_dest is not None:
+        if re.search(r"\b(what\s+can\s+i\s+do\s+in|show\s+me\s+places\s+in|places\s+in|sights\s+in|attractions\s+in|things\s+to\s+do\s+in)\b", clean):
+            return INTENT_PLACE_DISCOVERY
+        return INTENT_DESTINATION_DISCOVERY
 
-    # 9. PLACE DISCOVERY
-    if re.search(r"\b(what\s+can\s+i\s+do\s+in|show\s+me\s+places\s+in|places\s+in|sights\s+in|attractions\s+in|things\s+to\s+do\s+in)\b", clean):
+    # 9. GREETING / CASUAL CHAT (Only when NO destination was matched)
+    casual_patterns = [
+        r"^(hello|hi|hey|heya|howdy|hola|greetings)\b",
+        r"^good\s+(morning|afternoon|evening|day)\b",
+        r"^(thanks|thank\s+you|thx)\b",
+        r"^(what\s+can\s+you\s+do|who\s+are\s+you|what\s+are\s+you|help)\b",
+    ]
+    if any(re.search(pat, clean) for pat in casual_patterns):
+        return INTENT_CASUAL_CHAT
+
+    # 10. PLACE DISCOVERY with active destination context
+    if re.search(r"\b(what\s+can\s+i\s+do\s+in|show\s+me\s+places\s+in|places\s+in|sights\s+in|attractions\s+in|things\s+to\s+do\s+in|explore)\b", clean):
         return INTENT_PLACE_DISCOVERY
 
-    # 10. DESTINATION DISCOVERY (Default discovery flow when a destination is mentioned)
-    if re.search(r"\b(i\s+want\s+to\s+visit|visit|travel\s+to|explore|trip\s+to|going\s+to)\b", clean):
+    if re.search(r"\b(i\s+want\s+to\s+visit|visit|travel\s+to|explore|trip\s+to|trip\s+for|going\s+to)\b", clean):
         return INTENT_DESTINATION_DISCOVERY
 
     # Default to casual chat if short or unrecognized without places/destinations
@@ -234,7 +242,7 @@ def _classify_intent(
 
 
 # -------------------------------------------------------------------------
-# Real POI Retrieval & Place Schema Conversion
+# Real POI Retrieval & Place Schema Conversion (Zero fake fallbacks!)
 # -------------------------------------------------------------------------
 
 async def _fetch_destination_places(
@@ -244,21 +252,19 @@ async def _fetch_destination_places(
 ) -> List[DiscoveredPlaceSchema]:
     """
     Fetches genuine points of interest for a destination using OpenTripMap / POI service.
-    Zero hallucinated coordinates or IDs.
+    Zero hallucinated coordinates, IDs, or fake fallback placeholders.
     """
-    from app.services.poi_service import _get_fallback_pois
-
-    curated = _get_fallback_pois(destination.latitude, destination.longitude)
     pois = await search_activities(
-        lat=destination.latitude,
-        lon=destination.longitude,
-        kinds="historic,cultural,natural,architecture,monuments,fortifications,amusements",
-        limit=limit + offset + 5
+        lat=float(destination.latitude),
+        lon=float(destination.longitude),
+        radius_m=25000,
+        kinds="interesting_places",
+        limit=limit + offset + 15
     )
 
     combined = []
     seen = set()
-    for item in curated + pois:
+    for item in pois:
         key = item.name.lower().strip()
         # Filter out foreign non-Latin scripts, restaurants, and cinemas
         if (
@@ -647,7 +653,6 @@ async def copilot_chat(
     elif request.trip_context and request.trip_context.destinations:
         active_dest_name = request.trip_context.destinations[0]
     elif request.selected_places and len(request.selected_places) > 0:
-        # Infer from selected place destination_id
         first_p = request.selected_places[0]
         if first_p.destination_id:
             try:
@@ -657,12 +662,16 @@ async def copilot_chat(
             except Exception:
                 pass
 
+    # Detect if any destination is mentioned in the user message
+    matched_dest = _find_destination(db, msg)
+
     # Classify intent
     intent = _classify_intent(
         msg=msg,
         has_plan=has_plan,
         has_selected_places=has_selected,
-        active_dest=active_dest_name
+        active_dest=active_dest_name,
+        matched_dest=matched_dest
     )
 
     prefs = _get_traveler_profile(db, user)
@@ -752,7 +761,7 @@ async def copilot_chat(
     # Retrieves REAL destination & REAL POIs. NO automatic itinerary!
     # =========================================================================
     if intent in (INTENT_DESTINATION_DISCOVERY, INTENT_PLACE_DISCOVERY):
-        destination = _find_destination(db, msg)
+        destination = matched_dest
         if not destination and active_dest_name:
             destination = _find_destination(db, active_dest_name)
 
@@ -760,23 +769,44 @@ async def copilot_chat(
             # Tell the traveler truthfully that destination wasn't found
             return CopilotChatResponse(
                 intent=INTENT_DESTINATION_DISCOVERY,
-                message="GoFlexi couldn't retrieve that destination right now. Try exploring Jaipur, Goa, Manali, or Udaipur!",
+                message="GoFlexi couldn't retrieve that destination right now. Try exploring Visakhapatnam, Jaipur, Goa, Manali, or Udaipur!",
                 places=[],
                 selected_places=current_selected,
-                suggested_actions=["I want to visit Jaipur", "I want to visit Goa", "Where should I go?"],
+                suggested_actions=["I want to visit Visakhapatnam", "I want to visit Jaipur", "I want to visit Goa"],
                 trip_plan=None
             )
 
-        # Retrieve authentic POIs using the POI service
+        # If user switched to a different destination, clear places selected from previous destination
+        if matched_dest and active_dest_name and matched_dest.name.lower() != active_dest_name.lower():
+            current_selected = []
+
+        # Destination marker for globe
+        dest_loc = TripLocationSchema(
+            id=f"loc_dest_{destination.id}",
+            name=destination.name,
+            type="destination",
+            latitude=float(destination.latitude or 20.5937),
+            longitude=float(destination.longitude or 78.9629),
+            city=destination.city or destination.name,
+            description=destination.short_description or f"Verified travel destination in {destination.state or 'India'}"
+        )
+
+        # Retrieve authentic POIs using OpenTripMap
         try:
             places = await _fetch_destination_places(destination, limit=8)
         except Exception as exc:
             logger.warning(f"POI lookup failed: {exc}")
+            places = []
+
+        if not places:
             return CopilotChatResponse(
                 intent=INTENT_DESTINATION_DISCOVERY,
-                message="I couldn't retrieve verified places right now. Please try again.",
+                message=f"I couldn't retrieve verified places for {destination.name} right now. Please try again or ask for another destination.",
                 places=[],
                 selected_places=current_selected,
+                trip_updates=TripUpdatesSchema(destination=destination.name),
+                locations=[dest_loc],
+                suggested_actions=["Show me more places", f"Plan a trip to {destination.name}"],
                 trip_plan=None
             )
 
@@ -801,17 +831,6 @@ async def copilot_chat(
                 f"Here are top verified attractions from GoFlexi's destination database. "
                 f"Select the places you'd like to visit using the 'Add to trip' buttons below."
             )
-
-        # Destination marker for globe
-        dest_loc = TripLocationSchema(
-            id=f"loc_dest_{destination.id}",
-            name=destination.name,
-            type="destination",
-            latitude=float(destination.latitude or 26.9124),
-            longitude=float(destination.longitude or 75.7873),
-            city=destination.city or destination.name,
-            description=destination.short_description
-        )
 
         suggested_actions = []
         if places:
@@ -864,17 +883,26 @@ async def copilot_chat(
             )
 
         # Resolve destination
-        destination = _find_destination(db, active_dest_name or "Jaipur")
+        destination = matched_dest
+        if not destination and active_dest_name:
+            destination = _find_destination(db, active_dest_name)
+        if not destination and current_selected:
+            try:
+                destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
+            except Exception:
+                pass
+
         new_place: Optional[DiscoveredPlaceSchema] = None
 
         if destination and destination.latitude and destination.longitude:
             pois = await search_activities(
-                lat=destination.latitude,
-                lon=destination.longitude,
-                kinds="interesting_places,cultural,natural,amusements,foods",
-                limit=25
+                lat=float(destination.latitude),
+                lon=float(destination.longitude),
+                radius_m=25000,
+                kinds="interesting_places",
+                limit=50
             )
-            # Find closest match by name
+            # Find closest match by name from OpenTripMap
             for p in pois:
                 if target_name.lower() in p.name.lower() or p.name.lower() in target_name.lower():
                     img = p.preview_image or _resolve_landmark_image(p.name, p.kinds or "")
@@ -882,7 +910,7 @@ async def copilot_chat(
                         poi_id=str(p.xid),
                         destination_id=str(destination.id),
                         name=p.name,
-                        description=p.description or f"Verified {p.popularity} landmark in {destination.name}",
+                        description=getattr(p, "desc", None) or f"Verified {p.popularity} landmark in {destination.name}",
                         latitude=float(p.latitude),
                         longitude=float(p.longitude),
                         image_url=img,
@@ -891,21 +919,24 @@ async def copilot_chat(
                     )
                     break
 
-        if not new_place and destination:
-            # Create verified place with destination offset
-            new_place = DiscoveredPlaceSchema(
-                poi_id=f"poi_place_{uuid.uuid4().hex[:6]}",
-                destination_id=str(destination.id),
-                name=target_name.title(),
-                description=f"Verified landmark in {destination.name}",
-                latitude=float(destination.latitude or 26.9124),
-                longitude=float(destination.longitude or 75.7873),
-                image_url=_resolve_landmark_image(target_name),
-                source="GoFlexi Knowledge"
-            )
-
-        if new_place:
-            current_selected.append(new_place)
+            # If not in OpenTripMap list, check destination's curated heritage landmarks
+            if not new_place:
+                from app.services.poi_service import CURATED_FALLBACK_POIS
+                curated_list = CURATED_FALLBACK_POIS.get(destination.name.lower(), [])
+                for c in curated_list:
+                    if target_name.lower() in c["name"].lower() or c["name"].lower() in target_name.lower():
+                        new_place = DiscoveredPlaceSchema(
+                            poi_id=c["xid"],
+                            destination_id=str(destination.id),
+                            name=c["name"],
+                            description=c.get("desc", f"Verified landmark in {destination.name}"),
+                            latitude=float(destination.latitude),
+                            longitude=float(destination.longitude),
+                            image_url=c.get("image") or _resolve_landmark_image(c["name"]),
+                            source="Verified Landmark",
+                            kinds=c.get("kinds", "historic")
+                        )
+                        break
 
         # Build locations for Globe
         updated_locations: List[TripLocationSchema] = []
@@ -917,9 +948,36 @@ async def copilot_chat(
                     type="destination",
                     latitude=float(destination.latitude),
                     longitude=float(destination.longitude),
-                    city=destination.city or destination.name
+                    city=destination.city or destination.name,
+                    description=destination.short_description or f"Verified destination in {destination.state or 'India'}"
                 )
             )
+
+        if not new_place:
+            for idx, sp in enumerate(current_selected):
+                updated_locations.append(
+                    TripLocationSchema(
+                        id=f"loc_act_{sp.poi_id or idx}",
+                        name=sp.name,
+                        type="activity",
+                        latitude=sp.latitude,
+                        longitude=sp.longitude,
+                        description=sp.description,
+                        preview_image=sp.image_url
+                    )
+                )
+            return CopilotChatResponse(
+                intent=INTENT_ADD_PLACE,
+                message=f"I couldn't find a verified landmark matching '{target_name}' in {destination.name if destination else 'your trip'}. Please select one of the discovered place cards above.",
+                places=[],
+                selected_places=current_selected,
+                locations=updated_locations,
+                suggested_actions=["Show me more places", f"Plan a trip to {destination.name}" if destination else "Where should I go?"],
+                trip_plan=request.trip_state
+            )
+
+        current_selected.append(new_place)
+
         for idx, sp in enumerate(current_selected):
             updated_locations.append(
                 TripLocationSchema(
@@ -933,12 +991,13 @@ async def copilot_chat(
                 )
             )
 
-        added_name = new_place.name if new_place else target_name
+        added_name = new_place.name
         return CopilotChatResponse(
             intent=INTENT_ADD_PLACE,
             message=f"Added {added_name} to your trip.",
             places=[],
             selected_places=current_selected,
+            trip_updates=TripUpdatesSchema(destination=destination.name if destination else None),
             locations=updated_locations,
             itinerary_changes=[],
             suggested_actions=[
@@ -985,7 +1044,15 @@ async def copilot_chat(
         if updated_plan:
             updated_locations = updated_plan.locations
         else:
-            destination = _find_destination(db, active_dest_name or "Jaipur")
+            destination = matched_dest
+            if not destination and active_dest_name:
+                destination = _find_destination(db, active_dest_name)
+            if not destination and current_selected:
+                try:
+                    destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
+                except Exception:
+                    pass
+
             if destination and destination.latitude and destination.longitude:
                 updated_locations.append(
                     TripLocationSchema(
@@ -1026,14 +1093,19 @@ async def copilot_chat(
     # Retrieves additional REAL POIs for current destination.
     # =========================================================================
     if intent == INTENT_SHOW_MORE_PLACES:
-        destination = _find_destination(db, active_dest_name or "Jaipur")
-        if not destination:
-            destination = _find_destination(db, "Jaipur")
+        destination = matched_dest
+        if not destination and active_dest_name:
+            destination = _find_destination(db, active_dest_name)
+        if not destination and current_selected:
+            try:
+                destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
+            except Exception:
+                pass
 
         if not destination:
             return CopilotChatResponse(
                 intent=INTENT_SHOW_MORE_PLACES,
-                message="Please choose a destination first, e.g., Jaipur or Goa.",
+                message="Please choose a destination first (e.g. 'I want to visit Visakhapatnam' or 'I want to visit Jaipur').",
                 places=[],
                 selected_places=current_selected,
                 trip_plan=None
@@ -1061,16 +1133,19 @@ async def copilot_chat(
     # "Create a 3-day itinerary from these places", "Plan my trip", etc.
     # =========================================================================
     if intent == INTENT_ITINERARY_REQUEST:
-        destination = _find_destination(db, msg)
+        destination = matched_dest
         if not destination and active_dest_name:
             destination = _find_destination(db, active_dest_name)
-        if not destination:
-            destination = _find_destination(db, "Jaipur")
+        if not destination and current_selected:
+            try:
+                destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
+            except Exception:
+                pass
 
         if not destination:
             return CopilotChatResponse(
                 intent=INTENT_ITINERARY_REQUEST,
-                message="Please specify which destination you'd like to plan an itinerary for.",
+                message="Please specify which destination you'd like to plan an itinerary for (e.g. 'Plan 3 days in Visakhapatnam' or 'Plan 3 days in Jaipur').",
                 places=[],
                 selected_places=current_selected,
                 trip_plan=None

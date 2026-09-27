@@ -33,7 +33,7 @@ interface TripPlanTreeProps {
 }
 
 export const TripPlanTree: React.FC<TripPlanTreeProps> = ({
-  destination = 'Jaipur',
+  destination = 'Choose destination',
   selectedPlaces = [],
   plan,
   selectedLocation,
@@ -107,7 +107,7 @@ export const TripPlanTree: React.FC<TripPlanTreeProps> = ({
     ? dayNodes
     : dayNodes.filter((_, idx) => idx + 1 === selectedDayFilter);
 
-  const displayDestination = plan?.destination || destination || 'Jaipur';
+  const displayDestination = plan?.destination || destination || 'Choose destination';
 
   return (
     <div className="h-full flex flex-col bg-slate-900 border-r border-slate-800 select-none">

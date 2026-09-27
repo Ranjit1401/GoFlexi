@@ -35,10 +35,10 @@ export const TripGlobe: React.FC<TripGlobeProps> = ({ locations, routes, selecte
     }).catch(console.error);
   }, []);
 
-  // Determine initial camera view
-  let dest = Cartesian3.fromDegrees(1.0, 48.0, 1500000);
+  // Determine camera view: if no locations, center on Indian subcontinent perspective
+  let dest = Cartesian3.fromDegrees(78.9629, 20.5937, 5000000);
   if (locations.length > 0) {
-      const target = locations.find(l => l.type === 'destination') || locations[0];
+      const target = selectedLocation || locations.find(l => l.type === 'destination') || locations[0];
       dest = Cartesian3.fromDegrees(target.longitude, target.latitude, 1500000);
   }
 
@@ -152,7 +152,7 @@ export const TripGlobe: React.FC<TripGlobeProps> = ({ locations, routes, selecte
       </div>
 
       {/* Selected Location Quick Card at Bottom-Right */}
-      {selectedLocation && (
+      {selectedLocation && locations.length > 0 && (
         <div className="absolute bottom-4 right-4 z-10 w-72 bg-slate-900/95 backdrop-blur-md border border-indigo-500/40 rounded-xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="h-24 w-full relative bg-slate-800">
             <img

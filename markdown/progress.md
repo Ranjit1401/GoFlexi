@@ -329,6 +329,30 @@ Transformed the GoFlexi AI Trip Co-Pilot into a conversational discovery and rea
   - Step 7: `Make day 2 more relaxed` -> Intent `ITINERARY_MODIFICATION`, revised Day 2 pacing.
   - Step 8: `Remove Amber Fort` -> Intent `REMOVE_PLACE`, Amber Fort removed from `selected_places` and itinerary.
 
+### Phase 6 Update — Real Browser Bug Fix & Full State Synchronization
+
+#### Root Cause Analysis:
+1. **Wrong Greeting / Misclassified Intent ("make plan trip for visakhapatnam")**:
+   - `_classify_intent` in `copilot_service.py` evaluated regexes before destination lookup. Phrases like `"make plan trip for visakhapatnam"` failed `ITINERARY_REQUEST` regex and didn't match the specific `DESTINATION_DISCOVERY` prefixes, falling back to `CASUAL_CHAT` which outputted the generic `"Hey! I'm GoFlexi AI. Where would you like to go?"`.
+   - **Fix**: Added dynamic destination matching directly from Neon DB (`_find_destination`). When a valid destination is found and the user hasn't selected places yet, it prioritizes `DESTINATION_DISCOVERY`.
+2. **POI Fallback Leakage & OpenTripMap Category 400 Errors**:
+   - `_get_fallback_pois` in `poi_service.py` defaulted to `CURATED_FALLBACK_POIS["goa"]` for any coordinates outside Manali/Jaipur, which was injecting fake Goa attractions into Visakhapatnam!
+   - Passing unsupported subcategories like `viewpoints` and `amusements` to OpenTripMap returned HTTP 400 Bad Request.
+   - **Fix**: Removed all fallback POIs from discovery flow. Switched OpenTripMap query to official top-level `kinds="interesting_places"` with a 25km radius and filtered out movie theatres, railway tracks/bridges, and burial grounds. Verified 50+ authentic Visakhapatnam landmarks (Ayyappa Swamy Temple, Shivalayam, Venkateshwara swamy Temple, Dolphin's Nose, Yarada Beach).
+3. **Stale Header & Globe State (Defaulting to "Jaipur")**:
+   - `destinationQuery` in `AiTripCopilotPage.tsx` was initialized to `'Jaipur'`.
+   - `TripPlanTree.tsx` fallback defaulted to `'Jaipur'`.
+   - Globe bottom card did not guard on non-empty locations array.
+   - **Fix**: Initialized destination to `''` and fallback to `'Choose destination'`. Destination dynamically synchronizes from `response.trip_updates.destination` or `response.locations[0]`. Bottom-right card is guarded by `selectedLocation && locations.length > 0`.
+4. **Destination Switching**:
+   - Switching destinations (e.g. Visakhapatnam → Jaipur) now automatically resets previous selected places, updates the destination hub on the globe, and updates the header badge.
+
+#### Verification & Tests:
+- **Backend Tests (`backend/tests/test_copilot.py`)**: 18 of 18 passed (100%).
+- **Frontend Tests (`src/pages/traveler/__tests__/AiTripCopilotPage.test.tsx` & `src/components/traveler/__tests__/FlightSearchPanel.test.tsx`)**: 7 of 7 passed (100%).
+- **Frontend Build**: `npm run build` completed cleanly with 0 TypeScript/lint errors.
+- **E2E 7-Step Sequence (Steps A to G)**: Executed and verified against live FastAPI backend.
+
 ### Remaining Limitations:
 - Background trip cloud persistence to a Neon DB `trips` table is slated for a future phase (currently kept in authoritative session state).
 - Booking, live GPS tracking, and payment flows are out of scope for this phase per instructions.
