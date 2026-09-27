@@ -2,16 +2,24 @@ import React, { useState } from 'react';
 import { Trip } from '../../types/traveler';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Calendar, Users, MapPin, ArrowRight } from 'lucide-react';
+import { Calendar, Users, MapPin, ArrowRight, Edit3, Trash2 } from 'lucide-react';
 import { getDestinationImage } from '../../utils/placeImages';
 
 export interface TripCardProps {
   trip: Trip;
   onViewDetails?: (trip: Trip) => void;
+  onEdit?: (trip: Trip) => void;
+  onDelete?: (trip: Trip) => void;
   className?: string;
 }
 
-export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails, className = '' }) => {
+export const TripCard: React.FC<TripCardProps> = ({
+  trip,
+  onViewDetails,
+  onEdit,
+  onDelete,
+  className = '',
+}) => {
   const [imgError, setImgError] = useState(false);
   const authenticImage = getDestinationImage(trip.destination || trip.title);
   const displayImage = imgError ? authenticImage : (trip.imageUrl || authenticImage);
@@ -98,23 +106,58 @@ export const TripCard: React.FC<TripCardProps> = ({ trip, onViewDetails, classNa
         <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between gap-2">
           <div className="flex gap-1 min-w-0 overflow-hidden flex-1">
             {trip.tags?.slice(0, 2).map((t) => (
-              <Badge key={t} variant="neutral" size="sm" className="bg-slate-50 text-slate-500 text-[10px] px-2 py-0.5 truncate max-w-[110px]">
+              <Badge key={t} variant="neutral" size="sm" className="bg-slate-50 text-slate-500 text-[10px] px-2 py-0.5 truncate max-w-[90px]">
                 {t}
               </Badge>
             ))}
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails?.(trip);
-            }}
-            className="h-8 px-3 text-xs shrink-0 whitespace-nowrap group-hover:bg-navy-900 group-hover:text-white transition-colors"
-          >
-            <span>View Trip</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-1 shrink-0" />
-          </Button>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onEdit && trip.paymentStatus !== 'Paid' && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(trip);
+                }}
+                title="Edit trip details"
+                className="h-8 px-2 text-xs font-semibold text-slate-700 hover:text-navy-950 hover:bg-slate-100 transition-colors"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+            )}
+
+            {onDelete && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(trip);
+                }}
+                title="Delete trip"
+                className="h-8 px-2 text-xs font-semibold text-rose-600 hover:text-white hover:bg-rose-600 hover:border-rose-600 border-rose-200 bg-rose-50/50 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500 hover:text-white shrink-0" />
+                <span className="hidden sm:inline">Delete</span>
+              </Button>
+            )}
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(trip);
+              }}
+              className="h-8 px-3 text-xs shrink-0 whitespace-nowrap group-hover:bg-navy-900 group-hover:text-white transition-colors"
+            >
+              <span>View</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1 shrink-0" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

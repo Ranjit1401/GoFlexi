@@ -28,7 +28,10 @@ import {
   Receipt,
   ArrowRight,
   Info,
+  Trash2,
 } from 'lucide-react';
+import { EditTripModal } from '../../components/traveler/EditTripModal';
+import { DeleteTripDialog } from '../../components/traveler/DeleteTripDialog';
 import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerTripsPage: React.FC = () => {
@@ -42,17 +45,9 @@ export const TravelerTripsPage: React.FC = () => {
   const { user } = useAuth();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Edit Trip Modal state
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDestination, setEditDestination] = useState('');
-  const [editStartDate, setEditStartDate] = useState('');
-  const [editEndDate, setEditEndDate] = useState('');
-  const [editTravelersCount, setEditTravelersCount] = useState(1);
-  const [editBudget, setEditBudget] = useState('');
-  const [editSummary, setEditSummary] = useState('');
-  const [editStopsText, setEditStopsText] = useState('');
+  // Edit & Delete modal states
+  const [tripToEdit, setTripToEdit] = useState<Trip | null>(null);
+  const [tripToDelete, setTripToDelete] = useState<Trip | null>(null);
 
   const fetchTrips = useCallback(async () => {
     setIsLoading(true);
@@ -77,51 +72,20 @@ export const TravelerTripsPage: React.FC = () => {
       showToast('error', 'Paid trips cannot be modified as bookings are finalized.', 'Editing Locked');
       return;
     }
-    setEditTitle(trip.title);
-    setEditDestination(trip.destination);
-    setEditStartDate(trip.startDate);
-    setEditEndDate(trip.endDate);
-    setEditTravelersCount(trip.travelersCount || 1);
-    setEditBudget(trip.budget || '');
-    setEditSummary(trip.itinerarySummary || '');
-    setEditStopsText((trip.stops || []).join(', '));
-    setIsEditModalOpen(true);
+    setTripToEdit(trip);
   };
 
-  const handleSaveEdit = async () => {
-    if (!selectedTrip) return;
-    setIsSavingEdit(true);
-    try {
-      const stopsArray = editStopsText
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
+  const handleTripSaved = (updatedTrip: Trip) => {
+    setAllTrips((prev) => prev.map((t) => (t.id === updatedTrip.id ? updatedTrip : t)));
+    if (selectedTrip?.id === updatedTrip.id) {
+      setSelectedTrip(updatedTrip);
+    }
+  };
 
-      const updated = await updateTrip(selectedTrip.id, {
-        title: editTitle.trim() || selectedTrip.title,
-        destination: editDestination.trim() || selectedTrip.destination,
-        start_date: editStartDate.trim() || selectedTrip.startDate,
-        end_date: editEndDate.trim() || selectedTrip.endDate,
-        travelers_count: Number(editTravelersCount) || selectedTrip.travelersCount,
-        budget: editBudget.trim() || selectedTrip.budget,
-        itinerary_summary: editSummary.trim() || selectedTrip.itinerarySummary,
-        stops: stopsArray,
-      });
-
-      // Update in state
-      setSelectedTrip(updated);
-      setAllTrips((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-      setIsEditModalOpen(false);
-      showToast('success', 'Trip details updated successfully!', 'Changes Saved');
-    } catch (err: any) {
-      console.error('Failed to update trip:', err);
-      showToast(
-        'error',
-        err?.response?.data?.detail || 'Unable to update trip details. Please try again.',
-        'Update Failed'
-      );
-    } finally {
-      setIsSavingEdit(false);
+  const handleTripDeleted = (deletedTripId: string) => {
+    setAllTrips((prev) => prev.filter((t) => t.id !== deletedTripId));
+    if (selectedTrip?.id === deletedTripId) {
+      setSelectedTrip(null);
     }
   };
 
@@ -266,6 +230,8 @@ export const TravelerTripsPage: React.FC = () => {
               key={trip.id}
               trip={trip}
               onViewDetails={(t) => setSelectedTrip(t)}
+              onEdit={handleOpenEdit}
+              onDelete={(t) => setTripToDelete(t)}
             />
           ))}
         </div>
@@ -498,22 +464,31 @@ export const TravelerTripsPage: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <div className="text-[11px] text-slate-400">
-                Trip Ref: <span className="font-mono text-slate-600">{selectedTrip.id.slice(0, 13)}...</span>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setTripToDelete(selectedTrip)}
+                className="rounded-xl text-xs text-rose-600 hover:text-white hover:bg-rose-600 hover:border-rose-600 border-rose-200 bg-rose-50/50 inline-flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500 hover:text-white" />
+                <span>Delete Trip</span>
+              </Button>
+
               <div className="flex items-center gap-2">
                 {selectedTrip.paymentStatus !== 'Paid' && (
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => handleOpenEdit(selectedTrip)}
                     className="rounded-xl text-xs inline-flex items-center gap-1.5"
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
+                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
                     <span>Edit Trip</span>
                   </Button>
                 )}
                 <Button
                   variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedTrip(null)}
                   className="rounded-xl text-xs"
                 >
@@ -525,117 +500,20 @@ export const TravelerTripsPage: React.FC = () => {
         </Modal>
       )}
 
-      {/* Edit Trip Modal (Available until payment is done) */}
-      {isEditModalOpen && selectedTrip && (
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          title={`Edit Trip: ${selectedTrip.title}`}
-          subtitle="Update your destination, dates, travelers, or itinerary before completing payment."
-          maxWidth="lg"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Trip Title</label>
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="e.g. Goa Coastal Escape"
-              />
-            </div>
+      {/* Reusable Edit & Delete Modals */}
+      <EditTripModal
+        trip={tripToEdit}
+        isOpen={Boolean(tripToEdit)}
+        onClose={() => setTripToEdit(null)}
+        onSaved={handleTripSaved}
+      />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Destination</label>
-                <Input
-                  value={editDestination}
-                  onChange={(e) => setEditDestination(e.target.value)}
-                  placeholder="e.g. Goa, India"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Travelers Count</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={editTravelersCount}
-                  onChange={(e) => setEditTravelersCount(Number(e.target.value))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Start Date</label>
-                <Input
-                  type="text"
-                  value={editStartDate}
-                  onChange={(e) => setEditStartDate(e.target.value)}
-                  placeholder="e.g. 12 Oct 2026"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">End Date</label>
-                <Input
-                  type="text"
-                  value={editEndDate}
-                  onChange={(e) => setEditEndDate(e.target.value)}
-                  placeholder="e.g. 16 Oct 2026"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Budget</label>
-              <Input
-                value={editBudget}
-                onChange={(e) => setEditBudget(e.target.value)}
-                placeholder="e.g. ₹35,000"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Itinerary Overview</label>
-              <textarea
-                value={editSummary}
-                onChange={(e) => setEditSummary(e.target.value)}
-                rows={3}
-                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 text-slate-800"
-                placeholder="Describe the plan, activities, or notes for this trip..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Key Stops (comma-separated)</label>
-              <Input
-                value={editStopsText}
-                onChange={(e) => setEditStopsText(e.target.value)}
-                placeholder="e.g. Calangute Beach, Fontainhas, Morjim Sunset Shack"
-              />
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => setIsEditModalOpen(false)}
-                disabled={isSavingEdit}
-                className="rounded-xl text-xs"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSaveEdit}
-                disabled={isSavingEdit}
-                className="rounded-xl text-xs bg-navy-900 hover:bg-navy-800"
-              >
-                {isSavingEdit ? 'Saving Changes...' : 'Save Changes'}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      <DeleteTripDialog
+        trip={tripToDelete}
+        isOpen={Boolean(tripToDelete)}
+        onClose={() => setTripToDelete(null)}
+        onDeleted={handleTripDeleted}
+      />
     </div>
   );
 };

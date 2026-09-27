@@ -27,7 +27,11 @@ import {
   Compass,
   ChevronLeft,
   ChevronRight,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
+import { EditTripModal } from '../../components/traveler/EditTripModal';
+import { DeleteTripDialog } from '../../components/traveler/DeleteTripDialog';
 import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerDashboardPage: React.FC = () => {
@@ -51,6 +55,31 @@ export const TravelerDashboardPage: React.FC = () => {
   const tripsScrollRef = React.useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Edit & Delete states for upcoming trips
+  const [tripToEdit, setTripToEdit] = useState<Trip | null>(null);
+  const [tripToDelete, setTripToDelete] = useState<Trip | null>(null);
+
+  const handleOpenEdit = (trip: Trip) => {
+    if (trip.paymentStatus === 'Paid') {
+      return;
+    }
+    setTripToEdit(trip);
+  };
+
+  const handleTripSaved = (updatedTrip: Trip) => {
+    setUpcomingTrips((prev) => prev.map((t) => (t.id === updatedTrip.id ? updatedTrip : t)));
+    if (selectedTrip?.id === updatedTrip.id) {
+      setSelectedTrip(updatedTrip);
+    }
+  };
+
+  const handleTripDeleted = (deletedTripId: string) => {
+    setUpcomingTrips((prev) => prev.filter((t) => t.id !== deletedTripId));
+    if (selectedTrip?.id === deletedTripId) {
+      setSelectedTrip(null);
+    }
+  };
 
   const checkScrollPosition = useCallback(() => {
     if (tripsScrollRef.current) {
@@ -467,6 +496,8 @@ export const TravelerDashboardPage: React.FC = () => {
                   <TripCard
                     trip={trip}
                     onViewDetails={(t) => setSelectedTrip(t)}
+                    onEdit={handleOpenEdit}
+                    onDelete={(t) => setTripToDelete(t)}
                   />
                 </div>
               ))}
@@ -656,27 +687,67 @@ export const TravelerDashboardPage: React.FC = () => {
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
               <Button
-                variant="secondary"
-                onClick={() => setSelectedTrip(null)}
-                className="rounded-xl"
+                variant="outline"
+                size="sm"
+                onClick={() => setTripToDelete(selectedTrip)}
+                className="rounded-xl text-xs text-rose-600 hover:text-white hover:bg-rose-600 hover:border-rose-600 border-rose-200 bg-rose-50/50 inline-flex items-center gap-1.5"
               >
-                Close Itinerary
+                <Trash2 className="w-3.5 h-3.5 text-rose-500 hover:text-white" />
+                <span>Delete Trip</span>
               </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setSelectedTrip(null);
-                  navigate('/user/trips');
-                }}
-                className="rounded-xl bg-navy-900 hover:bg-navy-800"
-              >
-                <span>Manage Trip</span>
-                <ArrowRight className="w-4 h-4 ml-1.5" />
-              </Button>
+
+              <div className="flex items-center gap-2">
+                {selectedTrip.paymentStatus !== 'Paid' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenEdit(selectedTrip)}
+                    className="rounded-xl text-xs inline-flex items-center gap-1.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Edit Trip</span>
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedTrip(null)}
+                  className="rounded-xl text-xs"
+                >
+                  Close Details
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTrip(null);
+                    navigate('/user/trips');
+                  }}
+                  className="rounded-xl text-xs bg-navy-900 hover:bg-navy-800"
+                >
+                  <span>Manage Trip</span>
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </Modal>
       )}
+
+      {/* Reusable Edit & Delete Modals */}
+      <EditTripModal
+        trip={tripToEdit}
+        isOpen={Boolean(tripToEdit)}
+        onClose={() => setTripToEdit(null)}
+        onSaved={handleTripSaved}
+      />
+
+      <DeleteTripDialog
+        trip={tripToDelete}
+        isOpen={Boolean(tripToDelete)}
+        onClose={() => setTripToDelete(null)}
+        onDeleted={handleTripDeleted}
+      />
 
       {/* Floating Draggable AI Copilot Widget */}
       <DraggableCopilotWidget />
