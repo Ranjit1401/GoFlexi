@@ -79,12 +79,26 @@ def sample_destinations(db_session):
         budget_max=35000,
         popularity_score=9.1,
     )
+    d5 = Destination(
+        name="Kochi",
+        country="India",
+        state="Kerala",
+        city="Kochi",
+        latitude=9.9312,
+        longitude=76.2673,
+        description="Historic port city in Kerala famous for Fort Kochi and Chinese fishing nets.",
+        short_description="Queen of the Arabian Sea.",
+        budget_min=10000,
+        budget_max=35000,
+        popularity_score=9.4,
+    )
     db_session.add(d1)
     db_session.add(d2)
     db_session.add(d3)
     db_session.add(d4)
+    db_session.add(d5)
     db_session.commit()
-    return [d1, d2, d3, d4]
+    return [d1, d2, d3, d4, d5]
 
 
 def test_copilot_unauthenticated(client):
@@ -220,15 +234,15 @@ def test_case_3_add_place_amber_fort(client, sample_destinations):
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["intent"] == "ADD_PLACE"
-    assert "Added Amber Fort" in data["message"]
+    assert "Added Amber" in data["message"]
     assert data["trip_plan"] is None  # NO fake schedule yet
     assert len(data["selected_places"]) == 1
-    assert "amber fort" in data["selected_places"][0]["name"].lower()
+    assert any(term in data["selected_places"][0]["name"].lower() for term in ("amber", "amer"))
     # Coordinates must be valid
     assert data["selected_places"][0]["latitude"] != 0
     assert data["selected_places"][0]["longitude"] != 0
     # Globe locations must contain the marker
-    assert any("amber fort" in l["name"].lower() for l in data["locations"])
+    assert any(term in l["name"].lower() for l in data["locations"] for term in ("amber", "amer"))
 
 
 def test_case_4_add_city_palace(client, sample_destinations):
@@ -519,3 +533,167 @@ def test_copilot_destination_switch_visakhapatnam_to_jaipur(client, sample_desti
     assert len(data["locations"]) == 1
     assert data["locations"][0]["name"] == "Jaipur"
     assert data["locations"][0]["type"] == "destination"
+
+
+def test_copilot_cochin_alias_resolution(client, sample_destinations):
+    """
+    Step 22: 'plan a trip for cochin' must resolve Cochin -> Kochi, Kerala,
+    discover real places via SerpApi/POI service, and NOT auto-generate an itinerary.
+    """
+    token = register_and_login(client, name="Cochin Traveler", email="cochin@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "plan a trip for cochin"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert data["trip_plan"] is None
+    assert data["trip_updates"] is not None
+    assert data["trip_updates"]["destination"] == "Kochi"
+    assert len(data["locations"]) >= 1
+    assert data["locations"][0]["name"] == "Kochi"
+    assert data["locations"][0]["type"] == "destination"
+    assert len(data["places"]) >= 1
+    # Check verified coordinates on places
+    for p in data["places"]:
+        assert p["latitude"] != 0.0
+        assert p["longitude"] != 0.0
+
+
+def test_copilot_kochi_direct(client, sample_destinations):
+    """
+    Step 22: Direct search for 'I want to visit Kochi'.
+    """
+    token = register_and_login(client, name="Kochi Direct", email="kochi.direct@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "I want to visit Kochi"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert data["trip_updates"]["destination"] == "Kochi"
+    assert len(data["places"]) >= 1
+
+
+def test_copilot_vizag_alias_resolution(client, sample_destinations):
+    """
+    Step 22: 'plan a trip for Vizag' must resolve Vizag -> Visakhapatnam.
+    """
+    token = register_and_login(client, name="Vizag Alias", email="vizag.alias@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "plan a trip for Vizag"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert data["trip_updates"]["destination"] == "Visakhapatnam"
+
+
+def test_copilot_destination_not_in_neon_serpapi_discovery(client, sample_destinations):
+    """
+    Step 22: Destination not present in initial Neon sample (e.g. Udaipur)
+    must be resolved dynamically via SerpApi with genuine coordinates.
+    """
+    token = register_and_login(client, name="Udaipur Traveler", email="udaipur@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "plan a trip for Udaipur"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert "Udaipur" in data["trip_updates"]["destination"]
+    assert len(data["locations"]) >= 1
+    # Check that coordinates are in Udaipur region (~24.58, ~73.68)
+    dest_loc = data["locations"][0]
+    assert 24.0 <= dest_loc["latitude"] <= 25.5
+    assert 73.0 <= dest_loc["longitude"] <= 74.5
+
+
+def test_copilot_serpapi_failure_and_zero_results_graceful(client, sample_destinations, monkeypatch):
+    """
+    Step 22: When SerpApi search fails or returns zero results,
+    returns truthful error message and NEVER falls back to places from another city.
+    """
+    import app.services.copilot_service as cs
+
+    async def mock_fail_search(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(cs.travel_search_client, "search_travel_places", mock_fail_search)
+    monkeypatch.setattr(cs, "search_activities", mock_fail_search)
+
+    token = register_and_login(client, name="Fail Traveler", email="fail@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "plan a trip for Kochi"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert "couldn't retrieve verified places for Kochi" in data["message"]
+    assert data["places"] == []
+
+
+def test_copilot_wrong_city_fallback_prevention(client, sample_destinations):
+    """
+    Step 18 & 22: Prevent wrong-city fallback.
+    A destination discovery for Kochi must NEVER return places belonging to Jaipur or Goa.
+    """
+    token = register_and_login(client, name="Strict City", email="strict@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "plan a trip for Kochi"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    place_names = [p["name"].lower() for p in data["places"]]
+    for forbidden in ["hawa mahal", "amber fort", "baga beach", "calangute beach", "solang valley"]:
+        assert forbidden not in place_names
+
+
+def test_copilot_add_and_remove_places_flow(client, sample_destinations):
+    """
+    Step 22: Adding and removing places updates selected_places and globe markers properly.
+    """
+    token = register_and_login(client, name="Add Remove", email="addrem@example.com", role="traveler")
+    # Add Fort Kochi
+    res1 = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "message": "add Fort Kochi",
+            "trip_context": {"destinations": ["Kochi"]},
+            "selected_places": []
+        }
+    )
+    assert res1.status_code == status.HTTP_200_OK
+    data1 = res1.json()
+    assert data1["intent"] == "ADD_PLACE"
+    assert len(data1["selected_places"]) == 1
+    assert "Fort Kochi" in data1["selected_places"][0]["name"]
+
+    # Remove Fort Kochi
+    res2 = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "message": "remove Fort Kochi",
+            "trip_context": {"destinations": ["Kochi"]},
+            "selected_places": data1["selected_places"]
+        }
+    )
+    assert res2.status_code == status.HTTP_200_OK
+    data2 = res2.json()
+    assert data2["intent"] == "REMOVE_PLACE"
+    assert len(data2["selected_places"]) == 0
+

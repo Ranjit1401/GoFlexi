@@ -227,9 +227,27 @@ export const AiTripAssistant: React.FC<AiTripAssistantProps> = ({
                                 <p className="text-[10px] text-slate-400 line-clamp-1">
                                   {place.description}
                                 </p>
-                                <span className="text-[9px] text-slate-500 font-mono">
-                                  📍 {place.latitude.toFixed(2)}°, {place.longitude.toFixed(2)}°
-                                </span>
+                                <div className="flex items-center gap-2 text-[9px] font-mono mt-0.5">
+                                  {place.latitude && place.longitude ? (
+                                    <span className="text-slate-400">
+                                      📍 {place.latitude.toFixed(2)}°, {place.longitude.toFixed(2)}°
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-400/90 italic">
+                                      📍 Map location unavailable
+                                    </span>
+                                  )}
+                                  {place.rating ? (
+                                    <span className="text-amber-300 font-medium font-sans">
+                                      ★ {place.rating} {place.reviews ? `(${place.reviews.toLocaleString()})` : ''}
+                                    </span>
+                                  ) : null}
+                                  {place.source && (
+                                    <span className="px-1 py-0.5 text-[8px] uppercase tracking-wider rounded bg-slate-700/80 text-slate-300 font-sans">
+                                      {place.source}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 

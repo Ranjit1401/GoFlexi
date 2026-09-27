@@ -240,7 +240,11 @@ export const TripPlanTree: React.FC<TripPlanTreeProps> = ({
                           </div>
                         )}
                         <div className="text-[9px] text-slate-500 font-mono mt-0.5">
-                          {place.latitude.toFixed(2)}°N, {place.longitude.toFixed(2)}°E
+                          {place.latitude && place.longitude ? (
+                            <span>{place.latitude.toFixed(2)}°N, {place.longitude.toFixed(2)}°E</span>
+                          ) : (
+                            <span className="text-amber-400/90 italic">Map location unavailable</span>
+                          )}
                         </div>
                       </div>
                     </div>

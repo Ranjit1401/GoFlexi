@@ -1,5 +1,5 @@
-from typing import List, Optional, Dict, Any, Tuple
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any, Tuple, Union
+from pydantic import BaseModel, Field, field_validator
 
 
 class TripLocationSchema(BaseModel):
@@ -102,8 +102,19 @@ class DiscoveredPlaceSchema(BaseModel):
     longitude: float
     image_url: Optional[str] = None
     source: Optional[str] = "OpenTripMap"
-    kinds: Optional[str] = None
+    kinds: Optional[Union[str, List[str]]] = None
     rating: Optional[float] = None
+    reviews: Optional[int] = None
+    source_url: Optional[str] = None
+
+    @field_validator("kinds", mode="before")
+    @classmethod
+    def normalize_kinds(cls, v: Any) -> Optional[str]:
+        if isinstance(v, list):
+            return ", ".join(str(item) for item in v)
+        if v is not None and not isinstance(v, str):
+            return str(v)
+        return v
 
 
 class CopilotChatRequest(BaseModel):

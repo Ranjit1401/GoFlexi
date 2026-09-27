@@ -89,8 +89,10 @@ export interface DiscoveredPlace {
   longitude: number;
   image_url?: string;
   source?: string;
+  source_url?: string;
   kinds?: string;
   rating?: number;
+  reviews?: number;
 }
 
 export interface CopilotChatRequest {

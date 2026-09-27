@@ -28,6 +28,7 @@ from app.schemas.copilot import (
 )
 from app.services.poi_service import search_activities, _resolve_landmark_image
 from app.services.recommendation_service import get_personalized_recommendations
+from app.services.travel_search_service import travel_search_client
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +156,108 @@ def _find_destination(db: Session, text: str) -> Optional[Destination]:
     return None
 
 
+def _extract_destination_candidate(text: str) -> Optional[str]:
+    """
+    Extracts candidate destination query string from user message.
+    Handles phrases like 'plan a trip for Cochin', 'trip to Goa', 'visit Jaipur', etc.
+    """
+    clean = text.strip()
+    if not clean:
+        return None
+
+    # Ignore action commands, itinerary requests, modifications, or conversational queries
+    if re.search(r"\b(add|include|put|remove|delete|drop|show\s+more|more\s+places|create\s+.*itinerary|make\s+day|relaxed|pace|summary|what\s+is\s+in)\b", clean, re.IGNORECASE):
+        return None
+
+    patterns = [
+        r"(?:plan\s+(?:a\s+)?trip\s+(?:for|to)|trip\s+(?:for|to))\s+([a-zA-Z\s]+?)(?:\s+instead|\.|\?|$)",
+        r"(?:i\s+want\s+to\s+(?:visit|go\s+to|travel\s+to|explore)|visit|travel\s+to|explore)\s+([a-zA-Z\s]+?)(?:\s+instead|\.|\?|$)",
+        r"(?:change\s+destination\s+to|switch\s+to|i\s+want)\s+([a-zA-Z\s]+?)(?:\s+instead|\.|\?|$)",
+        r"(?:places|attractions|sights|things\s+to\s+do)\s+in\s+([a-zA-Z\s]+?)(?:\s+instead|\.|\?|$)",
+        r"(?:make\s+plan\s+trip\s+for|make\s+a\s+plan\s+for)\s+([a-zA-Z\s]+?)(?:\s+instead|\.|\?|$)",
+        r"(?:going\s+to|traveling\s+to)\s+([a-zA-Z\s]+?)(?:\s+instead|\.|\?|$)",
+    ]
+    for p in patterns:
+        m = re.search(p, clean, re.IGNORECASE)
+        if m:
+            cand = m.group(1).strip()
+            cand = re.sub(r"\b(instead|please|now)\b", "", cand, flags=re.IGNORECASE).strip()
+            if cand and len(cand) > 1 and not re.search(r"\b(itinerary|places|trip|day)\b", cand, re.IGNORECASE):
+                return cand
+
+    # If the message is short (1-3 words) and not a casual chat greeting, question, or command
+    words = clean.split()
+    if 1 <= len(words) <= 3 and not re.search(r"\b(hello|hi|hey|heya|thanks|help|yes|no|good\s+morning|places|more|show|plan|day|trip|itinerary)\b", clean, re.IGNORECASE):
+        return clean.strip("?.!")
+
+    return None
+
+
+async def _resolve_destination_smart(
+    db: Session,
+    text: str,
+    cand: Optional[str] = None
+) -> Tuple[Optional[Destination], Optional[str]]:
+    """
+    Primary destination resolution pipeline:
+    1. Try Neon database exact/fuzzy match.
+    2. If not found or alias (e.g. Cochin, Vizag, Bombay):
+       Use SerpApi's Google Maps engine to resolve genuine destination name and GPS coordinates.
+    3. Cross-reference resolved SerpApi name with Neon database to attach persistent DB record if present.
+    4. If not in Neon, dynamically build a Destination instance with verified SerpApi coordinates.
+    Returns: (Destination, alias_or_original_query)
+    """
+    # 1. First, check Neon DB with candidate or full text
+    search_terms = []
+    if cand:
+        search_terms.append(cand)
+    search_terms.append(text)
+
+    for term in search_terms:
+        dest = _find_destination(db, term)
+        if dest:
+            return dest, None
+
+    # 2. If not found in Neon DB, try SerpApi destination search
+    query_to_search = cand
+    if not query_to_search:
+        # Only search text if text looks like a destination name (e.g. "Cochin", "Vizag", "New Delhi")
+        # and doesn't contain command verbs or phrases
+        if not re.search(r"\b(show|more|places|itinerary|relaxed|day|make|create|add|remove|delete|plan|trip|what|how|where|when|why|hello|hi|hey|thanks|help)\b", text, re.IGNORECASE):
+            query_to_search = text
+
+    if not query_to_search:
+        return None, None
+
+    serp_dest = await travel_search_client.search_travel_destination(query_to_search)
+    if serp_dest and serp_dest.get("name"):
+        resolved_name = serp_dest["name"]
+        alias = serp_dest.get("alias") or (cand if cand and cand.lower() != resolved_name.lower() else None)
+
+        # Check Neon DB with the resolved name (e.g. 'Kochi' for 'Cochin')
+        db_match = _find_destination(db, resolved_name)
+        if db_match:
+            return db_match, alias
+
+        # If not present in Neon database, create a valid dynamic Destination instance
+        dyn_id = uuid.uuid5(uuid.NAMESPACE_DNS, resolved_name.lower())
+        dyn_dest = Destination(
+            id=dyn_id,
+            name=resolved_name,
+            city=resolved_name,
+            state=serp_dest.get("state", "India"),
+            country=serp_dest.get("country", "India"),
+            latitude=serp_dest.get("latitude", 20.5937),
+            longitude=serp_dest.get("longitude", 78.9629),
+            description=serp_dest.get("address") or f"Travel destination in {serp_dest.get('state', 'India')}",
+            short_description=f"Travel destination in {serp_dest.get('state', 'India')}",
+            popularity_score=8.5,
+        )
+        return dyn_dest, alias
+
+    return None, None
+
+
 def _classify_intent(
     msg: str,
     has_plan: bool,
@@ -214,7 +317,7 @@ def _classify_intent(
         return INTENT_ITINERARY_REQUEST
 
     # 8. DESTINATION DISCOVERY & PLACE DISCOVERY
-    # If a real destination is detected in the database, prioritize discovery over casual chat!
+    # If a real destination is detected, prioritize discovery over casual chat!
     if matched_dest is not None:
         if re.search(r"\b(what\s+can\s+i\s+do\s+in|show\s+me\s+places\s+in|places\s+in|sights\s+in|attractions\s+in|things\s+to\s+do\s+in)\b", clean):
             return INTENT_PLACE_DISCOVERY
@@ -234,7 +337,7 @@ def _classify_intent(
     if re.search(r"\b(what\s+can\s+i\s+do\s+in|show\s+me\s+places\s+in|places\s+in|sights\s+in|attractions\s+in|things\s+to\s+do\s+in|explore)\b", clean):
         return INTENT_PLACE_DISCOVERY
 
-    if re.search(r"\b(i\s+want\s+to\s+visit|visit|travel\s+to|explore|trip\s+to|trip\s+for|going\s+to)\b", clean):
+    if re.search(r"\b(i\s+want\s+to\s+visit|visit|travel\s+to|explore|trip\s+to|trip\s+for|going\s+to|plan\s+(?:a\s+)?trip\s+(?:for|to))\b", clean):
         return INTENT_DESTINATION_DISCOVERY
 
     # Default to casual chat if short or unrecognized without places/destinations
@@ -251,52 +354,88 @@ async def _fetch_destination_places(
     offset: int = 0
 ) -> List[DiscoveredPlaceSchema]:
     """
-    Fetches genuine points of interest for a destination using OpenTripMap / POI service.
+    Fetches genuine points of interest for a destination.
+    Uses SerpApi's Google Maps engine as the primary discovery source,
+    with OpenTripMap as optional enrichment/fallback.
     Zero hallucinated coordinates, IDs, or fake fallback placeholders.
     """
-    pois = await search_activities(
-        lat=float(destination.latitude),
-        lon=float(destination.longitude),
-        radius_m=25000,
-        kinds="interesting_places",
-        limit=limit + offset + 15
-    )
-
-    combined = []
-    seen = set()
-    for item in pois:
-        key = item.name.lower().strip()
-        # Filter out foreign non-Latin scripts, restaurants, and cinemas
-        if (
-            key not in seen
-            and not re.search(r"[\u0400-\u04FF\u0600-\u06FF\u4E00-\u9FFF]", item.name)
-            and not any(w in key for w in ("restaurant", "cinema", "bhojnalaya", "hotel", "cruv"))
-            and len(item.name.strip()) > 2
-        ):
-            seen.add(key)
-            combined.append(item)
-
-    sliced = combined[offset: offset + limit] if offset > 0 else combined[:limit]
     places: List[DiscoveredPlaceSchema] = []
 
-    for p in sliced:
-        img = p.preview_image or _resolve_landmark_image(p.name, p.kinds or "")
-        pop = getattr(p, "popularity", "Iconic")
-        desc = getattr(p, "desc", None) or f"Verified {pop} landmark in {destination.name}"
-        places.append(
-            DiscoveredPlaceSchema(
-                poi_id=str(p.xid),
-                destination_id=str(destination.id),
-                name=p.name,
-                description=desc,
-                latitude=float(p.latitude),
-                longitude=float(p.longitude),
-                image_url=img,
-                source="OpenTripMap",
-                kinds=p.kinds,
-                rating=4.9 if pop == "Iconic" else (4.6 if pop == "Popular" else 4.3)
-            )
+    # 1. Primary discovery: SerpApi Google Maps
+    try:
+        serp_results = await travel_search_client.search_travel_places(
+            destination=destination.name,
+            limit=limit + offset + 5
         )
+        if serp_results:
+            sliced = serp_results[offset: offset + limit] if offset > 0 else serp_results[:limit]
+            for item in sliced:
+                places.append(
+                    DiscoveredPlaceSchema(
+                        poi_id=item["poi_id"],
+                        destination_id=str(destination.id),
+                        name=item["name"],
+                        description=item["description"],
+                        latitude=item["latitude"],
+                        longitude=item["longitude"],
+                        image_url=item.get("image_url"),
+                        source="serpapi",
+                        kinds=item.get("kinds", "tourist_attraction"),
+                        rating=item.get("rating", 4.5),
+                        reviews=item.get("reviews"),
+                        source_url=item.get("source_url")
+                    )
+                )
+            if places:
+                return places
+    except Exception as exc:
+        logger.warning(f"SerpApi place discovery failed for {destination.name}: {exc}")
+
+    # 2. Secondary/Fallback enrichment: OpenTripMap
+    if destination.latitude and destination.longitude:
+        try:
+            pois = await search_activities(
+                lat=float(destination.latitude),
+                lon=float(destination.longitude),
+                radius_m=25000,
+                kinds="interesting_places",
+                limit=limit + offset + 15
+            )
+
+            combined = []
+            seen = set()
+            for item in pois:
+                key = item.name.lower().strip()
+                if (
+                    key not in seen
+                    and not re.search(r"[\u0400-\u04FF\u0600-\u06FF\u4E00-\u9FFF]", item.name)
+                    and not any(w in key for w in ("restaurant", "cinema", "bhojnalaya", "hotel", "cruv"))
+                    and len(item.name.strip()) > 2
+                ):
+                    seen.add(key)
+                    combined.append(item)
+
+            sliced = combined[offset: offset + limit] if offset > 0 else combined[:limit]
+            for p in sliced:
+                img = p.preview_image or _resolve_landmark_image(p.name, p.kinds or "")
+                pop = getattr(p, "popularity", "Iconic")
+                desc = getattr(p, "desc", None) or f"Verified {pop} landmark in {destination.name}"
+                places.append(
+                    DiscoveredPlaceSchema(
+                        poi_id=str(p.xid),
+                        destination_id=str(destination.id),
+                        name=p.name,
+                        description=desc,
+                        latitude=float(p.latitude),
+                        longitude=float(p.longitude),
+                        image_url=img,
+                        source="opentripmap",
+                        kinds=p.kinds,
+                        rating=4.9 if pop == "Iconic" else (4.6 if pop == "Popular" else 4.3)
+                    )
+                )
+        except Exception as exc:
+            logger.warning(f"OpenTripMap lookup failed for {destination.name}: {exc}")
 
     return places
 
@@ -663,7 +802,8 @@ async def copilot_chat(
                 pass
 
     # Detect if any destination is mentioned in the user message
-    matched_dest = _find_destination(db, msg)
+    candidate_query = _extract_destination_candidate(msg)
+    matched_dest, dest_alias = await _resolve_destination_smart(db, msg, candidate_query)
 
     # Classify intent
     intent = _classify_intent(
@@ -758,18 +898,18 @@ async def copilot_chat(
 
     # =========================================================================
     # INTENT: DESTINATION DISCOVERY & PLACE DISCOVERY (I want to visit Jaipur, etc.)
-    # Retrieves REAL destination & REAL POIs. NO automatic itinerary!
+    # Retrieves REAL destination & REAL POIs via SerpApi. NO automatic itinerary!
     # =========================================================================
     if intent in (INTENT_DESTINATION_DISCOVERY, INTENT_PLACE_DISCOVERY):
         destination = matched_dest
         if not destination and active_dest_name:
-            destination = _find_destination(db, active_dest_name)
+            destination, _ = await _resolve_destination_smart(db, active_dest_name)
 
         if not destination:
             # Tell the traveler truthfully that destination wasn't found
             return CopilotChatResponse(
                 intent=INTENT_DESTINATION_DISCOVERY,
-                message="GoFlexi couldn't retrieve that destination right now. Try exploring Visakhapatnam, Jaipur, Goa, Manali, or Udaipur!",
+                message="GoFlexi couldn't retrieve that destination right now. Try exploring Visakhapatnam, Jaipur, Kochi, Goa, or Manali!",
                 places=[],
                 selected_places=current_selected,
                 suggested_actions=["I want to visit Visakhapatnam", "I want to visit Jaipur", "I want to visit Goa"],
@@ -791,11 +931,11 @@ async def copilot_chat(
             description=destination.short_description or f"Verified travel destination in {destination.state or 'India'}"
         )
 
-        # Retrieve authentic POIs using OpenTripMap
+        # Retrieve authentic POIs using SerpApi with OpenTripMap fallback
         try:
             places = await _fetch_destination_places(destination, limit=8)
         except Exception as exc:
-            logger.warning(f"POI lookup failed: {exc}")
+            logger.warning(f"Place discovery failed for {destination.name}: {exc}")
             places = []
 
         if not places:
@@ -812,10 +952,11 @@ async def copilot_chat(
 
         # Call Groq to introduce the destination and highlights conversationally
         place_names = [p.name for p in places[:5]]
+        dest_display = f"{destination.name} ({dest_alias})" if dest_alias else destination.name
         prompt_instruction = (
-            f"You are GoFlexi AI. The traveler wants to discover {destination.name}. "
-            f"Here are verified places retrieved from GoFlexi's database: {', '.join(place_names)}. "
-            f"Introduce {destination.name} warmly in 2-3 sentences, highlighting why it fits their travel style ({prefs.get('travel_style', 'Balanced')}). "
+            f"You are GoFlexi AI. The traveler wants to discover {dest_display}. "
+            f"Here are verified places retrieved from GoFlexi and Google Maps: {', '.join(place_names)}. "
+            f"Introduce {dest_display} warmly in 2-3 sentences, highlighting why it fits their travel style ({prefs.get('travel_style', 'Balanced')}). "
             f"Tell them they can select places below to add to their trip, and you will organize them into an itinerary when they're ready. "
             f"Do NOT generate an itinerary or assign morning/afternoon/evening times."
         )
@@ -827,8 +968,8 @@ async def copilot_chat(
             )
         except Exception:
             ai_reply = (
-                f"{destination.name} has incredible places worth exploring! "
-                f"Here are top verified attractions from GoFlexi's destination database. "
+                f"Absolutely! I found {dest_display}, {destination.state or 'India'}. "
+                f"Here are top verified attractions you can add to your trip. "
                 f"Select the places you'd like to visit using the 'Add to trip' buttons below."
             )
 
@@ -885,7 +1026,7 @@ async def copilot_chat(
         # Resolve destination
         destination = matched_dest
         if not destination and active_dest_name:
-            destination = _find_destination(db, active_dest_name)
+            destination, _ = await _resolve_destination_smart(db, active_dest_name)
         if not destination and current_selected:
             try:
                 destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
@@ -894,49 +1035,74 @@ async def copilot_chat(
 
         new_place: Optional[DiscoveredPlaceSchema] = None
 
-        if destination and destination.latitude and destination.longitude:
-            pois = await search_activities(
-                lat=float(destination.latitude),
-                lon=float(destination.longitude),
-                radius_m=25000,
-                kinds="interesting_places",
-                limit=50
-            )
-            # Find closest match by name from OpenTripMap
-            for p in pois:
-                if target_name.lower() in p.name.lower() or p.name.lower() in target_name.lower():
-                    img = p.preview_image or _resolve_landmark_image(p.name, p.kinds or "")
-                    new_place = DiscoveredPlaceSchema(
-                        poi_id=str(p.xid),
-                        destination_id=str(destination.id),
-                        name=p.name,
-                        description=getattr(p, "desc", None) or f"Verified {p.popularity} landmark in {destination.name}",
-                        latitude=float(p.latitude),
-                        longitude=float(p.longitude),
-                        image_url=img,
-                        source="OpenTripMap",
-                        kinds=p.kinds
-                    )
-                    break
+        # 1. First, search SerpApi for the specific place name
+        dest_name = destination.name if destination else None
+        try:
+            serp_poi = await travel_search_client.search_travel_place_by_name(target_name, dest_name)
+            if serp_poi:
+                new_place = DiscoveredPlaceSchema(
+                    poi_id=serp_poi["poi_id"],
+                    destination_id=str(destination.id) if destination else None,
+                    name=serp_poi["name"],
+                    description=serp_poi["description"],
+                    latitude=serp_poi["latitude"],
+                    longitude=serp_poi["longitude"],
+                    image_url=serp_poi.get("image_url"),
+                    source="serpapi",
+                    kinds=serp_poi.get("kinds", "tourist_attraction"),
+                    rating=serp_poi.get("rating", 4.5),
+                    reviews=serp_poi.get("reviews"),
+                    source_url=serp_poi.get("source_url")
+                )
+        except Exception as exc:
+            logger.warning(f"SerpApi specific place search failed: {exc}")
 
-            # If not in OpenTripMap list, check destination's curated heritage landmarks
-            if not new_place:
-                from app.services.poi_service import CURATED_FALLBACK_POIS
-                curated_list = CURATED_FALLBACK_POIS.get(destination.name.lower(), [])
-                for c in curated_list:
-                    if target_name.lower() in c["name"].lower() or c["name"].lower() in target_name.lower():
+        # 2. If not found via SerpApi specific search, query OpenTripMap
+        if not new_place and destination and destination.latitude and destination.longitude:
+            try:
+                pois = await search_activities(
+                    lat=float(destination.latitude),
+                    lon=float(destination.longitude),
+                    radius_m=25000,
+                    kinds="interesting_places",
+                    limit=50
+                )
+                for p in pois:
+                    if target_name.lower() in p.name.lower() or p.name.lower() in target_name.lower():
+                        img = p.preview_image or _resolve_landmark_image(p.name, p.kinds or "")
                         new_place = DiscoveredPlaceSchema(
-                            poi_id=c["xid"],
+                            poi_id=str(p.xid),
                             destination_id=str(destination.id),
-                            name=c["name"],
-                            description=c.get("desc", f"Verified landmark in {destination.name}"),
-                            latitude=float(destination.latitude),
-                            longitude=float(destination.longitude),
-                            image_url=c.get("image") or _resolve_landmark_image(c["name"]),
-                            source="Verified Landmark",
-                            kinds=c.get("kinds", "historic")
+                            name=p.name,
+                            description=getattr(p, "desc", None) or f"Verified {p.popularity} landmark in {destination.name}",
+                            latitude=float(p.latitude),
+                            longitude=float(p.longitude),
+                            image_url=img,
+                            source="opentripmap",
+                            kinds=p.kinds
                         )
                         break
+            except Exception:
+                pass
+
+        # 3. Check curated heritage landmarks as fallback
+        if not new_place and destination:
+            from app.services.poi_service import CURATED_FALLBACK_POIS
+            curated_list = CURATED_FALLBACK_POIS.get(destination.name.lower(), [])
+            for c in curated_list:
+                if target_name.lower() in c["name"].lower() or c["name"].lower() in target_name.lower():
+                    new_place = DiscoveredPlaceSchema(
+                        poi_id=c["xid"],
+                        destination_id=str(destination.id),
+                        name=c["name"],
+                        description=c.get("desc", f"Verified landmark in {destination.name}"),
+                        latitude=float(destination.latitude or 20.5937),
+                        longitude=float(destination.longitude or 78.9629),
+                        image_url=c.get("image") or _resolve_landmark_image(c["name"]),
+                        source="Verified Landmark",
+                        kinds=c.get("kinds", "historic")
+                    )
+                    break
 
         # Build locations for Globe
         updated_locations: List[TripLocationSchema] = []
@@ -1095,7 +1261,7 @@ async def copilot_chat(
     if intent == INTENT_SHOW_MORE_PLACES:
         destination = matched_dest
         if not destination and active_dest_name:
-            destination = _find_destination(db, active_dest_name)
+            destination, _ = await _resolve_destination_smart(db, active_dest_name)
         if not destination and current_selected:
             try:
                 destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
@@ -1135,7 +1301,7 @@ async def copilot_chat(
     if intent == INTENT_ITINERARY_REQUEST:
         destination = matched_dest
         if not destination and active_dest_name:
-            destination = _find_destination(db, active_dest_name)
+            destination, _ = await _resolve_destination_smart(db, active_dest_name)
         if not destination and current_selected:
             try:
                 destination = db.query(Destination).filter(Destination.id == current_selected[0].destination_id).first()
