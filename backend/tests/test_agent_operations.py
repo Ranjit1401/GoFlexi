@@ -91,3 +91,43 @@ def test_agent_schedules_list_and_create(client, agent_headers):
     del_resp = client.delete(f"/api/agent/schedules/{s_id}", headers=agent_headers)
     assert del_resp.status_code == 200
     assert del_resp.json()["status"] == "deleted"
+
+
+def test_agent_vendors_crud(client, agent_headers):
+    # List
+    resp = client.get("/api/agent/vendors", headers=agent_headers)
+    assert resp.status_code == 200
+    vendors = resp.json()
+    assert len(vendors) >= 5
+
+    # Create
+    new_vendor = {
+        "name": "Panaji Coastal Jet Skis",
+        "category": "Activities",
+        "location": "Miramar, Goa",
+        "contact_person": "Akash Gaonkar",
+        "phone": "+91 98220 77112",
+        "email": "akash@goajetski.com",
+        "rating": 4.9,
+        "status": "Verified Partner"
+    }
+    create_resp = client.post("/api/agent/vendors", json=new_vendor, headers=agent_headers)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    assert created["name"] == "Panaji Coastal Jet Skis"
+    v_id = created["id"]
+
+    # Update
+    update_resp = client.put(
+        f"/api/agent/vendors/{v_id}",
+        json={"name": "Panaji Ocean Watersports", "rating": 5.0},
+        headers=agent_headers
+    )
+    assert update_resp.status_code == 200
+    assert update_resp.json()["name"] == "Panaji Ocean Watersports"
+
+    # Delete
+    del_resp = client.delete(f"/api/agent/vendors/{v_id}", headers=agent_headers)
+    assert del_resp.status_code == 200
+    assert del_resp.json()["status"] == "deleted"
+

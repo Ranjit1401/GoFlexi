@@ -1,32 +1,37 @@
-import React, { useState, useMemo } from 'react';
-import { mockVendors } from '../../data/vendors';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { getVendors, createVendor as apiCreateVendor } from '../../services/vendors';
 import { Vendor } from '../../types/agent';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { LoadingState } from '../../components/ui/LoadingState';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { useToast } from '../../context/ToastContext';
 import {
-  Store,
   Building,
   Car,
   Compass,
   Utensils,
   Star,
-  Phone,
-  Mail,
   MapPin,
   PlusCircle,
   Search,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 
 export const AgentVendorsPage: React.FC = () => {
   const { showToast } = useToast();
-  const [vendors, setVendors] = useState<Vendor[]>(mockVendors);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New vendor form
   const [vName, setVName] = useState('');
@@ -35,6 +40,24 @@ export const AgentVendorsPage: React.FC = () => {
   const [vContact, setVContact] = useState('');
   const [vPhone, setVPhone] = useState('');
   const [vEmail, setVEmail] = useState('');
+
+  const fetchVendors = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const data = await getVendors(categoryFilter, searchQuery);
+      setVendors(data);
+    } catch (err) {
+      console.error('Failed to load vendors:', err);
+      setErrorMessage('Unable to load vendor partners. Please check your connection and retry.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [categoryFilter, searchQuery]);
+
+  useEffect(() => {
+    fetchVendors();
+  }, [fetchVendors]);
 
   const filteredVendors = useMemo(() => {
     return vendors.filter((v) => {
@@ -46,29 +69,39 @@ export const AgentVendorsPage: React.FC = () => {
     });
   }, [vendors, categoryFilter, searchQuery]);
 
-  const handleAddVendor = (e: React.FormEvent) => {
+  const handleAddVendor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vName.trim()) {
-      showToast('error', 'Vendor name is required.');
+      showToast('error', 'Vendor name is required.', 'Validation Error');
       return;
     }
 
-    const created: Vendor = {
-      id: 'ven-' + Date.now(),
-      name: vName.trim(),
-      category: vCategory,
-      location: vLocation,
-      contactPerson: vContact || 'Operational Desk',
-      phone: vPhone || '+91 98000 00000',
-      email: vEmail || 'vendor@example.com',
-      rating: 4.8,
-      status: 'Verified Partner'
-    };
+    setIsSubmitting(true);
+    try {
+      const created = await apiCreateVendor({
+        name: vName.trim(),
+        category: vCategory,
+        location: vLocation || 'Goa',
+        contactPerson: vContact || 'Operational Desk',
+        phone: vPhone || '+91 98000 00000',
+        email: vEmail || 'vendor@example.com',
+        rating: 4.8,
+        status: 'Verified Partner',
+      });
 
-    setVendors([created, ...vendors]);
-    setAddModalOpen(false);
-    setVName('');
-    showToast('success', `${created.name} added to vendor network!`);
+      setVendors((prev) => [created, ...prev]);
+      setAddModalOpen(false);
+      setVName('');
+      setVContact('');
+      setVPhone('');
+      setVEmail('');
+      showToast('success', `${created.name} added to vendor network!`, 'Partner Registered');
+    } catch (err) {
+      console.error('Failed to create vendor:', err);
+      showToast('error', 'Could not register vendor. Please try again.', 'Registration Failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getCategoryIcon = (cat: Vendor['category']) => {
@@ -118,7 +151,7 @@ export const AgentVendorsPage: React.FC = () => {
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 categoryFilter === cat
                   ? 'bg-navy-950 text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -141,68 +174,97 @@ export const AgentVendorsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Vendors Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVendors.map((vendor) => (
-          <div
-            key={vendor.id}
-            className="bg-white rounded-3xl border border-slate-200/80 shadow-card p-6 flex flex-col justify-between hover:border-slate-300 transition-all group"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
-                    {getCategoryIcon(vendor.category)}
+      {/* Content Area */}
+      {isLoading ? (
+        <LoadingState message="Loading verified suppliers and hospitality directory..." />
+      ) : errorMessage ? (
+        <div className="bg-red-50/70 border border-red-200 rounded-3xl p-8 text-center max-w-lg mx-auto">
+          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800">Error loading vendors</h3>
+          <p className="text-xs text-slate-600 mt-1 mb-5">{errorMessage}</p>
+          <Button variant="primary" onClick={fetchVendors} className="rounded-xl inline-flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            <span>Retry</span>
+          </Button>
+        </div>
+      ) : filteredVendors.length === 0 ? (
+        <EmptyState
+          title={searchQuery || categoryFilter !== 'All' ? 'No matching vendors' : 'No partner vendors registered'}
+          description={
+            searchQuery || categoryFilter !== 'All'
+              ? 'Try changing the category or clear your search keyword.'
+              : 'Add your first hotel, transport, or activity partner to this roster.'
+          }
+          action={
+            <Button variant="primary" onClick={() => setAddModalOpen(true)} className="rounded-xl">
+              Add First Vendor
+            </Button>
+          }
+        />
+      ) : (
+        /* Vendors Grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVendors.map((vendor) => (
+            <div
+              key={vendor.id}
+              className="bg-white rounded-3xl border border-slate-200/80 shadow-card p-6 flex flex-col justify-between hover:border-slate-300 transition-all group"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
+                      {getCategoryIcon(vendor.category)}
+                    </div>
+                    <Badge variant="neutral" size="sm">{vendor.category}</Badge>
                   </div>
-                  <Badge variant="neutral" size="sm">{vendor.category}</Badge>
+                  <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                    <span>{vendor.rating}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                  <span>{vendor.rating}</span>
+
+                <h3 className="text-base font-bold text-navy-950 group-hover:text-brand-600 transition-colors">
+                  {vendor.name}
+                </h3>
+
+                <div className="flex items-center gap-1 text-xs text-slate-500 mt-1 mb-4">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{vendor.location}</span>
+                </div>
+
+                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span className="text-slate-400 font-semibold">Contact:</span>
+                    <span className="font-semibold text-slate-800">{vendor.contactPerson}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span className="text-slate-400 font-semibold">Phone:</span>
+                    <span className="font-mono text-slate-700">{vendor.phone}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600 truncate">
+                    <span className="text-slate-400 font-semibold">Email:</span>
+                    <span className="font-mono text-slate-700 truncate max-w-[170px]">{vendor.email}</span>
+                  </div>
                 </div>
               </div>
 
-              <h3 className="text-base font-bold text-navy-950 group-hover:text-brand-600 transition-colors">
-                {vendor.name}
-              </h3>
+              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                <Badge variant="success" size="sm" className="bg-emerald-50 text-emerald-800 border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {vendor.status}
+                </Badge>
 
-              <div className="flex items-center gap-1 text-xs text-slate-500 mt-1 mb-4">
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span>{vendor.location}</span>
-              </div>
-
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="text-slate-400 font-semibold">Contact:</span>
-                  <span className="font-semibold text-slate-800">{vendor.contactPerson}</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="text-slate-400 font-semibold">Phone:</span>
-                  <span className="font-mono text-slate-700">{vendor.phone}</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-600 truncate">
-                  <span className="text-slate-400 font-semibold">Email:</span>
-                  <span className="font-mono text-slate-700 truncate max-w-[170px]">{vendor.email}</span>
-                </div>
+                <button
+                  onClick={() => showToast('info', `Connecting to ${vendor.name} booking desk...`, 'Direct Dispatch')}
+                  className="text-xs font-bold text-brand-600 hover:underline cursor-pointer"
+                >
+                  Direct Dispatch
+                </button>
               </div>
             </div>
-
-            <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-              <Badge variant="success" size="sm" className="bg-emerald-50 text-emerald-800 border-emerald-200">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                {vendor.status}
-              </Badge>
-
-              <button
-                onClick={() => showToast('info', `Connecting to ${vendor.name} booking API...`)}
-                className="text-xs font-bold text-brand-600 hover:underline"
-              >
-                Direct Dispatch
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Add Vendor Modal */}
       <Modal
@@ -273,8 +335,8 @@ export const AgentVendorsPage: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" variant="primary" className="rounded-xl">
-              Save Partner
+            <Button type="submit" variant="primary" disabled={isSubmitting} className="rounded-xl">
+              {isSubmitting ? 'Saving...' : 'Save Partner'}
             </Button>
           </div>
         </form>
