@@ -1,13 +1,18 @@
 export interface TripLocation {
   id: string;
   name: string;
-  type: 'origin' | 'destination' | 'flight' | 'hotel' | 'activity' | 'restaurant' | 'transport' | string;
+  type: 'origin' | 'destination' | 'flight' | 'hotel' | 'stay' | 'activity' | 'restaurant' | 'transport' | string;
   latitude: number;
   longitude: number;
   city?: string;
   state?: string;
   day?: number;
+  time_block?: 'morning' | 'afternoon' | 'evening' | string;
   description?: string;
+  destination_id?: string;
+  poi_id?: string;
+  rating?: number;
+  preview_image?: string;
   metadata?: Record<string, any>;
 }
 
@@ -24,11 +29,12 @@ export interface TripRoute {
 
 export interface TripPlanNode {
   id: string;
-  type: 'root' | 'transport' | 'flight' | 'accommodation' | 'hotel' | 'day' | 'activity' | 'restaurant' | 'destination' | string;
+  type: 'root' | 'transport' | 'flight' | 'accommodation' | 'hotel' | 'day' | 'time_block' | 'activity' | 'restaurant' | 'destination' | string;
   title: string;
   subtitle?: string;
   date?: string;
   time?: string;
+  time_block?: 'morning' | 'afternoon' | 'evening' | string;
   location_id?: string;
   location?: TripLocation;
   status?: 'confirmed' | 'suggested' | 'optional';
@@ -48,6 +54,70 @@ export interface TripPlan {
   nodes: TripPlanNode[];
   locations: TripLocation[];
   routes: TripRoute[];
+}
+
+export interface ItineraryChange {
+  day: number;
+  time_block: 'morning' | 'afternoon' | 'evening' | string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  destination_id?: string;
+  poi_id?: string;
+  location?: TripLocation;
+  action: 'add' | 'update' | 'remove' | string;
+}
+
+export interface TripUpdates {
+  origin?: string;
+  destination?: string;
+  destinations?: string[];
+  duration_days?: number;
+  start_date?: string;
+  end_date?: string;
+  budget?: string;
+  travel_style?: string;
+  travelers?: number;
+}
+
+export interface DiscoveredPlace {
+  poi_id?: string;
+  destination_id?: string;
+  name: string;
+  description?: string;
+  latitude: number;
+  longitude: number;
+  image_url?: string;
+  source?: string;
+  kinds?: string;
+  rating?: number;
+}
+
+export interface CopilotChatRequest {
+  message: string;
+  trip_id?: string;
+  trip_state?: TripPlan | null;
+  selected_places?: DiscoveredPlace[];
+  trip_context?: {
+    origin?: string;
+    destinations?: string[];
+    start_date?: string;
+    end_date?: string;
+    budget?: number;
+    travelers?: number;
+  };
+}
+
+export interface CopilotChatResponse {
+  intent: string;
+  message: string;
+  places: DiscoveredPlace[];
+  selected_places?: DiscoveredPlace[];
+  trip_updates?: TripUpdates;
+  locations: TripLocation[];
+  itinerary_changes: ItineraryChange[];
+  suggested_actions: string[];
+  trip_plan?: TripPlan;
 }
 
 export interface TripPlanRequest {
@@ -72,7 +142,10 @@ export interface CopilotChatMessage {
   sender: 'user' | 'assistant' | 'system';
   text: string;
   timestamp: string;
+  intent?: string;
+  places?: DiscoveredPlace[];
   plan?: TripPlan;
+  suggestedActions?: string[];
   isThinking?: boolean;
 }
 

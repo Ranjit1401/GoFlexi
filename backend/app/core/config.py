@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     GEONAMES_USERNAME: Optional[str] = None
     OPENTRIPMAP_API_KEY: str = ""
 
+    # Phase 6: Real AI Trip Co-Pilot (Groq LLM)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+
+    @property
+    def groq_key(self) -> str:
+        import os
+        return (self.GROQ_API_KEY or os.environ.get("GROQ_API_KEY") or "").strip()
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
