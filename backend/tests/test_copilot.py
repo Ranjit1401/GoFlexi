@@ -66,11 +66,25 @@ def sample_destinations(db_session):
         budget_max=35000,
         popularity_score=9.5,
     )
+    d4 = Destination(
+        name="Visakhapatnam",
+        country="India",
+        state="Andhra Pradesh",
+        city="Visakhapatnam",
+        latitude=17.68009,
+        longitude=83.20161,
+        description="The City of Destiny, blending golden beaches with lush Eastern Ghats.",
+        short_description="Coastal city with scenic hills and clean beaches.",
+        budget_min=12000,
+        budget_max=35000,
+        popularity_score=9.1,
+    )
     db_session.add(d1)
     db_session.add(d2)
     db_session.add(d3)
+    db_session.add(d4)
     db_session.commit()
-    return [d1, d2, d3]
+    return [d1, d2, d3, d4]
 
 
 def test_copilot_unauthenticated(client):
@@ -425,3 +439,83 @@ def test_destination_recommendation(client, sample_destinations):
     data = response.json()
     assert data["intent"] == "DESTINATION_RECOMMENDATION"
     assert len(data["suggested_actions"]) >= 1
+
+
+def test_copilot_visakhapatnam_make_plan_trip_intent(client, sample_destinations):
+    """
+    Regression Test: 'make plan trip for visakhapatnam' must classify as DESTINATION_DISCOVERY,
+    NOT CASUAL_CHAT, return real Visakhapatnam hub, and NOT create an automatic itinerary.
+    """
+    token = register_and_login(client, name="Vizag Traveler", email="vizag@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "message": "make plan trip for visakhapatnam",
+            "trip_context": {"destinations": []},
+            "selected_places": []
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert data["trip_plan"] is None
+    assert data["trip_updates"] is not None
+    assert data["trip_updates"]["destination"] == "Visakhapatnam"
+    assert len(data["locations"]) >= 1
+    assert data["locations"][0]["name"] == "Visakhapatnam"
+    assert data["locations"][0]["type"] == "destination"
+    assert abs(data["locations"][0]["latitude"] - 17.68009) < 0.01
+
+
+def test_copilot_visakhapatnam_direct_discovery(client, sample_destinations):
+    """
+    Regression Test: 'I want to visit Visakhapatnam' produces DESTINATION_DISCOVERY with real POIs.
+    """
+    token = register_and_login(client, name="Vizag Direct", email="vizagdir@example.com", role="traveler")
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"message": "I want to visit Visakhapatnam"}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert data["trip_plan"] is None
+    assert data["trip_updates"]["destination"] == "Visakhapatnam"
+
+
+def test_copilot_destination_switch_visakhapatnam_to_jaipur(client, sample_destinations):
+    """
+    Regression Test: Switching destination from Visakhapatnam to Jaipur clears previous places
+    and switches destination hub.
+    """
+    token = register_and_login(client, name="Switch Traveler", email="switch@example.com", role="traveler")
+    # Start with selected places in Visakhapatnam
+    old_selected = [
+        {
+            "poi_id": "vizag_1",
+            "name": "Dolphin's Nose",
+            "latitude": 17.6662,
+            "longitude": 83.2432,
+            "description": "Scenic cliff viewpoint",
+            "source": "OpenTripMap"
+        }
+    ]
+    response = client.post(
+        "/api/copilot/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "message": "Actually, I want to go to Jaipur instead",
+            "trip_context": {"destinations": ["Visakhapatnam"]},
+            "selected_places": old_selected
+        }
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["intent"] == "DESTINATION_DISCOVERY"
+    assert data["trip_updates"]["destination"] == "Jaipur"
+    assert data["selected_places"] == []
+    assert len(data["locations"]) == 1
+    assert data["locations"][0]["name"] == "Jaipur"
+    assert data["locations"][0]["type"] == "destination"

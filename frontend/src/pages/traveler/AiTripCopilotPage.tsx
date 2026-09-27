@@ -21,7 +21,7 @@ import { TripPlanTree } from '../../components/traveler/TripPlanTree';
 import { TripGlobe } from '../../components/traveler/TripGlobe';
 import { AiTripAssistant } from '../../components/traveler/AiTripAssistant';
 
-const POPULAR_DESTINATIONS = ['Jaipur', 'Goa', 'Manali', 'Srinagar', 'Udaipur', 'Kerala'];
+const POPULAR_DESTINATIONS = ['Visakhapatnam', 'Jaipur', 'Goa', 'Manali', 'Srinagar', 'Udaipur', 'Kerala'];
 const DURATION_OPTIONS = [
   { label: '3 Days', days: 3 },
   { label: '4 Days', days: 4 },
@@ -49,7 +49,7 @@ export const AiTripCopilotPage: React.FC = () => {
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
   // Top Header Context Filter State
-  const [destinationQuery, setDestinationQuery] = useState<string>('Jaipur');
+  const [destinationQuery, setDestinationQuery] = useState<string>('');
   const [selectedDuration, setSelectedDuration] = useState<number>(3);
   const [travelersCount, setTravelersCount] = useState<number>(2);
   const [budgetTier, setBudgetTier] = useState<string>('Balanced Comfort');
@@ -65,8 +65,8 @@ export const AiTripCopilotPage: React.FC = () => {
       text: "Welcome to GoFlexi AI Trip Co-Pilot! 🌍\n\nI'm your real-time travel planning assistant powered by Groq LLM and GoFlexi's verified destination database. Ask me to discover destinations, explore verified places, add them to your trip, and build an itinerary when you're ready.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       suggestedActions: [
+        'I want to visit Visakhapatnam',
         'I want to visit Jaipur',
-        'What can I do in Jaipur?',
         'Where should I go?',
         'Explore beaches in Goa'
       ]
@@ -93,32 +93,51 @@ export const AiTripCopilotPage: React.FC = () => {
         trip_state: tripPlan,
         selected_places: selectedPlaces,
         trip_context: {
-          destinations: [destinationQuery],
+          destinations: destinationQuery ? [destinationQuery] : undefined,
           travelers: travelersCount,
         }
       });
 
-      // Synchronize Selected Places
+      // 1. Synchronize Destination & Header State
+      let newDest = destinationQuery;
+      if (response.trip_updates?.destination) {
+        newDest = response.trip_updates.destination;
+        setDestinationQuery(newDest);
+      } else if (response.trip_plan?.destination) {
+        newDest = response.trip_plan.destination;
+        setDestinationQuery(newDest);
+      } else if (response.locations && response.locations.length > 0) {
+        const destLoc = response.locations.find((l) => l.type === 'destination');
+        if (destLoc) {
+          newDest = destLoc.name;
+          setDestinationQuery(destLoc.name);
+        }
+      }
+
+      // If destination changed, clear previous trip plan
+      if (tripPlan && tripPlan.destination && newDest && tripPlan.destination.toLowerCase() !== newDest.toLowerCase()) {
+        setTripPlan(null);
+      }
+
+      // 2. Synchronize Selected Places
       if (response.selected_places !== undefined) {
         setSelectedPlaces(response.selected_places);
       }
 
-      // Synchronize 3D Globe Locations
+      // 3. Synchronize 3D Globe Locations & Selected Card Target
       if (response.locations && response.locations.length > 0) {
         setLocations(response.locations);
-        const defaultLoc =
-          response.locations.find((l) => l.type === 'destination') ||
-          response.locations[0] ||
-          null;
-        setSelectedLocation(defaultLoc);
+        const latestPlace = response.locations[response.locations.length - 1];
+        const destLoc = response.locations.find((l) => l.type === 'destination') || response.locations[0];
+        setSelectedLocation(response.intent === 'ADD_PLACE' ? latestPlace : destLoc);
+      } else if (response.intent === 'CASUAL_CHAT' && !newDest) {
+        setLocations([]);
+        setSelectedLocation(null);
       }
 
-      // Synchronize Authoritative Trip Plan state (only if itinerary was created/modified)
+      // 4. Synchronize Authoritative Trip Plan state (only if itinerary was created/modified)
       if (response.trip_plan) {
         setTripPlan(response.trip_plan);
-        if (response.trip_plan.destination) {
-          setDestinationQuery(response.trip_plan.destination);
-        }
         if (response.trip_plan.duration_days) {
           setSelectedDuration(response.trip_plan.duration_days);
         }
@@ -192,6 +211,7 @@ export const AiTripCopilotPage: React.FC = () => {
     setSelectedPlaces([]);
     setLocations([]);
     setSelectedLocation(null);
+    setDestinationQuery('');
     setError(null);
     setIsSaved(false);
     setMessages([
@@ -201,9 +221,9 @@ export const AiTripCopilotPage: React.FC = () => {
         text: "Workspace reset. Where would you like to plan your next journey?",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         suggestedActions: [
+          'I want to visit Visakhapatnam',
           'I want to visit Jaipur',
           'Explore beaches in Goa',
-          '5-day adventure in Manali',
           'Where should I go?'
         ]
       },
@@ -271,8 +291,8 @@ export const AiTripCopilotPage: React.FC = () => {
               <MapPin className="w-3.5 h-3.5 text-indigo-400" />
               <div className="text-left leading-tight">
                 <span className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold block">Where</span>
-                <span className="font-semibold text-white truncate max-w-[90px]">
-                  {tripPlan?.destination || destinationQuery}
+                <span className="font-semibold text-white truncate max-w-[120px]">
+                  {tripPlan?.destination || destinationQuery || 'Choose destination'}
                 </span>
               </div>
               <ChevronDown className="w-3 h-3 text-slate-500" />
