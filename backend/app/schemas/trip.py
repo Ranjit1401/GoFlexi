@@ -13,6 +13,10 @@ class TripBase(BaseModel):
     travelers_count: int = Field(1, ge=1, description="Number of travelers")
     budget: str = Field("₹25,000", description="Budget string e.g. ₹35,000")
     status: str = Field("Upcoming", description="Upcoming | Past | Draft")
+    payment_status: str = Field("Pending", description="Pending | Paid")
+    payment_id: Optional[str] = None
+    paid_at: Optional[datetime] = None
+    cost_breakdown: Optional[Any] = None
     image_url: Optional[str] = None
     itinerary_summary: Optional[str] = None
     tags: Optional[List[str]] = None
@@ -32,6 +36,10 @@ class TripUpdate(BaseModel):
     travelers_count: Optional[int] = None
     budget: Optional[str] = None
     status: Optional[str] = None
+    payment_status: Optional[str] = None
+    payment_id: Optional[str] = None
+    paid_at: Optional[datetime] = None
+    cost_breakdown: Optional[Any] = None
     image_url: Optional[str] = None
     itinerary_summary: Optional[str] = None
     tags: Optional[List[str]] = None

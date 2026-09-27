@@ -28,6 +28,7 @@ import {
   LocateFixed,
   X,
   Navigation,
+  CreditCard,
 } from 'lucide-react';
 import { getCurrentLocationCity } from '../../utils/geolocation';
 import { ProgressBar } from '../../components/ui/ProgressBar';
@@ -54,7 +55,7 @@ import {
   getWikivoyageSummary,
   recommendTrip,
 } from '../../services/trip-wizard';
-import { createTrip } from '../../services/trips';
+import { createTrip, CreateTripPayload } from '../../services/trips';
 import {
   GeoResult,
   POIResult,
@@ -461,30 +462,57 @@ const TravelerNewTripWizardContent: React.FC = () => {
     }
   };
 
-  const handleSaveTrip = async () => {
+  const computeTripCostBreakdown = () => {
+    const flightCost = selectedFlight?.price
+      ? selectedFlight.price * travelersCount
+      : Math.round(budgetMax * flightBudgetRatio);
+    const durationDays = calculateTripDays(startDate, endDate);
+    const hotelCost = selectedHotel?.price_per_night
+      ? selectedHotel.price_per_night * Math.max(1, durationDays - 1)
+      : Math.round(budgetMax * hotelBudgetRatio);
+    const activitiesCost = activities.reduce((sum, a) => sum + (a.cost || 500), 0) * travelersCount;
+    const taxesCost = Math.round((flightCost + hotelCost + activitiesCost) * 0.08);
+    const totalCost = flightCost + hotelCost + activitiesCost + taxesCost;
+
+    return {
+      flights: flightCost,
+      hotel: hotelCost,
+      activities: activitiesCost,
+      taxes: taxesCost,
+      total: totalCost,
+    };
+  };
+
+  const handleSaveTrip = async (payNow: boolean = false) => {
     setIsSaved(true);
-    const tripPayload = {
+    const breakdown = computeTripCostBreakdown();
+    const tripPayload: CreateTripPayload = {
       title: `${destination} Custom Journey`,
       destination: destination,
       start_date: startDate,
       end_date: endDate,
       days: calculateTripDays(startDate, endDate),
       travelers_count: travelersCount,
-      budget: `₹${budgetMax.toLocaleString('en-IN')}`,
-      status: 'Upcoming' as const,
+      budget: `₹${breakdown.total.toLocaleString('en-IN')}`,
+      status: 'Upcoming',
+      payment_status: payNow ? 'Paid' : 'Pending',
+      cost_breakdown: breakdown,
       image_url: activities[0]?.preview_image || getDestinationImage(destination),
       itinerary_summary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and flight with ${selectedFlight?.airline || 'Express Carrier'}.`,
       tags: [travelStyle, `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`],
       stops: activities.map((a) => a.name).slice(0, 5),
     };
 
+    let createdId = '';
     try {
-      await createTrip(tripPayload);
+      const created = await createTrip(tripPayload);
+      createdId = created.id;
     } catch (err) {
       console.error('Failed to save trip to backend:', err);
       // Fallback to localStorage just in case network is down
       try {
         const localTrip = { id: `trip-${Date.now()}`, ...tripPayload };
+        createdId = localTrip.id;
         const existing = JSON.parse(localStorage.getItem('goflexi_custom_trips') || '[]');
         localStorage.setItem('goflexi_custom_trips', JSON.stringify([localTrip, ...existing]));
       } catch {
@@ -492,14 +520,25 @@ const TravelerNewTripWizardContent: React.FC = () => {
       }
     }
 
-    showToast(
-      'success',
-      `Trip to ${destination} saved to your account!`,
-      'Trip Saved'
-    );
-    setTimeout(() => {
-      navigate('/user/trips');
-    }, 1200);
+    if (payNow) {
+      showToast(
+        'success',
+        `Payment confirmed for ${destination}! Your itinerary is finalized.`,
+        'Payment Confirmed'
+      );
+      setTimeout(() => {
+        navigate(`/user/billing?tripId=${createdId || ''}&paid=true`);
+      }, 1000);
+    } else {
+      showToast(
+        'info',
+        `Payment skipped. Your trip is saved as pending and queued in your Billing section!`,
+        'Trip Saved (Pay Later)'
+      );
+      setTimeout(() => {
+        navigate(`/user/billing?tripId=${createdId || ''}`);
+      }, 1000);
+    }
   };
 
   // -----------------------------------------------------------
@@ -512,7 +551,7 @@ const TravelerNewTripWizardContent: React.FC = () => {
       if (!generatedTripPlan) {
         handleGenerateRecommendation();
       } else {
-        handleSaveTrip();
+        handleSaveTrip(false);
       }
     }
   };
@@ -1373,16 +1412,26 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={handleSaveTrip}
+                        onClick={() => handleSaveTrip(false)}
                         disabled={isSaved}
-                        className="rounded-xl text-xs bg-white text-emerald-950 hover:bg-emerald-50"
+                        className="rounded-xl text-xs bg-white text-emerald-950 hover:bg-emerald-50 font-semibold"
                       >
-                        <Bookmark className="w-3.5 h-3.5 mr-1" />
-                        {isSaved ? 'Saved!' : 'Save Trip'}
+                        <Clock className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                        {isSaved ? 'Saved!' : 'Skip Payment (Pay Later)'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleSaveTrip(true)}
+                        disabled={isSaved}
+                        className="rounded-xl text-xs bg-emerald-500 hover:bg-emerald-400 text-navy-950 font-bold shadow-md"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 mr-1" />
+                        Proceed to Payment
                       </Button>
                       <Button
                         size="sm"
@@ -1417,6 +1466,26 @@ const TravelerNewTripWizardContent: React.FC = () => {
                       <span className="font-bold truncate block">
                         {selectedHotel ? selectedHotel.name : 'Curated Resort'}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Estimated Cost Breakdown Strip */}
+                  <div className="p-3 bg-emerald-950/60 rounded-xl border border-emerald-700/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-1.5 text-emerald-300 font-bold">
+                      <Wallet className="w-4 h-4" />
+                      <span>Total Estimated Cost:</span>
+                      <span className="text-white text-sm font-extrabold ml-1">
+                        ₹{computeTripCostBreakdown().total.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-emerald-200/80">
+                      <span>Flights: ₹{computeTripCostBreakdown().flights.toLocaleString('en-IN')}</span>
+                      <span>•</span>
+                      <span>Stays: ₹{computeTripCostBreakdown().hotel.toLocaleString('en-IN')}</span>
+                      <span>•</span>
+                      <span>Activities: ₹{computeTripCostBreakdown().activities.toLocaleString('en-IN')}</span>
+                      <span>•</span>
+                      <span>Taxes: ₹{computeTripCostBreakdown().taxes.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </div>
@@ -1481,22 +1550,45 @@ const TravelerNewTripWizardContent: React.FC = () => {
             Back
           </Button>
 
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleNext}
-            disabled={isRecommending}
-            className="rounded-xl px-6 bg-navy-900 hover:bg-navy-800"
-          >
-            <span>
-              {step === totalSteps
-                ? generatedTripPlan
-                  ? 'Complete & Save Trip'
-                  : 'Generate My Trip Plan'
-                : 'Continue'}
-            </span>
-            <ArrowRight className="w-4 h-4 ml-1.5" />
-          </Button>
+          {step === totalSteps && generatedTripPlan ? (
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => handleSaveTrip(false)}
+                disabled={isSaved}
+                className="rounded-xl px-5 border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold"
+              >
+                <span>Skip Payment (Pay Later)</span>
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => handleSaveTrip(true)}
+                disabled={isSaved}
+                className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-500 font-bold shadow-lg shadow-emerald-600/20 text-white inline-flex items-center gap-2"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>Proceed to Payment (₹{computeTripCostBreakdown().total.toLocaleString('en-IN')})</span>
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleNext}
+              disabled={isRecommending}
+              className="rounded-xl px-6 bg-navy-900 hover:bg-navy-800"
+            >
+              <span>
+                {step === totalSteps
+                  ? 'Generate My Trip Plan'
+                  : 'Continue'}
+              </span>
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

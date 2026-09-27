@@ -115,3 +115,71 @@ def test_filter_trips_by_status(client, auth_headers):
     assert past_resp.status_code == 200
     for trip in past_resp.json():
         assert trip["status"] == "Past"
+
+
+def test_trip_payment_lifecycle(client, auth_headers):
+    # 1. Create trip with Pending payment
+    payload = {
+        "title": "Andaman Island Hop",
+        "destination": "Andaman",
+        "start_date": "2026-12-05",
+        "end_date": "2026-12-10",
+        "days": 5,
+        "travelers_count": 2,
+        "budget": "₹45,000",
+        "status": "Upcoming",
+        "payment_status": "Pending",
+        "cost_breakdown": {
+            "flights": 18000,
+            "hotel": 19000,
+            "activities": 5000,
+            "taxes": 3000,
+            "total": 45000
+        }
+    }
+    create_resp = client.post("/api/trips", json=payload, headers=auth_headers)
+    assert create_resp.status_code == 201
+    trip = create_resp.json()
+    trip_id = trip["id"]
+    assert trip["payment_status"] == "Pending"
+    assert trip["cost_breakdown"]["total"] == 45000
+
+    # 2. While unpaid, trip CAN be edited
+    edit_resp = client.put(
+        f"/api/trips/{trip_id}",
+        json={"title": "Andaman Luxury Beach Hop", "travelers_count": 3},
+        headers=auth_headers
+    )
+    assert edit_resp.status_code == 200
+    assert edit_resp.json()["title"] == "Andaman Luxury Beach Hop"
+    assert edit_resp.json()["travelers_count"] == 3
+
+    # 3. Filter by payment_status=Pending
+    pending_resp = client.get("/api/trips?payment_status=Pending", headers=auth_headers)
+    assert pending_resp.status_code == 200
+    pending_ids = [t["id"] for t in pending_resp.json()]
+    assert trip_id in pending_ids
+
+    # 4. Pay the trip via PUT /api/trips/{trip_id}/pay
+    pay_resp = client.put(f"/api/trips/{trip_id}/pay", headers=auth_headers)
+    assert pay_resp.status_code == 200
+    paid_trip = pay_resp.json()
+    assert paid_trip["payment_status"] == "Paid"
+    assert paid_trip["payment_id"].startswith("PAY-")
+    assert paid_trip["paid_at"] is not None
+
+    # 5. After payment, editing is locked (returns 400 Bad Request)
+    lock_resp = client.put(
+        f"/api/trips/{trip_id}",
+        json={"title": "Attempted Alteration"},
+        headers=auth_headers
+    )
+    assert lock_resp.status_code == 400
+    assert "Paid trips are finalized" in lock_resp.json()["detail"]
+
+    # 6. Filter by payment_status=Paid
+    paid_list_resp = client.get("/api/trips?payment_status=Paid", headers=auth_headers)
+    assert paid_list_resp.status_code == 200
+    paid_ids = [t["id"] for t in paid_list_resp.json()]
+    assert trip_id in paid_ids
+

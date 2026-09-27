@@ -153,6 +153,7 @@ export interface WizardActivity {
   day?: number;
   description?: string;
   preview_image?: string;
+  cost?: number;
 }
 
 import { FlightOption, HotelOption } from './travel-search';
