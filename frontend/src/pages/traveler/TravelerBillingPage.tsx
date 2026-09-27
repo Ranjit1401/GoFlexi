@@ -2,8 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight, Check, Plane, Users, X, Hand } from 'lucide-react';
 import printerReference from '../../assets/voyagar-printer.png';
 import './TravelerBillingPage.css';
+import { api } from '../../services/api-client';
 
 type BillingState = 'ready' | 'generating' | 'printing' | 'final' | 'booking';
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayInstance;
+  }
+}
+
+type RazorpayCheckoutOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill?: { name?: string; email?: string; contact?: string };
+  theme?: { color?: string };
+  handler: (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => void;
+  modal?: { ondismiss?: () => void };
+};
+
+type RazorpayInstance = {
+  open: () => void;
+};
 
 const costs = [
   { label: 'Flights', detail: 'Mumbai → Dubai', meta: '2 Travellers', price: '₹24,580' },
@@ -130,7 +154,60 @@ export const TravelerBillingPage: React.FC = () => {
     if (state === 'generating') { const t = window.setTimeout(() => setState('printing'), 1600); return () => window.clearTimeout(t); }
     if (state === 'printing') { const t = window.setTimeout(() => setState('final'), 5200); return () => window.clearTimeout(t); }
   }, [state]);
-  const booking = () => { setSplitOpen(false); setState('booking'); };
+  const booking = async () => {
+    setSplitOpen(false);
+
+    try {
+      const scriptId = 'razorpay-checkout-js';
+      if (!document.getElementById(scriptId)) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.id = scriptId;
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Unable to load Razorpay Checkout'));
+          document.body.appendChild(script);
+        });
+      }
+
+      const { data: order } = await api.post('/payments/create-order', {
+        amount: 72022,
+        currency: 'INR',
+        receipt: `goflexi_${Date.now()}`,
+      });
+
+      if (!window.Razorpay) throw new Error('Razorpay Checkout is unavailable');
+
+      const checkout = new window.Razorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'GoFlexi',
+        description: 'Mumbai → Dubai trip booking',
+        order_id: order.order_id,
+        theme: { color: '#1683F7' },
+        handler: async (response) => {
+          try {
+            await api.post('/payments/verify', response);
+            setState('booking');
+          } catch (error) {
+            console.error(error);
+            window.alert('Payment verification failed. Please contact support before retrying.');
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            // Keep the user on the bill until payment is completed.
+          },
+        },
+      });
+
+      checkout.open();
+    } catch (error) {
+      console.error(error);
+      window.alert('Unable to start payment. Please check that the backend and Razorpay test keys are configured.');
+    }
+  };
   if (state === 'booking') return <div className="billing-booking-handoff"><div className="billing-success"><Check size={32} /></div><h1>Ready to book your trip.</h1><p>Your bill is confirmed. Continue in the booking flow to secure your itinerary.</p><div><span>Mumbai → Dubai<small>15 Oct – 20 Oct · 2 Travellers</small></span><strong>₹72,022</strong></div><button className="billing-secondary-btn" onClick={() => setState('final')}>Back to Bill</button></div>;
   return <div className="billing-page">
     {state === 'final' ? <FinalBill onSplit={() => setSplitOpen(true)} onBook={booking} /> : <><TripHeader /><div className="billing-machine-layout"><CostBreakdown /><Printer state={state} onTap={() => setState('generating')} /></div><p className="billing-footnote">Prices are estimates and may change based on availability at the time of booking.</p></>}
