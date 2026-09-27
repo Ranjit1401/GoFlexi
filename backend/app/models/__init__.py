@@ -12,6 +12,8 @@ from app.models.destination import (
     DestinationSource,
 )
 
+from app.models.trip import Trip
+
 __all__ = [
     "User",
     "Agent",
@@ -26,5 +28,6 @@ __all__ = [
     "DestinationPace",
     "DestinationBestMonth",
     "DestinationSource",
+    "Trip",
 ]
 

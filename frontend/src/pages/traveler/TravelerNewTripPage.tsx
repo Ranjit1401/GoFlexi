@@ -50,6 +50,7 @@ import {
   getWikivoyageSummary,
   recommendTrip,
 } from '../../services/trip-wizard';
+import { createTrip } from '../../services/trips';
 import {
   GeoResult,
   POIResult,
@@ -417,28 +418,35 @@ const TravelerNewTripWizardContent: React.FC = () => {
     }
   };
 
-  const handleSaveTrip = () => {
+  const handleSaveTrip = async () => {
     setIsSaved(true);
-    const newTrip = {
-      id: `trip-${Date.now()}`,
+    const tripPayload = {
       title: `${destination} Custom Journey`,
       destination: destination,
-      startDate: startDate,
-      endDate: endDate,
+      start_date: startDate,
+      end_date: endDate,
       days: calculateTripDays(startDate, endDate),
-      travelersCount: travelersCount,
+      travelers_count: travelersCount,
       budget: `₹${budgetMax.toLocaleString('en-IN')}`,
       status: 'Upcoming' as const,
-      imageUrl: activities[0]?.preview_image || getDestinationImage(destination),
-      itinerarySummary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and flight with ${selectedFlight?.airline || 'Express Carrier'}.`,
+      image_url: activities[0]?.preview_image || getDestinationImage(destination),
+      itinerary_summary: `${travelStyle} personalized journey with stay at ${selectedHotel?.name || 'Curated Resort'} and flight with ${selectedFlight?.airline || 'Express Carrier'}.`,
       tags: [travelStyle, `${travelersCount} Traveler${travelersCount > 1 ? 's' : ''}`],
       stops: activities.map((a) => a.name).slice(0, 5),
     };
+
     try {
-      const existing = JSON.parse(localStorage.getItem('goflexi_custom_trips') || '[]');
-      localStorage.setItem('goflexi_custom_trips', JSON.stringify([newTrip, ...existing]));
-    } catch {
-      // Ignore localStorage issues
+      await createTrip(tripPayload);
+    } catch (err) {
+      console.error('Failed to save trip to backend:', err);
+      // Fallback to localStorage just in case network is down
+      try {
+        const localTrip = { id: `trip-${Date.now()}`, ...tripPayload };
+        const existing = JSON.parse(localStorage.getItem('goflexi_custom_trips') || '[]');
+        localStorage.setItem('goflexi_custom_trips', JSON.stringify([localTrip, ...existing]));
+      } catch {
+        // Ignore
+      }
     }
 
     showToast(

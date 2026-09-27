@@ -1,31 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockTrips } from '../../data/trips';
+import { getTrips } from '../../services/trips';
 import { TripCard } from '../../components/traveler/TripCard';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Badge } from '../../components/ui/Badge';
+import { LoadingState } from '../../components/ui/LoadingState';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { Trip } from '../../types/traveler';
-import { PlusCircle, Luggage, MapPin, Calendar, Users, CheckCircle2 } from 'lucide-react';
+import { PlusCircle, Luggage, MapPin, AlertCircle, RefreshCw } from 'lucide-react';
 import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerTripsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'Upcoming' | 'Past' | 'Draft'>('Upcoming');
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [allTrips, setAllTrips] = useState<Trip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const [allTrips] = useState<Trip[]>(() => {
+  const fetchTrips = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
     try {
-      const stored = localStorage.getItem('goflexi_custom_trips');
-      if (stored) {
-        const custom: Trip[] = JSON.parse(stored);
-        return [...custom, ...mockTrips];
-      }
-    } catch {
-      // Ignore
+      const data = await getTrips();
+      setAllTrips(data);
+    } catch (err) {
+      console.error('Failed to load trips:', err);
+      setErrorMessage('Unable to load your trips. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
     }
-    return mockTrips;
-  });
+  }, []);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
 
   const filteredTrips = allTrips.filter((t) => t.status === activeTab);
 
@@ -58,7 +68,7 @@ export const TravelerTripsPage: React.FC = () => {
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200">
         {(['Upcoming', 'Past', 'Draft'] as const).map((tab) => {
-          const count = mockTrips.filter((t) => t.status === tab).length;
+          const count = allTrips.filter((t) => t.status === tab).length;
           const isActive = activeTab === tab;
           return (
             <button
@@ -83,22 +93,34 @@ export const TravelerTripsPage: React.FC = () => {
         })}
       </div>
 
-      {/* Trips Grid */}
-      {filteredTrips.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center">
-          <Luggage className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-800">No {activeTab.toLowerCase()} trips found.</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto mb-6">
-            Ready to chart your next travel experience? Launch the trip generator to customize an itinerary.
-          </p>
-          <Button
-            variant="primary"
-            onClick={() => navigate('/user/trips/new')}
-            className="rounded-xl"
-          >
-            Create New Trip
+      {/* Content */}
+      {isLoading ? (
+        <LoadingState message="Loading your personal itineraries..." />
+      ) : errorMessage ? (
+        <div className="bg-red-50/70 border border-red-200 rounded-3xl p-8 text-center max-w-lg mx-auto">
+          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800">Error loading trips</h3>
+          <p className="text-xs text-slate-600 mt-1 mb-5">{errorMessage}</p>
+          <Button variant="primary" onClick={fetchTrips} className="rounded-xl inline-flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            <span>Retry</span>
           </Button>
         </div>
+      ) : filteredTrips.length === 0 ? (
+        <EmptyState
+          icon={<Luggage className="w-7 h-7 text-slate-400" />}
+          title={`No ${activeTab.toLowerCase()} trips found`}
+          description="Ready to chart your next travel experience? Launch the trip generator to customize an itinerary."
+          action={
+            <Button
+              variant="primary"
+              onClick={() => navigate('/user/trips/new')}
+              className="rounded-xl"
+            >
+              Create New Trip
+            </Button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           {filteredTrips.map((trip) => (
@@ -161,7 +183,7 @@ export const TravelerTripsPage: React.FC = () => {
               </p>
             </div>
 
-            {selectedTrip.stops && (
+            {selectedTrip.stops && selectedTrip.stops.length > 0 && (
               <div>
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
                   Key Stops & Activities
