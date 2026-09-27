@@ -9,6 +9,9 @@ import {
   TripRecommendationRequest,
   TripRecommendationResponse,
   WikivoyageSummary,
+  TripPlanRequest,
+  TripPlanResponse,
+  DigitalTwinResponse,
 } from '../types/trip-planner';
 
 export async function searchDestinations(query: string): Promise<GeoResult[]> {
@@ -112,7 +115,7 @@ export async function getDigitalTwinSimulation(params: {
   rainfallMm?: number;
   temperatureC?: number;
   stormDurationHours?: number;
-}): Promise<import('../types/trip-planner').DigitalTwinResponse> {
+}): Promise<DigitalTwinResponse> {
   const resp = await api.get('/trip-wizard/digital-twin', {
     params: {
       lat: params.latitude,

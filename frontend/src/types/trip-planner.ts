@@ -1,3 +1,5 @@
+import { FlightOption, HotelOption } from './travel-search';
+
 export interface TripLocation {
   id: string;
   name: string;
@@ -263,8 +265,6 @@ export interface WizardActivity {
   preview_image?: string;
   cost?: number;
 }
-
-import { FlightOption, HotelOption } from './travel-search';
 
 export interface TripRecommendationRequest {
   destination: string;
