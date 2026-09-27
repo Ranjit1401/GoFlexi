@@ -1,0 +1,502 @@
+[
+  {
+    "sample_num": 1,
+    "instruction": "I want a relaxed 4 day trip to Kochi with my girlfriend under 30k",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Kochi\",\n  \"duration_days\": 4,\n  \"companion\": \"Couple\",\n  \"pace\": \"Relaxed\",\n  \"budget\": 30000,\n  \"currency\": \"INR\"\n}"
+  },
+  {
+    "sample_num": 2,
+    "instruction": "plan a 5 day journey to Goa with college friends for party and beaches",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Goa\",\n  \"duration_days\": 5,\n  \"companion\": \"Friends\",\n  \"interests\": [\n    \"Nightlife\",\n    \"Relaxation\"\n  ]\n}"
+  },
+  {
+    "sample_num": 3,
+    "instruction": "Plan a 3-day family trip to Jaipur starting next Friday with budget around 45000",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Jaipur\",\n  \"duration_days\": 3,\n  \"companion\": \"Family\",\n  \"budget\": 45000,\n  \"currency\": \"INR\",\n  \"travel_date\": \"next Friday\"\n}"
+  },
+  {
+    "sample_num": 4,
+    "instruction": "I need a solo budget backpacking trip to Manali for 6 days",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Manali\",\n  \"duration_days\": 6,\n  \"companion\": \"Solo\",\n  \"travel_style\": \"Budget\",\n  \"pace\": \"Balanced\"\n}"
+  },
+  {
+    "sample_num": 5,
+    "instruction": "Can you organize a quick weekend getaway to Udaipur for me and my wife? Keep it luxury.",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Udaipur\",\n  \"duration_days\": 2,\n  \"companion\": \"Couple\",\n  \"travel_style\": \"Luxury\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 6,
+    "instruction": "make a 7 days travel plan to Visakhapatnam departing from Mumbai by flight",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Visakhapatnam\",\n  \"origin\": \"Mumbai\",\n  \"duration_days\": 7,\n  \"transport\": \"Flight\"\n}"
+  },
+  {
+    "sample_num": 7,
+    "instruction": "chill 3 days in Munnar with my girl",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Munnar\",\n  \"duration_days\": 3,\n  \"companion\": \"Couple\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 8,
+    "instruction": "trip to Varanasi for 4 days focusing on culture and photography with parents",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Varanasi\",\n  \"duration_days\": 4,\n  \"companion\": \"Family\",\n  \"interests\": [\n    \"Culture\",\n    \"Photography\"\n  ]\n}"
+  },
+  {
+    "sample_num": 9,
+    "instruction": "plan a trip for cochin",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Cochin\"\n}"
+  },
+  {
+    "sample_num": 10,
+    "instruction": "I want to visit Jaipur for 3 days",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Jaipur\",\n  \"duration_days\": 3\n}"
+  },
+  {
+    "sample_num": 11,
+    "instruction": "make plan trip for visakhapatnam",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Visakhapatnam\"\n}"
+  },
+  {
+    "sample_num": 12,
+    "instruction": "Plan an action packed 4 day adventure trip to Rishikesh with buddies",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Rishikesh\",\n  \"duration_days\": 4,\n  \"companion\": \"Friends\",\n  \"pace\": \"Packed\",\n  \"interests\": [\n    \"Adventure\",\n    \"Sports\"\n  ]\n}"
+  },
+  {
+    "sample_num": 13,
+    "instruction": "Create a balanced 5-day holiday in Ooty with my husband under 50,000 INR",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Ooty\",\n  \"duration_days\": 5,\n  \"companion\": \"Couple\",\n  \"pace\": \"Balanced\",\n  \"budget\": 50000,\n  \"currency\": \"INR\"\n}"
+  },
+  {
+    "sample_num": 14,
+    "instruction": "looking for a 2 day road trip to Pondicherry by car with friends",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Pondicherry\",\n  \"duration_days\": 2,\n  \"companion\": \"Friends\",\n  \"transport\": \"Car\"\n}"
+  },
+  {
+    "sample_num": 15,
+    "instruction": "I have 10 days and 1 lakh budget for Kashmir honeymoon",
+    "response": "{\n  \"intent\": \"TRIP_PLANNING\",\n  \"destination\": \"Kashmir\",\n  \"duration_days\": 10,\n  \"companion\": \"Couple\",\n  \"budget\": 100000,\n  \"currency\": \"INR\",\n  \"travel_style\": \"Premium\"\n}"
+  },
+  {
+    "sample_num": 16,
+    "instruction": "Where should I go for a relaxing vacation in October?",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"interests\": [\n    \"Relaxation\"\n  ],\n  \"travel_date\": \"October\"\n}"
+  },
+  {
+    "sample_num": 17,
+    "instruction": "Show me places to visit in Kochi",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"destination\": \"Kochi\"\n}"
+  },
+  {
+    "sample_num": 18,
+    "instruction": "what can I see and do in Jaipur?",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"destination\": \"Jaipur\"\n}"
+  },
+  {
+    "sample_num": 19,
+    "instruction": "Suggest some cool beach destinations in South India",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"interests\": [\n    \"Relaxation\"\n  ],\n  \"region\": \"South India\"\n}"
+  },
+  {
+    "sample_num": 20,
+    "instruction": "show me places there",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\"\n}"
+  },
+  {
+    "sample_num": 21,
+    "instruction": "Where can I go with family for heritage and historical monuments?",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"companion\": \"Family\",\n  \"interests\": [\n    \"Culture\"\n  ]\n}"
+  },
+  {
+    "sample_num": 22,
+    "instruction": "Recommend top sights in Visakhapatnam",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"destination\": \"Visakhapatnam\"\n}"
+  },
+  {
+    "sample_num": 23,
+    "instruction": "I want to explore hill stations near Delhi for a weekend",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"origin\": \"Delhi\",\n  \"duration_days\": 2\n}"
+  },
+  {
+    "sample_num": 24,
+    "instruction": "what are the best adventure hotspots in India right now?",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"interests\": [\n    \"Adventure\"\n  ]\n}"
+  },
+  {
+    "sample_num": 25,
+    "instruction": "give me some hidden gems in Kerala for quiet photography",
+    "response": "{\n  \"intent\": \"DESTINATION_DISCOVERY\",\n  \"region\": \"Kerala\",\n  \"interests\": [\n    \"Photography\",\n    \"Relaxation\"\n  ]\n}"
+  },
+  {
+    "sample_num": 26,
+    "instruction": "Add Fort Kochi to my trip",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Fort Kochi\"\n}"
+  },
+  {
+    "sample_num": 27,
+    "instruction": "add Mattancherry Palace",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Mattancherry Palace\"\n}"
+  },
+  {
+    "sample_num": 28,
+    "instruction": "Put Amber Fort into Day 2 morning",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Amber Fort\",\n  \"day_number\": 2,\n  \"time_block\": \"morning\"\n}"
+  },
+  {
+    "sample_num": 29,
+    "instruction": "add the palace",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"palace\"\n}"
+  },
+  {
+    "sample_num": 30,
+    "instruction": "Include Hawa Mahal in our Jaipur schedule",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Hawa Mahal\",\n  \"destination\": \"Jaipur\"\n}"
+  },
+  {
+    "sample_num": 31,
+    "instruction": "Can you add Baga Beach to evening of Day 1?",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Baga Beach\",\n  \"day_number\": 1,\n  \"time_block\": \"evening\"\n}"
+  },
+  {
+    "sample_num": 32,
+    "instruction": "I definitely want to check out Subhash Bose Park",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Subhash Bose Park\"\n}"
+  },
+  {
+    "sample_num": 33,
+    "instruction": "Add Kailasagiri ropeway for our afternoon activity",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Kailasagiri ropeway\",\n  \"time_block\": \"afternoon\"\n}"
+  },
+  {
+    "sample_num": 34,
+    "instruction": "Please insert City Palace into our plan",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"City Palace\"\n}"
+  },
+  {
+    "sample_num": 35,
+    "instruction": "add Chinese Fishing Nets to tomorrow morning",
+    "response": "{\n  \"intent\": \"ADD_PLACE\",\n  \"place_name\": \"Chinese Fishing Nets\",\n  \"day_number\": 2,\n  \"time_block\": \"morning\"\n}"
+  },
+  {
+    "sample_num": 36,
+    "instruction": "Remove Amber Fort from my schedule",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"Amber Fort\"\n}"
+  },
+  {
+    "sample_num": 37,
+    "instruction": "drop Mattancherry Palace",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"Mattancherry Palace\"\n}"
+  },
+  {
+    "sample_num": 38,
+    "instruction": "remove that fort",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"fort\"\n}"
+  },
+  {
+    "sample_num": 39,
+    "instruction": "Delete City Palace from Day 2",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"City Palace\",\n  \"day_number\": 2\n}"
+  },
+  {
+    "sample_num": 40,
+    "instruction": "I don't want to go to Baga Beach anymore, take it off",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"Baga Beach\"\n}"
+  },
+  {
+    "sample_num": 41,
+    "instruction": "exclude the crowded market from Sunday",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"crowded market\"\n}"
+  },
+  {
+    "sample_num": 42,
+    "instruction": "remove Fort Kochi Beach from my selected places",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"Fort Kochi Beach\"\n}"
+  },
+  {
+    "sample_num": 43,
+    "instruction": "drop the museum on Day 3",
+    "response": "{\n  \"intent\": \"REMOVE_PLACE\",\n  \"place_name\": \"museum\",\n  \"day_number\": 3\n}"
+  },
+  {
+    "sample_num": 44,
+    "instruction": "make day 2 more relaxed",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 2,\n  \"modification_type\": \"make_relaxed\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 45,
+    "instruction": "don't make it hectic",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"modification_type\": \"make_relaxed\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 46,
+    "instruction": "keep the itinerary relaxed",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"modification_type\": \"make_relaxed\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 47,
+    "instruction": "make day 2 less hectic",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 2,\n  \"modification_type\": \"make_relaxed\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 48,
+    "instruction": "Swap Day 1 and Day 3 plans",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 1,\n  \"modification_type\": \"swap_days\"\n}"
+  },
+  {
+    "sample_num": 49,
+    "instruction": "Move afternoon sightseeing on Day 2 to the morning",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 2,\n  \"time_block\": \"morning\",\n  \"modification_type\": \"reschedule_time_block\"\n}"
+  },
+  {
+    "sample_num": 50,
+    "instruction": "We want more free time in the evenings for rest",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"time_block\": \"evening\",\n  \"modification_type\": \"increase_leisure_time\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 51,
+    "instruction": "Compress the schedule on Day 1 so we can finish by 4 PM",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 1,\n  \"modification_type\": \"early_finish\"\n}"
+  },
+  {
+    "sample_num": 52,
+    "instruction": "Can we pack more sights into Day 3? We have plenty of energy.",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 3,\n  \"modification_type\": \"make_packed\",\n  \"pace\": \"Packed\"\n}"
+  },
+  {
+    "sample_num": 53,
+    "instruction": "Push morning start time on Day 2 to 11 AM",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 2,\n  \"time_block\": \"morning\",\n  \"modification_type\": \"late_start\"\n}"
+  },
+  {
+    "sample_num": 54,
+    "instruction": "Rearrange Day 1 to have an easy afternoon",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 1,\n  \"time_block\": \"afternoon\",\n  \"modification_type\": \"make_relaxed\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 55,
+    "instruction": "Give us an extra rest break between sights on Day 2",
+    "response": "{\n  \"intent\": \"MODIFY_ITINERARY\",\n  \"day_number\": 2,\n  \"modification_type\": \"add_break\"\n}"
+  },
+  {
+    "sample_num": 56,
+    "instruction": "increase my budget to 50k",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"budget\": 50000,\n  \"currency\": \"INR\"\n}"
+  },
+  {
+    "sample_num": 57,
+    "instruction": "make this cheaper",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"travel_style\": \"Budget\"\n}"
+  },
+  {
+    "sample_num": 58,
+    "instruction": "not too expensive",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"travel_style\": \"Budget\"\n}"
+  },
+  {
+    "sample_num": 59,
+    "instruction": "Our maximum limit is strictly 35000 INR total",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"budget\": 35000,\n  \"currency\": \"INR\"\n}"
+  },
+  {
+    "sample_num": 60,
+    "instruction": "Upgrade our stay preference to luxury resorts, budget is flexible",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"travel_style\": \"Luxury\"\n}"
+  },
+  {
+    "sample_num": 61,
+    "instruction": "Cut down hotel expenses to fit under 20k",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"budget\": 20000,\n  \"currency\": \"INR\",\n  \"travel_style\": \"Budget\"\n}"
+  },
+  {
+    "sample_num": 62,
+    "instruction": "We can spend up to 80,000 for this anniversary trip",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"budget\": 80000,\n  \"currency\": \"INR\",\n  \"travel_style\": \"Premium\"\n}"
+  },
+  {
+    "sample_num": 63,
+    "instruction": "Switch to balanced midrange budget options",
+    "response": "{\n  \"intent\": \"UPDATE_BUDGET\",\n  \"travel_style\": \"Balanced\"\n}"
+  },
+  {
+    "sample_num": 64,
+    "instruction": "something chill",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"pace\": \"Relaxed\",\n  \"travel_style\": \"Balanced\"\n}"
+  },
+  {
+    "sample_num": 65,
+    "instruction": "trip with my girl",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"companion\": \"Couple\"\n}"
+  },
+  {
+    "sample_num": 66,
+    "instruction": "We love street food and local culinary experiences",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Food\"\n  ]\n}"
+  },
+  {
+    "sample_num": 67,
+    "instruction": "Focus more on outdoor hiking and adventure",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Adventure\",\n    \"Sports\"\n  ]\n}"
+  },
+  {
+    "sample_num": 68,
+    "instruction": "We want heritage forts, art museums and cultural sites",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Culture\"\n  ]\n}"
+  },
+  {
+    "sample_num": 69,
+    "instruction": "Avoid loud clubs, we prefer peaceful nature and sunset photography",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Relaxation\",\n    \"Photography\"\n  ]\n}"
+  },
+  {
+    "sample_num": 70,
+    "instruction": "We are traveling with two small kids so keep activities child-friendly",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"companion\": \"Family\"\n}"
+  },
+  {
+    "sample_num": 71,
+    "instruction": "Prioritize local shopping bazaars and handicraft markets",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Shopping\"\n  ]\n}"
+  },
+  {
+    "sample_num": 72,
+    "instruction": "Interested in tiger safaris and bird watching",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Wildlife\"\n  ]\n}"
+  },
+  {
+    "sample_num": 73,
+    "instruction": "We are high energy college buddies looking for vibrant nightlife",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"companion\": \"Friends\",\n  \"interests\": [\n    \"Nightlife\"\n  ],\n  \"pace\": \"Packed\"\n}"
+  },
+  {
+    "sample_num": 74,
+    "instruction": "Prefer calm spiritual places and ancient temples",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"interests\": [\n    \"Culture\",\n    \"Relaxation\"\n  ]\n}"
+  },
+  {
+    "sample_num": 75,
+    "instruction": "I am a solo traveler who loves street photography and café hopping",
+    "response": "{\n  \"intent\": \"UPDATE_PREFERENCES\",\n  \"companion\": \"Solo\",\n  \"interests\": [\n    \"Photography\",\n    \"Food\"\n  ]\n}"
+  },
+  {
+    "sample_num": 76,
+    "instruction": "Optimize the route to minimize driving between stops",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"optimization_goal\": \"minimize_travel_time\"\n}"
+  },
+  {
+    "sample_num": 77,
+    "instruction": "Cluster nearby places together on Day 1",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"day_number\": 1,\n  \"optimization_goal\": \"cluster_geographic\"\n}"
+  },
+  {
+    "sample_num": 78,
+    "instruction": "Reorder Day 2 sights so we don't have to backtrack across town",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"day_number\": 2,\n  \"optimization_goal\": \"prevent_backtracking\"\n}"
+  },
+  {
+    "sample_num": 79,
+    "instruction": "Make this route as time-efficient as possible",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"optimization_goal\": \"minimize_travel_time\"\n}"
+  },
+  {
+    "sample_num": 80,
+    "instruction": "Organize the stops geographically to reduce cab fare",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"optimization_goal\": \"budget_efficiency\"\n}"
+  },
+  {
+    "sample_num": 81,
+    "instruction": "Re-sequence Day 3 places from North to South",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"day_number\": 3,\n  \"optimization_goal\": \"directional_sequence\"\n}"
+  },
+  {
+    "sample_num": 82,
+    "instruction": "Optimize our daily transit schedule for lower fatigue",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"optimization_goal\": \"minimize_fatigue\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 83,
+    "instruction": "Find the fastest driving order for my selected places",
+    "response": "{\n  \"intent\": \"OPTIMIZE_TRIP\",\n  \"optimization_goal\": \"minimize_travel_time\"\n}"
+  },
+  {
+    "sample_num": 84,
+    "instruction": "It's raining heavily today, what should we do instead?",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"rain\"\n}"
+  },
+  {
+    "sample_num": 85,
+    "instruction": "hotel got cancelled",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"hotel_cancelled\"\n}"
+  },
+  {
+    "sample_num": 86,
+    "instruction": "Our flight got delayed by 4 hours, please adjust Day 1",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"flight_delayed\",\n  \"day_number\": 1\n}"
+  },
+  {
+    "sample_num": 87,
+    "instruction": "The palace is closed today for a private event, replace it",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"attraction_closed\",\n  \"place_name\": \"palace\"\n}"
+  },
+  {
+    "sample_num": 88,
+    "instruction": "Heavy storm forecast for tomorrow afternoon, can we reschedule beach visits?",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"storm\",\n  \"time_block\": \"afternoon\"\n}"
+  },
+  {
+    "sample_num": 89,
+    "instruction": "My partner is feeling sick today, we need to cancel active plans",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"illness\",\n  \"pace\": \"Relaxed\"\n}"
+  },
+  {
+    "sample_num": 90,
+    "instruction": "Massive traffic jam near the monument, give us an alternative nearby",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"traffic_delay\"\n}"
+  },
+  {
+    "sample_num": 91,
+    "instruction": "Train got rescheduled to late evening, reorganize our morning",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"train_delayed\",\n  \"time_block\": \"morning\"\n}"
+  },
+  {
+    "sample_num": 92,
+    "instruction": "Ferry service is suspended due to rough sea, what are our options?",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"transit_cancellation\"\n}"
+  },
+  {
+    "sample_num": 93,
+    "instruction": "Key museum is under renovation, find an alternative cultural spot",
+    "response": "{\n  \"intent\": \"HANDLE_DISRUPTION\",\n  \"disruption_type\": \"attraction_closed\",\n  \"interests\": [\n    \"Culture\"\n  ]\n}"
+  },
+  {
+    "sample_num": 94,
+    "instruction": "what else can I do?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"query_topic\": \"activity_suggestions\"\n}"
+  },
+  {
+    "sample_num": 95,
+    "instruction": "What is the best season to visit Kochi?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"destination\": \"Kochi\",\n  \"query_topic\": \"best_season\"\n}"
+  },
+  {
+    "sample_num": 96,
+    "instruction": "What clothes should I pack for Jaipur in December?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"destination\": \"Jaipur\",\n  \"query_topic\": \"clothing\",\n  \"travel_date\": \"December\"\n}"
+  },
+  {
+    "sample_num": 97,
+    "instruction": "Is Goa safe for solo female travelers at night?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"destination\": \"Goa\",\n  \"companion\": \"Solo\",\n  \"query_topic\": \"safety\"\n}"
+  },
+  {
+    "sample_num": 98,
+    "instruction": "Do local vendors in Manali accept UPI payments or should I carry cash?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"destination\": \"Manali\",\n  \"query_topic\": \"payments_and_cash\"\n}"
+  },
+  {
+    "sample_num": 99,
+    "instruction": "How many days are ideal to explore Visakhapatnam properly?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"destination\": \"Visakhapatnam\",\n  \"query_topic\": \"ideal_duration\"\n}"
+  },
+  {
+    "sample_num": 100,
+    "instruction": "What are the common local transport options available in Udaipur?",
+    "response": "{\n  \"intent\": \"GENERAL_TRAVEL_QUERY\",\n  \"destination\": \"Udaipur\",\n  \"query_topic\": \"local_transport\"\n}"
+  }
+]
