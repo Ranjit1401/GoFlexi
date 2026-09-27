@@ -39,8 +39,9 @@ export const parseApiError = (error: unknown): ApiError => {
     const axiosErr = error as AxiosError;
 
     if (!axiosErr.response) {
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
       return {
-        message: 'Unable to connect to server',
+        message: isOffline ? 'You are offline. Please reconnect to continue.' : 'Unable to connect to server',
         status: 0,
         isNetworkError: true,
       };
