@@ -25,7 +25,13 @@ import {
   RefreshCw,
   AlertCircle,
   Compass,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
+import { EditTripModal } from '../../components/traveler/EditTripModal';
+import { DeleteTripDialog } from '../../components/traveler/DeleteTripDialog';
 import { getDestinationImage } from '../../utils/placeImages';
 
 export const TravelerDashboardPage: React.FC = () => {
@@ -46,6 +52,42 @@ export const TravelerDashboardPage: React.FC = () => {
 
   const [upcomingTrips, setUpcomingTrips] = useState<Trip[]>([]);
   const [loadingTrips, setLoadingTrips] = useState<boolean>(true);
+  const tripsScrollRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Edit & Delete states for upcoming trips
+  const [tripToEdit, setTripToEdit] = useState<Trip | null>(null);
+  const [tripToDelete, setTripToDelete] = useState<Trip | null>(null);
+
+  const handleOpenEdit = (trip: Trip) => {
+    if (trip.paymentStatus === 'Paid') {
+      return;
+    }
+    setTripToEdit(trip);
+  };
+
+  const handleTripSaved = (updatedTrip: Trip) => {
+    setUpcomingTrips((prev) => prev.map((t) => (t.id === updatedTrip.id ? updatedTrip : t)));
+    if (selectedTrip?.id === updatedTrip.id) {
+      setSelectedTrip(updatedTrip);
+    }
+  };
+
+  const handleTripDeleted = (deletedTripId: string) => {
+    setUpcomingTrips((prev) => prev.filter((t) => t.id !== deletedTripId));
+    if (selectedTrip?.id === deletedTripId) {
+      setSelectedTrip(null);
+    }
+  };
+
+  const checkScrollPosition = useCallback(() => {
+    if (tripsScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = tripsScrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  }, []);
 
   const fetchTrips = useCallback(async () => {
     setLoadingTrips(true);
@@ -62,6 +104,23 @@ export const TravelerDashboardPage: React.FC = () => {
   useEffect(() => {
     fetchTrips();
   }, [fetchTrips]);
+
+  useEffect(() => {
+    checkScrollPosition();
+    window.addEventListener('resize', checkScrollPosition);
+    return () => window.removeEventListener('resize', checkScrollPosition);
+  }, [upcomingTrips, checkScrollPosition]);
+
+  const scrollTrips = (direction: 'left' | 'right') => {
+    if (tripsScrollRef.current) {
+      const scrollAmount = 450;
+      tripsScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkScrollPosition, 350);
+    }
+  };
 
   const fetchRecommendations = useCallback(async (forceRefresh: boolean = false) => {
     const cached = getCachedRecommendations();
@@ -352,26 +411,62 @@ export const TravelerDashboardPage: React.FC = () => {
         )}
       </section>
 
-      {/* SECTION: MY TRIPS (Upcoming Trips) */}
+      {/* SECTION: MY TRIPS (Upcoming Trips Horizontal Slider) */}
       <section className="space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-navy-950">
-              Upcoming Trips
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-xl sm:text-2xl font-bold text-navy-950">
+                Upcoming Trips
+              </h2>
+              {upcomingTrips.length > 0 && (
+                <Badge variant="neutral" size="sm" className="bg-brand-50 text-brand-700 border-brand-200">
+                  {upcomingTrips.length} {upcomingTrips.length === 1 ? 'Trip' : 'Trips'}
+                </Badge>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Keep track of locked departures, day plans, and itinerary syncs.
+              Slide horizontally from left to right to browse your departures, day plans, and itinerary syncs.
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/user/trips')}
-            className="text-brand-600 hover:text-brand-700 font-semibold"
-          >
-            <span>View All Trips</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
+
+          <div className="flex items-center gap-2">
+            {/* Left / Right Carousel Controls */}
+            {upcomingTrips.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => scrollTrips('left')}
+                  disabled={!canScrollLeft}
+                  title="Slide left"
+                  aria-label="Previous trip"
+                  className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-700 shadow-xs hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => scrollTrips('right')}
+                  disabled={!canScrollRight}
+                  title="Slide right"
+                  aria-label="Next trip"
+                  className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-700 shadow-xs hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/user/trips')}
+              className="text-brand-600 hover:text-brand-700 font-semibold"
+            >
+              <span>View All Trips</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
         </div>
 
         {loadingTrips ? (
@@ -379,14 +474,34 @@ export const TravelerDashboardPage: React.FC = () => {
             Loading upcoming trips...
           </div>
         ) : upcomingTrips.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 max-w-4xl">
-            {upcomingTrips.map((trip) => (
-              <TripCard
-                key={trip.id}
-                trip={trip}
-                onViewDetails={(t) => setSelectedTrip(t)}
-              />
-            ))}
+          <div className="relative">
+            {/* Subtle Gradient Indicators for scrollability */}
+            {canScrollLeft && (
+              <div className="absolute left-0 top-0 bottom-4 w-12 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none z-10 rounded-l-2xl hidden sm:block" />
+            )}
+            {canScrollRight && (
+              <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none z-10 rounded-r-2xl hidden sm:block" />
+            )}
+
+            <div
+              ref={tripsScrollRef}
+              onScroll={checkScrollPosition}
+              className="flex gap-5 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {upcomingTrips.map((trip) => (
+                <div
+                  key={trip.id}
+                  className="snap-start shrink-0 w-[320px] sm:w-[420px] md:w-[460px] max-w-[90vw]"
+                >
+                  <TripCard
+                    trip={trip}
+                    onViewDetails={(t) => setSelectedTrip(t)}
+                    onEdit={handleOpenEdit}
+                    onDelete={(t) => setTripToDelete(t)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-8 text-center space-y-3">
@@ -570,18 +685,69 @@ export const TravelerDashboardPage: React.FC = () => {
               </div>
             )}
 
-            <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
               <Button
-                variant="secondary"
-                onClick={() => setSelectedTrip(null)}
-                className="rounded-xl"
+                variant="outline"
+                size="sm"
+                onClick={() => setTripToDelete(selectedTrip)}
+                className="rounded-xl text-xs text-rose-600 hover:text-white hover:bg-rose-600 hover:border-rose-600 border-rose-200 bg-rose-50/50 inline-flex items-center gap-1.5"
               >
-                Close Itinerary
+                <Trash2 className="w-3.5 h-3.5 text-rose-500 hover:text-white" />
+                <span>Delete Trip</span>
               </Button>
+
+              <div className="flex items-center gap-2">
+                {selectedTrip.paymentStatus !== 'Paid' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenEdit(selectedTrip)}
+                    className="rounded-xl text-xs inline-flex items-center gap-1.5"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Edit Trip</span>
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedTrip(null)}
+                  className="rounded-xl text-xs"
+                >
+                  Close Details
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedTrip(null);
+                    navigate('/user/trips');
+                  }}
+                  className="rounded-xl text-xs bg-navy-900 hover:bg-navy-800"
+                >
+                  <span>Manage Trip</span>
+                  <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </Modal>
       )}
+
+      {/* Reusable Edit & Delete Modals */}
+      <EditTripModal
+        trip={tripToEdit}
+        isOpen={Boolean(tripToEdit)}
+        onClose={() => setTripToEdit(null)}
+        onSaved={handleTripSaved}
+      />
+
+      <DeleteTripDialog
+        trip={tripToDelete}
+        isOpen={Boolean(tripToDelete)}
+        onClose={() => setTripToDelete(null)}
+        onDeleted={handleTripDeleted}
+      />
 
       {/* Floating Draggable AI Copilot Widget */}
       <DraggableCopilotWidget />

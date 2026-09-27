@@ -18,7 +18,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98] whitespace-nowrap shrink-0';
 
   const variants = {
     primary: 'bg-navy-800 hover:bg-navy-700 text-white shadow-sm hover:shadow focus:ring-navy-600',
@@ -42,11 +42,11 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin text-current" />
+        <Loader2 className="w-4 h-4 animate-spin text-current shrink-0" />
       ) : icon ? (
-        <span className="flex-shrink-0">{icon}</span>
+        <span className="flex-shrink-0 inline-flex items-center justify-center">{icon}</span>
       ) : null}
-      <span>{children}</span>
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">{children}</span>
     </button>
   );
 };
